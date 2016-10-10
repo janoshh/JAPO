@@ -1,37 +1,80 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-		<title>JAPO</title>	
-		<script src="js/modernizr.custom.js"></script>
-		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.5/angular.min.js"></script>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-		<script src="js/jquery.dlmenu.js"></script>
-		<script type="text/javascript" src="js/app.js"></script>
-	</head>
-	<body>
-        <h1>Log in</h1>
-        <div id="login" class="">
-            <form action="home.html" method="get">
-                E-mail: <input type="text" name="email"><br>
-                Password: <input type="text" name="password"><br>
-                <input type="submit" value="Submit">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>JAPO</title>
+    <script src="js/modernizr.custom.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.5/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="js/jquery.dlmenu.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <div id="main">
+        <div id="login" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth">
+            <form action="home.html" method="get" class="form-signin">
+
+                <h2 class="form-signin-heading">Sign in</h2>
+                <div class="margin">
+                    <label for="inputEmail" class="sr-only">Email address</label>
+                    <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
+                </div>
+                <div class="margin">
+                    <label for="inputPassword" class="sr-only">Password</label>
+                    <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+                </div>
+                <div class="margin">
+                    <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+                </div>
             </form>
         </div>
-        
-        <h1>Register</h1>
-        <div id="register" class="">
-            <form action="home.html" method="get">
-                First Name: <input type="text" name="firstName"><br>
-                Last Name: <input type="text" name="lastName"><br>
-                E-mail: <input type="text" name="email"><br>
-                Password: <input type="text" name="password"><br>
-                Retype Password: <input type="text" name="password2"><br>
-                <input type="submit" value="Register">
+
+        <div id="register" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth">
+            <form action="home.html" method="get" class="form-register">
+
+
+                <h2 class="form-register-heading">Register</h2>
+                <div class="margin">
+                    <label for="inputEmail" class="sr-only">Name</label>
+                    <input type="text" id="inputName" class="form-control" placeholder="Enter your name" required>
+                </div>
+                <div class="margin">
+                    <label for="inputEmail" class="sr-only">Last name</label>
+                    <input type="text" id="inputLastname" class="form-control" placeholder="Enter your last name" required>
+                </div>
+                <div class="margin">
+                    <label for="inputEmail" class="sr-only">Email address</label>
+                    <input type="email" id="inputRegisterEmail" class="form-control" placeholder="Email address" required autofocus>
+                </div>
+                <div class="margin">
+                    <label for="inputPassword" class="sr-only">Password</label>
+                    <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+                </div>
+                <div class="margin">
+                    <label for="inputPassword" class="sr-only">Password</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm your password" required>
+                </div>
+                <div class="margin">
+                    <button class="btn btn-lg btn-primary btn-block" type="submit">Register</button>
+                </div>
             </form>
         </div>
-        
-	</body>
+    </div>
+</body>
+
 </html>
