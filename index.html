@@ -45,29 +45,29 @@
         </div>
 
         <div id="register" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth">
-            <form action="home.html" method="get" class="form-register">
+            <form action="http://localhost:8080/api/createUser" method="post" class="form-register">
 
 
                 <h2 class="form-register-heading">Register</h2>
                 <div class="margin">
                     <label for="inputEmail" class="sr-only">Name</label>
-                    <input type="text" id="inputName" class="form-control" placeholder="Enter your name" required>
+                    <input type="text" id="inputName" name="fnam" class="form-control" placeholder="Enter your first name" required>
                 </div>
                 <div class="margin">
                     <label for="inputEmail" class="sr-only">Last name</label>
-                    <input type="text" id="inputLastname" class="form-control" placeholder="Enter your last name" required>
+                    <input type="text" id="inputLastname" name="lname" class="form-control" placeholder="Enter your last name" required>
                 </div>
                 <div class="margin">
                     <label for="inputEmail" class="sr-only">Email address</label>
-                    <input type="email" id="inputRegisterEmail" class="form-control" placeholder="Email address" required autofocus>
+                    <input type="email" id="inputRegisterEmail" name="email" class="form-control" placeholder="Email address" required autofocus>
                 </div>
                 <div class="margin">
                     <label for="inputPassword" class="sr-only">Password</label>
-                    <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+                    <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
                 </div>
                 <div class="margin">
                     <label for="inputPassword" class="sr-only">Password</label>
-                    <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm your password" required>
+                    <input type="password" id="inputPasswordConfirm" name="password" data-match="#inputPassword" data-match-error="Passwords don't match" class="form-control" placeholder="Confirm your password" required>
                 </div>
                 <div class="margin">
                     <button class="btn btn-lg btn-primary btn-block" type="submit">Register</button>
