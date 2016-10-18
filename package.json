@@ -1,19 +1,11 @@
 {
-  "name": "japo",
-  "version": "1.0.0",
-  "description": "Janosh-Arne Paperless Office",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/janoshh/JAPO.git"
-  },
-  "author": "Janosh Verdonck, Arne Thiels",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/janoshh/JAPO/issues"
-  },
-  "homepage": "https://github.com/janoshh/JAPO#readme"
+  "name": "node-token-jwt",
+  "main": "server.js",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "jsonwebtoken": "^7.1.9",
+    "mongoose": "^4.6.4",
+    "morgan": "^1.7.0"
+  }
 }
