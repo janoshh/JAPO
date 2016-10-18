@@ -45,7 +45,7 @@
         </div>
 
         <div id="register" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth">
-            <form action="http://localhost:8080/api/createUser" method="post" class="form-register">
+            <form action="http://localhost:8080/api/createUser" method="post" class="form-register" data-toggle="validator">
 
 
                 <h2 class="form-register-heading">Register</h2>
@@ -63,11 +63,12 @@
                 </div>
                 <div class="margin">
                     <label for="inputPassword" class="sr-only">Password</label>
-                    <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
+                    <input type="password" data-minlength="6" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
+                    <div class="help-block">Minimum of 6 characters</div>
                 </div>
                 <div class="margin">
                     <label for="inputPassword" class="sr-only">Password</label>
-                    <input type="password" id="inputPasswordConfirm" name="passwordConfirm" data-match="#inputPassword" data-match-error="Passwords don't match" class="form-control" placeholder="Confirm your password" required>
+
                 </div>
                 <div class="margin">
                     <button class="btn btn-lg btn-primary btn-block" type="submit">Register</button>
