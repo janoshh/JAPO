@@ -22,6 +22,11 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 // use morgan to log requests to the console
 app.use(morgan('dev'));
+
+app.get('/css/style.css', function(req, res){
+  res.sendFile(__dirname + '/css/style.css');
+});
+
 // =================================================================
 // routes ==========================================================
 // =================================================================

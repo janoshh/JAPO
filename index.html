@@ -6,11 +6,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>JAPO</title>
-    <script src="js/modernizr.custom.js"></script>
+    
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.5/angular.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script src="js/jquery.dlmenu.js"></script>
-    <script type="text/javascript" src="js/app.js"></script>
 
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
@@ -21,13 +19,13 @@
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 
 <body>
     <div id="main">
         <div id="login" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth">
-            <form action="http://localhost:8080/api/authenticate" method="post" class="form-signin">
+            <form action="api/authenticate" method="post" class="form-signin">
 
                 <h2 class="form-signin-heading">Sign in</h2>
                 <div class="margin">
@@ -45,7 +43,7 @@
         </div>
 
         <div id="register" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth">
-            <form action="http://localhost:8080/api/createUser" method="post" class="form-register" data-toggle="validator">
+            <form action="api/createUser" method="post" class="form-register" data-toggle="validator">
 
 
                 <h2 class="form-register-heading">Register</h2>
