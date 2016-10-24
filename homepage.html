@@ -20,21 +20,32 @@
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="styleHome.css">
 </head>
 
 <body data-ng-app="loginApp">
     <div id="main">
-        <!--zoekbalk-->
-        <div class="col-md-8">
-            <input type="text" class="form-control has-feedback" placeholder="Search">
-            <span class="glyphicon glyphicon-search form-control-feedback"></span>
+        <div id="top">
+            <!--zoekbalk-->
+            <div class="col-md-8 col-xs-12">
+                <input type="text" class="form-control has-feedback" placeholder="Search">
+                <span class="glyphicon glyphicon-search form-control-feedback"></span>
+            </div>
+            <div class="col-md-1 col-xs-8">
+                <button class="btn btn-primary">Upload</button>
+            </div>
+            <div class="col-md-2 col-xs-3">
+                <label>email-loggedin</label>
+            </div>
+            <div class="col-md-1 col-xs-1">
+                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                    <span class="glyphicon glyphicon-triangle-bottom"></span></button>
+                <ul class="dropdown-menu">
+                    <li><a href="#">Settings</a></li>
+                    <li><a href="#">Log out</a></li>
+                </ul>
+            </div>
         </div>
-        <div class="col-md-1">
-        <button class="btn btn-primary">Upoad</button>
-        </div>
-        <div class="col-md-3"></div>
-        
     </div>
 </body>
 

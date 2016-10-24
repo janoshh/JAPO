@@ -1,33 +1,28 @@
-.margin{
+.margin {
     margin: 15px 0px 15px 0px
 }
-
-button{
+button {
     float: right;
     max-width: 200px;
-    
 }
-
-#main{
+#main {
     width: 75%;
     margin: 0 auto;
     margin-top: 5%;
 }
-
-@media(max-width: 1000px){
-    #login{
+@media(max-width: 1000px) {
+    #login {
         border-bottom: 1px solid black;
         padding-bottom: 20px;
     }
 }
-
-@media(min-width: 1000px){
-    #login{
+@media(min-width: 1000px) {
+    #login {
         border-right: 1px solid black;
         min-height: 500px;
         padding-right: 80px;
     }
-    #register{
+    #register {
         padding-left: 80px;
     }
 }

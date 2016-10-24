@@ -1,0 +1,9 @@
+#top {
+    border-bottom: 1px solid black;
+}
+
+#main {
+    width: 75%;
+    margin: 0 auto;
+    margin-top: 5%;
+}
