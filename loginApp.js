@@ -31,7 +31,7 @@ app.controller("addController", function ($scope, $http) {
             "name": emailUser,
             "body": loginPass
         }).success(function (post) {
-            console.log(post);
+            //console.log(post);
             $scope.posts.unshift(post);
         });
 
@@ -55,7 +55,7 @@ app.controller("addController", function ($scope, $http) {
                 "email": email,
                 "passwordConfirm": passwordConf
             }).success(function (post) {
-                console.log(post);
+                //console.log(post);
                 $scope.posts.unshift(post);
             });
         }
