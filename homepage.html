@@ -20,16 +20,21 @@
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
-    <link rel="stylesheet" type="text/css" href="styleHome.css">
+    <script src="app.js" type="text/javascript">
+
+
+    </script>
+
+    <link rel="stylesheet" type="text/css" href="css/styleHome.css">
 </head>
 
-<body data-ng-app="loginApp">
-    <div id="main">
+<body data-ng-app="app">
+    <div id="main" ng-controller="appController">
         <div id="top">
             <!--zoekbalk-->
             <div class="col-md-8 col-xs-12">
                 <input type="text" class="form-control has-feedback" placeholder="Search">
-                <span class="glyphicon glyphicon-search form-control-feedback"></span>
+                <span class="glyphicon glyphicon-search form-control-feedback zoek"></span>
             </div>
             <div class="col-md-1 col-xs-8">
                 <button class="btn btn-primary">Upload</button>
@@ -38,15 +43,72 @@
                 <label>email-loggedin</label>
             </div>
             <div class="col-md-1 col-xs-1">
-                <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                <button class="dropdown-toggle" type="button" data-toggle="dropdown">
                     <span class="glyphicon glyphicon-triangle-bottom"></span></button>
                 <ul class="dropdown-menu">
                     <li><a href="#">Settings</a></li>
                     <li><a href="#">Log out</a></li>
                 </ul>
             </div>
+
         </div>
+
+        <div>
+            <input id="slider" type="range" min="7" max="40" value="50" oninput="resize(this.value)" />
+        </div>
+
+        <div ng-repeat="pdfItem in collection" id="collections">
+            <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen -->
+            <img src="{{pdfItem.thumbnail}}">
+            <p>{{pdfItem.titel}}</p>
+        </div>
+
+        <div id="collectionsList">
+            <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen. hieronder nog tabel maken-->
+            <table>
+                <tr class="bold">
+                    <th>Title</th>
+                    <th>Tags</th>
+                    <th>Datum</th>
+                    <th>Grootte</th>
+                </tr>
+                <tr ng-repeat="pdfItem in collection">
+                    <th>
+                        {{pdfItem.titel}}
+                    </th>
+                    <th>
+                        {{pdfItem.tags}}
+                    </th>
+                    <th>
+                        {{pdfItem.datum}}
+                    </th>
+                    <th>
+                        {{pdfItem.grootte}}
+                    </th>
+                </tr>
+            </table>
+        </div>
+
     </div>
 </body>
+
+<script>
+    $(collectionsList).hide();
+
+    function resize(newValue) {
+
+        if (newValue < 8) {
+            $(collections).css("max-width", newValue + "%");
+            $(collections).hide();
+            $(collectionsList).show();
+
+        } else {
+            $(collections).css("max-width", newValue + "%");
+            $(collectionsList).hide();
+            $(collections).show();
+        }
+    }
+
+</script>
 
 </html>
