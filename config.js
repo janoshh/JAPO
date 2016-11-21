@@ -1,6 +1,6 @@
 module.exports = {
 
     'secret': 'janosh-arne-paperless-office',
-    'database': 'mongodb://japo:japo@jello.modulusmongo.net:27017/Napewo2z'
+    'database': 'mongodb://japo:janosharne123@ds031167.mlab.com:31167/users'
 
 };

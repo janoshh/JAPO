@@ -1,6 +1,3 @@
-// =================================================================
-// get the packages we need ========================================
-// =================================================================
 var express = require('express');
 var app = express();
 var bodyParser = require('body-parser');
@@ -9,11 +6,14 @@ var mongoose = require('mongoose');
 var jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 var config = require('./config'); // get our config file
 var User = require('./models/user'); // get our mongoose model
-// =================================================================
-// configuration ===================================================
-// =================================================================
 var port = process.env.PORT || 8080; // used to create, sign, and verify tokens
-mongoose.connect(config.database); // connect to database
+// connect to database
+mongoose.connect(config.database);
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function () {
+    // we're connected!    
+});
 app.set('superSecret', config.secret); // secret variable
 // use body parser so we can get info from POST and/or URL parameters
 app.use(bodyParser.urlencoded({
@@ -22,33 +22,14 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 // use morgan to log requests to the console
 app.use(morgan('dev'));
-
-app.get('/css/style.css', function(req, res){
-  res.sendFile(__dirname + '/css/style.css');
-});
-
 // =================================================================
 // routes ==========================================================
 // =================================================================
-app.get('/setup', function (req, res) {
-    // create a sample user
-    var japo = new User({
-        name: 'japo@japo.com'
-        , password: 'Japo'
-        , premium: false
-    });
-    japo.save(function (err) {
-        if (err) throw err;
-        console.log('User saved successfully');
-        res.json({
-            success: true
-        });
-    });
-});
 var path = require('path');
-app.use(express.static(__dirname + '/../'));
+public = __dirname + '/public/';
+app.use(express.static(public));
 app.get("/", function (req, res) {
-    res.sendFile(__dirname + '/' + "index.html");
+    res.sendFile(public + "index.html");
 });
 // ---------------------------------------------------------
 // get an instance of the router for api routes
@@ -59,6 +40,7 @@ var apiRoutes = express.Router();
 // ---------------------------------------------------------
 // http://localhost:8080/api/authenticate
 apiRoutes.post('/authenticate', function (req, res) {
+    console.log("oooow, ne post jom");
     // find the user
     User.findOne({
         name: req.body.name
@@ -84,35 +66,54 @@ apiRoutes.post('/authenticate', function (req, res) {
                 var token = jwt.sign(user, app.get('superSecret'), {
                     expiresIn: 86400 // expires in 24 hours
                 });
+                res.redirect(public + "home.html");
+                /*
                 res.json({
                     success: true
                     , message: 'Enjoy your token!'
                     , token: token
                 });
+                */
             }
         }
     });
 });
 apiRoutes.post('/createUser', function (req, res) {
-    
+    // getting log in data
     var name = req.body.email
     var password = req.body.password
-    
-    console.log("Creating new user");
-    // create a new user
-    var user = new User({
-        fname: req.body.fname
-        , lname: req.body.lname
-        , name: req.body.email
-        , password: req.body.passwordConfirm
-        , premium: false
-    });
-    user.save(function (err) {
+    var succes = false;
+    // create a new user if it doesn't exist yet
+    User.findOne({
+        name: req.body.email
+    }, function (err, user) {
         if (err) throw err;
-        console.log('User saved successfully');
-        res.sendFile(__dirname + '/' + "registered.html");
-    });  
-    
+        if (!user) {
+            var newUser = new User({
+                fname: req.body.fname
+                , lname: req.body.lname
+                , name: req.body.email
+                , password: req.body.password
+                , premium: false
+            });
+            newUser.save(function (err, newUser) {
+                if (err) return console.error(err);
+                if (!err) {
+                    console.log("New user saved tot db");
+                    res.json({
+                        success: true
+                        , message: 'User created!'
+                    });
+                }
+            });
+        }
+        else {
+            res.json({
+                success: false
+                , message: 'This email address is already been used.'
+            });
+        }
+    });
 });
 // ---------------------------------------------------------
 // route middleware to authenticate and check token
@@ -163,6 +164,74 @@ apiRoutes.get('/check', function (req, res) {
     res.json(req.decoded);
 });
 app.use('/api', apiRoutes);
+
+
+
+
+// MONGODB
+/*
+
+var documentsSchema = new Schema({
+    name: String
+    , type: String
+    , content: String
+    , uploadDate: {
+        type: Date
+        , default: Date.now
+    }
+});
+var transactionSchema = new Schema({
+    txId: ObjectId
+    , txStatus: {
+        type: String
+        , index: true
+        , default: "started"
+    }
+    , documents: [{
+        type: ObjectId
+        , ref: 'Document'
+    }]
+});
+apiRoutes.post('/uploadFile', function (req, res) {
+    function uploadFile(req, res) {
+        var file = req.files.file;
+        console.log(file.path);
+        if (file.type != 'application/pdf') {
+            res.render('./tx/application/uploadResult', {
+                result: 'File must be pdf'
+            });
+        }
+        else if (file.size > 1024 * 1024) {
+            res.render('./tx/application/uploadResult', {
+                result: 'File is too big'
+            });
+        }
+        else {
+            var document = new Document();
+            document.name = file.name;
+            document.type = file.type;
+            fs.readFile(file.path, function (err, data) {
+                document.content = data;
+                document.save(function (err, document) {
+                    if (err) throw err;
+                    Transaction.findById(req.body.ltxId, function (err, tx) {
+                        tx.documents.push(document._id);
+                        tx.save(function (err, tx) {
+                            res.render('./tx/application/uploadResult', {
+                                result: 'ok'
+                                , fileId: document._id
+                            });
+                        });
+                    });
+                });
+            });
+        }
+    }
+});
+
+*/
+
+
 // =================================================================
 // start the server ================================================
 // =================================================================
