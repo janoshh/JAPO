@@ -1,12 +1,9 @@
-
 <body data-ng-app="app">
     <div id="main" ng-controller="homeController">
         <div id="top">
             <!--zoekbalk-->
             <div class="col-md-8 col-xs-12">
-                <input type="text" class="form-control has-feedback" placeholder="Search">
-                <span class="glyphicon glyphicon-search form-control-feedback zoek"></span>
-            </div>
+                <input type="text" class="form-control has-feedback" placeholder="Search"> <span class="glyphicon glyphicon-search form-control-feedback zoek"></span> </div>
             <div class="col-md-1 col-xs-8">
                 <button class="btn btn-primary">Upload</button>
             </div>
@@ -14,26 +11,19 @@
                 <label>email-loggedin</label>
             </div>
             <div class="col-md-1 col-xs-1">
-                <button class="dropdown-toggle" type="button" data-toggle="dropdown">
-                    <span class="glyphicon glyphicon-triangle-bottom"></span></button>
+                <button class="dropdown-toggle" type="button" data-toggle="dropdown"> <span class="glyphicon glyphicon-triangle-bottom"></span></button>
                 <ul class="dropdown-menu">
                     <li><a href="#">Settings</a></li>
                     <li><a href="#">Log out</a></li>
                 </ul>
             </div>
-
         </div>
-
         <div>
-            <input id="slider" type="range" min="7" max="40" value="50" oninput="resize(this.value)" />
-        </div>
-
+            <input id="slider" type="range" min="7" max="40" value="50" oninput="resize(this.value)" /> </div>
         <div ng-repeat="pdfItem in collection" id="collections">
-            <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen -->
-            <img src="{{pdfItem.thumbnail}}">
+            <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen --><img src="{{pdfItem.thumbnail}}">
             <p>{{pdfItem.titel}}</p>
         </div>
-
         <div id="collectionsList">
             <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen. hieronder nog tabel maken-->
             <table>
@@ -44,41 +34,12 @@
                     <th>Grootte</th>
                 </tr>
                 <tr ng-repeat="pdfItem in collection">
-                    <th>
-                        {{pdfItem.titel}}
-                    </th>
-                    <th>
-                        {{pdfItem.tags}}
-                    </th>
-                    <th>
-                        {{pdfItem.datum}}
-                    </th>
-                    <th>
-                        {{pdfItem.grootte}}
-                    </th>
+                    <th> {{pdfItem.titel}} </th>
+                    <th> {{pdfItem.tags}} </th>
+                    <th> {{pdfItem.datum}} </th>
+                    <th> {{pdfItem.grootte}} </th>
                 </tr>
             </table>
         </div>
-
     </div>
 </body>
-
-<script>
-    $(collectionsList).hide();
-
-    function resize(newValue) {
-
-        if (newValue < 8) {
-            $(collections).css("max-width", newValue + "%");
-            $(collections).hide();
-            $(collectionsList).show();
-
-        } else {
-            $(collections).css("max-width", newValue + "%");
-            $(collectionsList).hide();
-            $(collections).show();
-        }
-    }
-
-</script>
-

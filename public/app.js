@@ -127,7 +127,7 @@ app.controller("registerController", function ($scope, $http, $location) {
 // -----------------
 // Upload Controller
 // -----------------
-app.controller("luploadController", function ($scope, $http, $location) {
+app.controller("uploadController", function ($scope, $http, $location) {
     $scope.LogIn = function () {
         
         //post req
@@ -143,6 +143,7 @@ app.controller("luploadController", function ($scope, $http, $location) {
 });
 
 
+// ---------------
 // Home Controller
 // ---------------
 
