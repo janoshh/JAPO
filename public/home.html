@@ -1,11 +1,10 @@
-<body data-ng-app="app">
     <div id="main" ng-controller="homeController">
         <div id="top">
             <!--zoekbalk-->
             <div class="col-md-8 col-xs-12">
                 <input type="text" class="form-control has-feedback" placeholder="Search"> <span class="glyphicon glyphicon-search form-control-feedback zoek"></span> </div>
             <div class="col-md-1 col-xs-8">
-                <button class="btn btn-primary">Upload</button>
+                <button class="btn btn-primary" ng-click="goToUpload()">Upload</button>
             </div>
             <div class="col-md-2 col-xs-3">
                 <label>email-loggedin</label>
@@ -42,4 +41,3 @@
             </table>
         </div>
     </div>
-</body>

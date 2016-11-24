@@ -19,14 +19,14 @@
     <link rel="stylesheet" type="text/css" href="css/style.css"> </head>
 
 <body data-ng-app="Japo-app">
-    <div ng-view onload="hideList()"></div>
+    <div ng-view></div>
 </body>
 <script>
     $(function () {
         console.log("in body ready");
         $(collectionsList).hide();
     });
-    
+
     function hideList() {
         console.log("in hideList");
         $(collectionsList).hide();
@@ -45,5 +45,4 @@
         }
     }
 </script>
-
 </html>

@@ -6,6 +6,8 @@ var mongoose = require('mongoose');
 var jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 var config = require('./config'); // get our config file
 var User = require('./models/user'); // get our mongoose model
+var fs = require('fs');
+var busboy = require('connect-busboy');
 var port = process.env.PORT || 8080; // used to create, sign, and verify tokens
 // connect to database
 mongoose.connect(config.database);
@@ -22,15 +24,15 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json());
 // use morgan to log requests to the console
 app.use(morgan('dev'));
-// =================================================================
-// routes ==========================================================
-// =================================================================
+app.use(busboy());
 var path = require('path');
 public = __dirname + '/public/';
 app.use(express.static(public));
 app.get("/", function (req, res) {
     res.sendFile(public + "index.html");
 });
+var AWS = require('aws-sdk');
+var s3 = new AWS.S3();
 // ---------------------------------------------------------
 // get an instance of the router for api routes
 // ---------------------------------------------------------
@@ -40,13 +42,14 @@ var apiRoutes = express.Router();
 // ---------------------------------------------------------
 // http://localhost:8080/api/authenticate
 apiRoutes.post('/authenticate', function (req, res) {
-    console.log("oooow, ne post jom");
     // find the user
     User.findOne({
         name: req.body.name
     }, function (err, user) {
         if (err) throw err;
+        debugger;
         if (!user) {
+            res.status(422);
             res.json({
                 success: false
                 , message: 'Authentication failed. User not found.'
@@ -55,6 +58,7 @@ apiRoutes.post('/authenticate', function (req, res) {
         else if (user) {
             // check if password matches
             if (user.password != req.body.password) {
+                res.status(422);
                 res.json({
                     success: false
                     , message: 'Authentication failed. Wrong password.'
@@ -66,14 +70,13 @@ apiRoutes.post('/authenticate', function (req, res) {
                 var token = jwt.sign(user, app.get('superSecret'), {
                     expiresIn: 86400 // expires in 24 hours
                 });
-                res.redirect(public + "home.html");
-                /*
+                //res.redirect(public + "home.html");
+                res.status(200);
                 res.json({
                     success: true
                     , message: 'Enjoy your token!'
                     , token: token
                 });
-                */
             }
         }
     });
@@ -83,6 +86,7 @@ apiRoutes.post('/createUser', function (req, res) {
     var name = req.body.email
     var password = req.body.password
     var succes = false;
+    var bucket = name.replace("@", "-");
     // create a new user if it doesn't exist yet
     User.findOne({
         name: req.body.email
@@ -105,6 +109,28 @@ apiRoutes.post('/createUser', function (req, res) {
                         , message: 'User created!'
                     });
                 }
+                // CREATE S3 BUCKET FOR USER
+                s3.listBuckets(function (err, data) {
+                    if (err) {
+                        console.log("Error", err);
+                    }
+                    else {
+                        console.log("Bucket List", data.Buckets);
+                    }
+                });
+                s3.createBucket({
+                    Bucket: bucket
+                }, function () {
+                    var params = {
+                        Bucket: bucket
+                        , Key: 'Welcome.pdf'
+                        , Body: 'Hello and welcome to JAPO!'
+                    };
+                    s3.putObject(params, function (err, data) {
+                        if (err) console.log(err)
+                        else console.log("Successfully created Bucket for user " + bucket);
+                    });
+                });
             });
         }
         else {
@@ -163,75 +189,30 @@ apiRoutes.get('/users', function (req, res) {
 apiRoutes.get('/check', function (req, res) {
     res.json(req.decoded);
 });
+apiRoutes.post('/upload', function (req, res, next) {
+    var fileSize = req.headers['file-size'];
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    console.log("Uploading file "+filename+" ("+fileSize+"b) to "+bucket);
+    req.pipe(req.busboy);
+    req.busboy.on('file', function (fieldname, file, filename) {
+        var params = {
+            Bucket: bucket
+            , Key: filename
+            , Body: file
+            , ContentLength: fileSize
+            , ACL: 'public-read'
+        };
+        s3.putObject(params, function (err, data) {
+            if (err) console.log(err)
+            else console.log("Succesfully added in bucket "+bucket);
+        });
+    });
+    req.busboy.on('finish', function () {
+        console.log("Upload succes!");
+    });
+});
 app.use('/api', apiRoutes);
-
-
-
-
-// MONGODB
-/*
-
-var documentsSchema = new Schema({
-    name: String
-    , type: String
-    , content: String
-    , uploadDate: {
-        type: Date
-        , default: Date.now
-    }
-});
-var transactionSchema = new Schema({
-    txId: ObjectId
-    , txStatus: {
-        type: String
-        , index: true
-        , default: "started"
-    }
-    , documents: [{
-        type: ObjectId
-        , ref: 'Document'
-    }]
-});
-apiRoutes.post('/uploadFile', function (req, res) {
-    function uploadFile(req, res) {
-        var file = req.files.file;
-        console.log(file.path);
-        if (file.type != 'application/pdf') {
-            res.render('./tx/application/uploadResult', {
-                result: 'File must be pdf'
-            });
-        }
-        else if (file.size > 1024 * 1024) {
-            res.render('./tx/application/uploadResult', {
-                result: 'File is too big'
-            });
-        }
-        else {
-            var document = new Document();
-            document.name = file.name;
-            document.type = file.type;
-            fs.readFile(file.path, function (err, data) {
-                document.content = data;
-                document.save(function (err, document) {
-                    if (err) throw err;
-                    Transaction.findById(req.body.ltxId, function (err, tx) {
-                        tx.documents.push(document._id);
-                        tx.save(function (err, tx) {
-                            res.render('./tx/application/uploadResult', {
-                                result: 'ok'
-                                , fileId: document._id
-                            });
-                        });
-                    });
-                });
-            });
-        }
-    }
-});
-
-*/
-
-
 // =================================================================
 // start the server ================================================
 // =================================================================
