@@ -115,13 +115,11 @@ app.controller("registerController", function ($scope, $http, $location) {
 // Home Controller
 // ---------------
 app.controller("homeController", function ($scope, $http, $location) {
-    
     var token = sessionStorage.getItem("japo-token");
     var user = sessionStorage.getItem("username");
-    
     $scope.user = user;
-    
-    console.log("Getting data");
+    var fileList;
+    $scope.fileList = [];
     $http({
         method: 'GET'
         , url: '/api/getFiles'
@@ -129,43 +127,21 @@ app.controller("homeController", function ($scope, $http, $location) {
             'x-access-token': token
             , 'user': user
         }
-    }).then(function(response) {
-        console.log("Retrieved data");
-        $scope.fileList = response.data;
-        console.log($scope.fileList);
+    }).then(function (response) {
+        fileList = response.data.files[0];
+        for (i = 0; i < fileList.length; i++) {
+            var name = fileList[i].Key;
+            var size = humanFileSize(fileList[i].Size, true);
+            var date = fileList[i].LastModified;
+            date = date.substring(0, date.indexOf('T'));
+            console.log(date);
+            var thumbnail = "/pdf/pdflogo.jpg";
+            var file = {
+                name, size, thumbnail, date
+            };
+            $scope.fileList.push(file);
+        }
     });
-    
-    
-    $scope.collection = [];
-    $scope.collection.push({
-        titel: "pdf1"
-        , grootte: "50Mb"
-        , tags: "factuur"
-        , datum: "17/11/2016"
-        , thumbnail: "/pdf/pdflogo.jpg"
-    });
-    $scope.collection.push({
-        titel: "pdf2"
-        , grootte: "10Mb"
-        , tags: "telenet"
-        , datum: "17/11/2016"
-        , thumbnail: "/pdf/pdflogo.jpg"
-    });
-    $scope.collection.push({
-        titel: "pdf3"
-        , grootte: "6Mb"
-        , tags: "contract"
-        , datum: "17/11/2016"
-        , thumbnail: "/pdf/pdflogo.jpg"
-    });
-    $scope.collection.push({
-        titel: "pdf4"
-        , grootte: "118Mb"
-        , tags: "factuur"
-        , datum: "17/11/2016"
-        , thumbnail: "/pdf/pdflogo.jpg"
-    });
-    console.log($scope.collection);
     $scope.goToUpload = function () {
         $location.path("/upload");
     }
@@ -228,6 +204,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
             $scope.progressVisible = false
         });
     };
+    $scope.tags = "PDF bestand";
     $scope.uploadFile = function () {
         var fd = new FormData()
         for (var i in $scope.files) {
@@ -244,6 +221,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.setRequestHeader("x-access-token", token);
         xhr.setRequestHeader("user", user);
         xhr.setRequestHeader("file-size", $scope.files[i].size);
+        xhr.setRequestHeader("tags", $scope.tags);
         $scope.progressVisible = true
         xhr.send(fd)
     }
@@ -262,6 +240,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     function uploadComplete(evt) {
         /* This event is raised when the server send back a response */
         //alert(evt.target.responseText)
+        $location.path("/home");
     }
 
     function uploadFailed(evt) {
@@ -275,3 +254,17 @@ app.controller("uploadController", function ($scope, $http, $location) {
             //alert("The upload has been canceled by the user or the browser dropped the connection.")
     }
 });
+// Size van Bytes naar kb, mb, gb,... omzetten
+function humanFileSize(bytes, si) {
+    var thresh = si ? 1000 : 1024;
+    if (Math.abs(bytes) < thresh) {
+        return bytes + ' B';
+    }
+    var units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+    var u = -1;
+    do {
+        bytes /= thresh;
+        ++u;
+    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+    return bytes.toFixed(1) + ' ' + units[u];
+}

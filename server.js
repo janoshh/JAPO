@@ -193,9 +193,10 @@ apiRoutes.post('/upload', function (req, res, next) {
     var fileSize = req.headers['file-size'];
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
-    console.log("Uploading file " + filename + " (" + fileSize + "b) to " + bucket);
+    var tags = req.headers['tags'];
     req.pipe(req.busboy);
     req.busboy.on('file', function (fieldname, file, filename) {
+        console.log("Uploading file " + filename + " (" + fileSize + "B) to " + bucket + " | Tags = "+tags);
         var params = {
             Bucket: bucket
             , Key: filename
@@ -205,7 +206,10 @@ apiRoutes.post('/upload', function (req, res, next) {
         };
         s3.putObject(params, function (err, data) {
             if (err) console.log(err)
-            else console.log("Succesfully added in bucket " + bucket);
+            else {
+                console.log("Succesfully added in bucket " + bucket);
+                res.status(200).end();
+            }
         });
     });
     req.busboy.on('finish', function () {
@@ -215,11 +219,10 @@ apiRoutes.post('/upload', function (req, res, next) {
 apiRoutes.get('/getFiles', function (req, res) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
-    
     var files = [];
-    
     var params = {
-        Bucket: bucket };
+        Bucket: bucket
+    };
     console.log("Getting files from " + bucket);
     s3.listObjects(params, function (err, data) {
         if (err) console.log(err, err.stack); // an error occurred
@@ -228,11 +231,10 @@ apiRoutes.get('/getFiles', function (req, res) {
             files.push(data.Contents);
             console.log(files);
             return res.status(200).send({
-            files: files
-        });
+                files: files
+            });
         }
     });
-    
 });
 app.use('/api', apiRoutes);
 // =================================================================
