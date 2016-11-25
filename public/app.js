@@ -130,14 +130,14 @@ app.controller("homeController", function ($scope, $http, $location) {
     }).then(function (response) {
         fileList = response.data.files[0];
         for (i = 0; i < fileList.length; i++) {
-            var name = fileList[i].Key;
-            var size = humanFileSize(fileList[i].Size, true);
-            var date = fileList[i].LastModified;
+            var name = fileList[i].filename;
+            var size = humanFileSize(fileList[i].size, true);
+            var date = fileList[i].date;
             date = date.substring(0, date.indexOf('T'));
-            console.log(date);
             var thumbnail = "/pdf/pdflogo.jpg";
+            var tags = fileList[i].tags;
             var file = {
-                name, size, thumbnail, date
+                name, size, thumbnail, date, tags
             };
             $scope.fileList.push(file);
         }
@@ -240,7 +240,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     function uploadComplete(evt) {
         /* This event is raised when the server send back a response */
         //alert(evt.target.responseText)
-        $location.path("/home");
+        //$location.path("/home");
     }
 
     function uploadFailed(evt) {
@@ -253,6 +253,11 @@ app.controller("uploadController", function ($scope, $http, $location) {
             })
             //alert("The upload has been canceled by the user or the browser dropped the connection.")
     }
+    
+    $scope.goBack = function () {
+        $location.path("/home");
+    }
+    
 });
 // Size van Bytes naar kb, mb, gb,... omzetten
 function humanFileSize(bytes, si) {

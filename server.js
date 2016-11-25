@@ -3,21 +3,26 @@ var app = express();
 var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var mongoose = require('mongoose');
-var jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
-var config = require('./config'); // get our config file
-var User = require('./models/user'); // get our mongoose model
+var jwt = require('jsonwebtoken');
+var config = require('./config');
+var User = require('./models/user');
+var File = require('./models/file');
 var fs = require('fs');
 var busboy = require('connect-busboy');
-var port = process.env.PORT || 8080; // used to create, sign, and verify tokens
+var port = process.env.PORT || 8080;
 // connect to database
 mongoose.connect(config.database);
+//
+// Connect to database;
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function () {
-    // we're connected!    
+    console.log("Connected to Database");
 });
-app.set('superSecret', config.secret); // secret variable
-// use body parser so we can get info from POST and/or URL parameters
+//
+//
+//
+app.set('superSecret', config.secret);
 app.use(bodyParser.urlencoded({
     extended: false
 }));
@@ -194,20 +199,44 @@ apiRoutes.post('/upload', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     var tags = req.headers['tags'];
+    var metadata = {
+        "x-amz-meta-tags": tags
+    };
     req.pipe(req.busboy);
     req.busboy.on('file', function (fieldname, file, filename) {
-        console.log("Uploading file " + filename + " (" + fileSize + "B) to " + bucket + " | Tags = "+tags);
+        console.log("Uploading file " + filename + " (" + fileSize + "B) to " + bucket + " | Tags = " + tags);
         var params = {
             Bucket: bucket
             , Key: filename
             , Body: file
             , ContentLength: fileSize
+            , Metadata: metadata
             , ACL: 'public-read'
         };
-        s3.putObject(params, function (err, data) {
+        //
+        var fileLocation;
+        // Wegschrijven naar Amazon S3
+        s3.upload(params, function (err, data) {
             if (err) console.log(err)
             else {
-                console.log("Succesfully added in bucket " + bucket);
+                //console.log("Succesfully added in bucket " + bucket);
+                fileLocation = data.Location;
+                //
+                // Wegschrijven naar MongoDB
+                file = new File({
+                    user: user
+                    , filename: filename
+                    , size: fileSize
+                    , date: Date.now()
+                    , tags: "PDF BESTAND"
+                    , location: fileLocation
+                });
+                file.save(function (err, userObj) {
+                    if (err) {
+                        console.log(err);
+                    }
+                });
+                //
                 res.status(200).end();
             }
         });
@@ -220,20 +249,15 @@ apiRoutes.get('/getFiles', function (req, res) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     var files = [];
-    var params = {
-        Bucket: bucket
-    };
-    console.log("Getting files from " + bucket);
-    s3.listObjects(params, function (err, data) {
-        if (err) console.log(err, err.stack); // an error occurred
-        else {
-            //console.log(data); // successful response
-            files.push(data.Contents);
-            console.log(files);
+
+     mongoose.connection.db.collection("files", function (err, collection) {
+        collection.find({ user : user }).toArray(function (err, data) {
+            console.log(data); // it will print your collection data
+            files.push(data);
             return res.status(200).send({
                 files: files
             });
-        }
+        })
     });
 });
 app.use('/api', apiRoutes);
