@@ -1,43 +1,46 @@
-    <div id="main" ng-controller="homeController">
-        <div id="top">
-            <!--zoekbalk-->
-            <div class="col-md-8 col-xs-12">
-                <input type="text" class="form-control has-feedback" placeholder="Search"> <span class="glyphicon glyphicon-search form-control-feedback zoek"></span> </div>
-            <div class="col-md-1 col-xs-8">
-                <button class="btn btn-primary" ng-click="goToUpload()">Upload</button>
-            </div>
-            <div class="col-md-2 col-xs-3">
-                <label>{{user}}</label>
-            </div>
-            <div class="col-md-1 col-xs-1">
-                <button class="dropdown-toggle" type="button" data-toggle="dropdown"> <span class="glyphicon glyphicon-triangle-bottom"></span></button>
-                <ul class="dropdown-menu">
-                    <li><a href="#">Settings</a></li>
-                    <li><a href="#">Log out</a></li>
-                </ul>
-            </div>
+<div id="main" ng-controller="homeController">
+    <div id="top">
+        <!--zoekbalk-->
+        <div class="col-md-8 col-xs-12">
+            <input type="text" class="form-control has-feedback" placeholder="Search"> <span class="glyphicon glyphicon-search form-control-feedback zoek"></span> </div>
+        <div class="col-md-1 col-xs-8">
+            <button class="btn btn-primary" ng-click="goToUpload()">Upload</button>
         </div>
-        <div>
-            <input id="slider" type="range" min="7" max="40" value="50" oninput="resize(this.value)" /> </div>
-        <div ng-repeat="pdfItem in fileList" id="collections">
-            <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen --><img src="{{pdfItem.thumbnail}}">
-            <p>{{pdfItem.name}}</p>
+        <div class="col-md-2 col-xs-3">
+            <label>{{user}}</label>
         </div>
-        <div id="collectionsList">
-            <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen. hieronder nog tabel maken-->
-            <table>
-                <tr class="bold">
-                    <th>Title</th>
-                    <th>Tags</th>
-                    <th>Datum</th>
-                    <th>Grootte</th>
-                </tr>
-                <tr ng-repeat="pdfItem in fileList">
-                    <th> {{pdfItem.name}} </th>
-                    <th> {{pdfItem.tags}} </th>
-                    <th> {{pdfItem.date}} </th>
-                    <th> {{pdfItem.size}} </th>
-                </tr>
-            </table>
+        <div class="col-md-1 col-xs-1">
+            <button class="dropdown-toggle" type="button" data-toggle="dropdown"> <span class="glyphicon glyphicon-triangle-bottom"></span></button>
+            <ul class="dropdown-menu">
+                <li><a href="#">Settings</a></li>
+                <li><a href="#">Log out</a></li>
+            </ul>
         </div>
     </div>
+    <div>
+        <input id="slider" type="range" min="7" max="40" value="50" oninput="resize(this.value)" /> </div>
+    <div ng-repeat="pdfItem in fileList" id="collections">
+        <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen --><img src="{{pdfItem.thumbnail}}">
+        <p>{{pdfItem.name}}</p>
+    </div>
+    <div id="collectionsList">
+        <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen. hieronder nog tabel maken-->
+        <table>
+            <tr class="bold">
+                <th>Title</th>
+                <th>Tags</th>
+                <th>Datum</th>
+                <th>Grootte</th>
+            </tr>
+            <tr ng-repeat="pdfItem in fileList" ng-click="showFile({{pdfItem.name}})">
+                <th> {{pdfItem.name}} </th>
+                <th> {{pdfItem.tags}} </th>
+                <th> {{pdfItem.date}} </th>
+                <th> {{pdfItem.size}} </th>
+                <th>
+                    <a href="{{pdfItem.location}}" download="{{pdfItem.name}}"> <img src="donwloadIcon.png"> </a>
+                </th>
+            </tr>
+        </table>
+    </div>
+</div>

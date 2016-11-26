@@ -199,12 +199,17 @@ apiRoutes.post('/upload', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     var tags = req.headers['tags'];
+    var customFilename = req.headers['customFilename'];
+    console.log(tags);
     var metadata = {
         "x-amz-meta-tags": tags
     };
     req.pipe(req.busboy);
     req.busboy.on('file', function (fieldname, file, filename) {
         console.log("Uploading file " + filename + " (" + fileSize + "B) to " + bucket + " | Tags = " + tags);
+        if (customFilename != "") {
+            filename = customFilename + filename.substring(filename.indexOf('.'),5);;
+        }
         var params = {
             Bucket: bucket
             , Key: filename
@@ -228,7 +233,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                     , filename: filename
                     , size: fileSize
                     , date: Date.now()
-                    , tags: "PDF BESTAND"
+                    , tags: tags
                     , location: fileLocation
                 });
                 file.save(function (err, userObj) {

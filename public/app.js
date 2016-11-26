@@ -136,8 +136,9 @@ app.controller("homeController", function ($scope, $http, $location) {
             date = date.substring(0, date.indexOf('T'));
             var thumbnail = "/pdf/pdflogo.jpg";
             var tags = fileList[i].tags;
+            var location = fileList[i].location;
             var file = {
-                name, size, thumbnail, date, tags
+                name, size, thumbnail, date, tags, location
             };
             $scope.fileList.push(file);
         }
@@ -204,7 +205,8 @@ app.controller("uploadController", function ($scope, $http, $location) {
             $scope.progressVisible = false
         });
     };
-    $scope.tags = "PDF bestand";
+    $scope.tags;
+    $scope.customFilename;
     $scope.uploadFile = function () {
         var fd = new FormData()
         for (var i in $scope.files) {
@@ -222,6 +224,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.setRequestHeader("user", user);
         xhr.setRequestHeader("file-size", $scope.files[i].size);
         xhr.setRequestHeader("tags", $scope.tags);
+        xhr.setRequestHeader("tags", $scope.customFilename);
         $scope.progressVisible = true
         xhr.send(fd)
     }
