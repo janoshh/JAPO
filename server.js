@@ -128,7 +128,7 @@ apiRoutes.post('/createUser', function (req, res) {
                 }, function () {
                     var params = {
                         Bucket: bucket
-                        , Key: 'Welcome.pdf'
+                        , Key: 'Welcome.txt'
                         , Body: 'Hello and welcome to JAPO!'
                     };
                     s3.putObject(params, function (err, data) {
@@ -199,14 +199,69 @@ apiRoutes.post('/upload', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     var tags = req.headers['tags'];
-    var customFilename = req.headers['customFilename'];
-    console.log(tags);
+    var customFilename = req.headers['customfilename'];
     var metadata = {
         "x-amz-meta-tags": tags
     };
+    var fileType;
+    //
     req.pipe(req.busboy);
     req.busboy.on('file', function (fieldname, file, filename) {
-        console.log("Uploading file " + filename + " (" + fileSize + "B) to " + bucket + " | Tags = " + tags);
+        //
+        var params = {
+            Bucket: bucket
+            , Key: filename
+            , Body: file
+            , ContentLength: fileSize
+            , Metadata: metadata
+            , ACL: 'public-read'
+        };
+        //
+        var fileLocation;
+        fileType = filename.substr(filename.lastIndexOf('.') + 1);
+        if (customFilename != "") {
+            console.log("CUSTOM FILENAME = "+customFilename);
+            filename = customFilename;
+        }
+        // Wegschrijven naar Amazon S3
+        s3.upload(params, function (err, data) {
+            if (err) console.log(err)
+            else {
+                //console.log("Succesfully added in bucket " + bucket);
+                fileLocation = data.Location;
+                //
+                // Wegschrijven naar MongoDB
+                file = new File({
+                    user: user
+                    , filename: filename
+                    , filetype: fileType
+                    , size: fileSize
+                    , date: Date.now()
+                    , tags: tags
+                    , location: fileLocation
+                });
+                file.save(function (err, userObj) {
+                    if (err) {
+                        console.log(err);
+                    }
+                });
+                //
+                res.status(200).end();
+            }
+        });
+    });
+    req.busboy.on('finish', function () {
+        console.log("Upload succes!");
+    });
+});
+
+apiRoutes.post('/deletFile', function (req, res, next) {
+    var fileSize = req.headers['file-size'];
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    req.pipe(req.busboy);
+    req.busboy.on('file', function (fieldname, file, filename) {
+        console.log("Deleting file " + filename + " (" + fileSize + "B) to " + bucket + " | Tags = " + tags);
         if (customFilename != "") {
             filename = customFilename + filename.substring(filename.indexOf('.'),5);;
         }
@@ -228,19 +283,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                 fileLocation = data.Location;
                 //
                 // Wegschrijven naar MongoDB
-                file = new File({
-                    user: user
-                    , filename: filename
-                    , size: fileSize
-                    , date: Date.now()
-                    , tags: tags
-                    , location: fileLocation
-                });
-                file.save(function (err, userObj) {
-                    if (err) {
-                        console.log(err);
-                    }
-                });
+                db.files.deleteOne( { user: user, filename: filename } )
                 //
                 res.status(200).end();
             }
@@ -250,6 +293,8 @@ apiRoutes.post('/upload', function (req, res, next) {
         console.log("Upload succes!");
     });
 });
+
+
 apiRoutes.get('/getFiles', function (req, res) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
@@ -257,8 +302,9 @@ apiRoutes.get('/getFiles', function (req, res) {
 
      mongoose.connection.db.collection("files", function (err, collection) {
         collection.find({ user : user }).toArray(function (err, data) {
-            console.log(data); // it will print your collection data
+            //console.log(data); // it will print your collection data
             files.push(data);
+            console.log(files);
             return res.status(200).send({
                 files: files
             });

@@ -131,20 +131,35 @@ app.controller("homeController", function ($scope, $http, $location) {
         fileList = response.data.files[0];
         for (i = 0; i < fileList.length; i++) {
             var name = fileList[i].filename;
+            if (name.lastIndexOf('.') > 0) {
+                name = name.substring(0, name.lastIndexOf('.'));    
+            }
             var size = humanFileSize(fileList[i].size, true);
             var date = fileList[i].date;
             date = date.substring(0, date.indexOf('T'));
             var thumbnail = "/pdf/pdflogo.jpg";
             var tags = fileList[i].tags;
             var location = fileList[i].location;
+            var filetype = fileList[i].filetype.toUpperCase();
             var file = {
-                name, size, thumbnail, date, tags, location
+                name, size, thumbnail, date, tags, location, filetype
             };
             $scope.fileList.push(file);
         }
     });
     $scope.goToUpload = function () {
         $location.path("/upload");
+    }
+    $scope.deleteFile = function (file) {
+        $http({
+            method: 'GET'
+            , url: '/api/deletFile'
+            , headers: {
+                'x-access-token': token
+                , 'user': user
+                , 'filename': file
+            }
+        });
     }
 });
 // -----------------
@@ -224,7 +239,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.setRequestHeader("user", user);
         xhr.setRequestHeader("file-size", $scope.files[i].size);
         xhr.setRequestHeader("tags", $scope.tags);
-        xhr.setRequestHeader("tags", $scope.customFilename);
+        xhr.setRequestHeader("customFilename", $scope.customFilename);
         $scope.progressVisible = true
         xhr.send(fd)
     }
@@ -256,11 +271,9 @@ app.controller("uploadController", function ($scope, $http, $location) {
             })
             //alert("The upload has been canceled by the user or the browser dropped the connection.")
     }
-    
     $scope.goBack = function () {
         $location.path("/home");
     }
-    
 });
 // Size van Bytes naar kb, mb, gb,... omzetten
 function humanFileSize(bytes, si) {
