@@ -131,8 +131,12 @@ app.controller("homeController", function ($scope, $http, $location) {
         fileList = response.data.files[0];
         for (i = 0; i < fileList.length; i++) {
             var name = fileList[i].filename;
-            if (name.lastIndexOf('.') > 0) {
-                name = name.substring(0, name.lastIndexOf('.'));    
+            var customfilename = fileList[i].customfilename;
+            if (customfilename === "undefined") {
+                customfilename = name;
+            }
+            if (customfilename.lastIndexOf('.') > 0) {
+                customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
             }
             var size = humanFileSize(fileList[i].size, true);
             var date = fileList[i].date;
@@ -142,7 +146,7 @@ app.controller("homeController", function ($scope, $http, $location) {
             var location = fileList[i].location;
             var filetype = fileList[i].filetype.toUpperCase();
             var file = {
-                name, size, thumbnail, date, tags, location, filetype
+                name, customfilename, size, thumbnail, date, tags, location, filetype
             };
             $scope.fileList.push(file);
         }
@@ -150,17 +154,15 @@ app.controller("homeController", function ($scope, $http, $location) {
     $scope.goToUpload = function () {
         $location.path("/upload");
     }
-    $scope.deleteFile = function (file) {
-        $http({
-            method: 'GET'
-            , url: '/api/deletFile'
-            , headers: {
-                'x-access-token': token
-                , 'user': user
-                , 'filename': file
-            }
-        });
-    }
+    $scope.deleteFile = function (filename) {
+        console.log("USER WIL FILE "+ filename +" DELETEN");
+        var xhr = new XMLHttpRequest()
+        xhr.open("POST", "/api/deletefile");
+        xhr.setRequestHeader("x-access-token", token);
+        xhr.setRequestHeader("user", user);
+        xhr.setRequestHeader("filename", filename);
+        xhr.send()
+    };
 });
 // -----------------
 // Upload Controller

@@ -216,24 +216,22 @@ apiRoutes.post('/upload', function (req, res, next) {
             , Metadata: metadata
             , ACL: 'public-read'
         };
-        //
-        var fileLocation;
-        fileType = filename.substr(filename.lastIndexOf('.') + 1);
-        if (customFilename != "") {
-            console.log("CUSTOM FILENAME = "+customFilename);
-            filename = customFilename;
-        }
         // Wegschrijven naar Amazon S3
         s3.upload(params, function (err, data) {
             if (err) console.log(err)
             else {
                 //console.log("Succesfully added in bucket " + bucket);
+                //
+                var fileLocation;
+                // Get Extension / Filetype
+                fileType = filename.substr(filename.lastIndexOf('.') + 1);
                 fileLocation = data.Location;
                 //
                 // Wegschrijven naar MongoDB
                 file = new File({
                     user: user
                     , filename: filename
+                    , customfilename: customFilename
                     , filetype: fileType
                     , size: fileSize
                     , date: Date.now()
@@ -254,54 +252,46 @@ apiRoutes.post('/upload', function (req, res, next) {
         console.log("Upload succes!");
     });
 });
-
-apiRoutes.post('/deletFile', function (req, res, next) {
-    var fileSize = req.headers['file-size'];
+apiRoutes.post('/deletefile', function (req, res, next) {
+    console.log("POST OM FILE TE DELETEN");
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
-    req.pipe(req.busboy);
-    req.busboy.on('file', function (fieldname, file, filename) {
-        console.log("Deleting file " + filename + " (" + fileSize + "B) to " + bucket + " | Tags = " + tags);
-        if (customFilename != "") {
-            filename = customFilename + filename.substring(filename.indexOf('.'),5);;
+    var filename = req.headers['filename'];
+    console.log("Deleting file " + filename);
+    //
+    var params = {
+        Bucket: bucket
+        , Delete: {
+            Objects: [
+                {
+                    Key: filename
+                }
+        ]
         }
-        var params = {
-            Bucket: bucket
-            , Key: filename
-            , Body: file
-            , ContentLength: fileSize
-            , Metadata: metadata
-            , ACL: 'public-read'
-        };
-        //
-        var fileLocation;
-        // Wegschrijven naar Amazon S3
-        s3.upload(params, function (err, data) {
-            if (err) console.log(err)
-            else {
-                //console.log("Succesfully added in bucket " + bucket);
-                fileLocation = data.Location;
+    };
+    s3.deleteObjects(params, function (err, data) {
+        if (err) console.log(err, err.stack);
+        else {
+            console.log('delete', data);
+            File.findOne({
+                    filename: filename
+                }).remove(function (err, data) {
+                    if (err) console.log(err, err.stack);
+                    else console.log("succes");
+                });
                 //
-                // Wegschrijven naar MongoDB
-                db.files.deleteOne( { user: user, filename: filename } )
-                //
-                res.status(200).end();
-            }
-        });
-    });
-    req.busboy.on('finish', function () {
-        console.log("Upload succes!");
+            res.status(200).end();
+        }
     });
 });
-
-
 apiRoutes.get('/getFiles', function (req, res) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     var files = [];
-
-     mongoose.connection.db.collection("files", function (err, collection) {
-        collection.find({ user : user }).toArray(function (err, data) {
+    mongoose.connection.db.collection("files", function (err, collection) {
+        collection.find({
+            user: user
+        }).toArray(function (err, data) {
             //console.log(data); // it will print your collection data
             files.push(data);
             console.log(files);

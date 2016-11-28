@@ -21,7 +21,7 @@
         <input id="slider" type="range" min="7" max="40" value="50" oninput="resize(this.value)" /> </div>
     <div ng-repeat="pdfItem in fileList" id="collections">
         <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen --><img src="{{pdfItem.thumbnail}}">
-        <p>{{pdfItem.name}}</p>
+        <p>{{pdfItem.customfilename}}</p>
     </div>
     <div id="collectionsList">
         <!-- deze x 2 en aanspreken in script zodat er voor de lijst meerdere gegevens inkomen. hieronder nog tabel maken-->
@@ -36,14 +36,14 @@
             </tr>
             <tr ng-repeat="pdfItem in fileList" ng-click="showFile({{pdfItem.name}})">
                 <th> {{pdfItem.filetype}} </th>
-                <th> {{pdfItem.name}} </th>
+                <th> {{pdfItem.customfilename}} </th>
                 <th> {{pdfItem.tags}} </th>
                 <th> {{pdfItem.date}} </th>
                 <th> {{pdfItem.size}} </th>
                 <th>
                     <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
-                     <a>
-                    <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile({{pdfItem.name}})" title="Delete file"> </a>
+                     <a href="#">
+                    <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
                 </th>
             </tr>
         </table>
