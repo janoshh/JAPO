@@ -1,3 +1,4 @@
+var jq = $.noConflict();
 var app = angular.module('Japo-app', ['ngRoute']);
 app.config(function ($routeProvider) {
     $routeProvider.when("/", {
@@ -115,6 +116,20 @@ app.controller("registerController", function ($scope, $http, $location) {
 // Home Controller
 // ---------------
 app.controller("homeController", function ($scope, $http, $location) {
+    // Show List or Grid
+    $scope.$watch('value', function (newValue) {
+        if (newValue < 8) {
+            jq('#collections').css("max-width", newValue + "%");
+            jq('#collections').hide();
+            jq('#collectionsList').show();
+        }
+        else {
+            jq('#collections').css("max-width", newValue + "%");
+            jq('#collectionsList').hide();
+            jq('#collections').show();
+        }
+    });
+    $scope.value = 40;
     var token = sessionStorage.getItem("japo-token");
     var user = sessionStorage.getItem("username");
     $scope.user = user;
@@ -132,7 +147,7 @@ app.controller("homeController", function ($scope, $http, $location) {
         for (i = 0; i < fileList.length; i++) {
             var name = fileList[i].filename;
             var customfilename = fileList[i].customfilename;
-            if (customfilename === "undefined") {
+            if (customfilename === "") {
                 customfilename = name;
             }
             if (customfilename.lastIndexOf('.') > 0) {
@@ -141,7 +156,7 @@ app.controller("homeController", function ($scope, $http, $location) {
             var size = humanFileSize(fileList[i].size, true);
             var date = fileList[i].date;
             date = date.substring(0, date.indexOf('T'));
-            var thumbnail = "/pdf/pdflogo.jpg";
+            var thumbnail = "https://s3.amazonaws.com/test-account.com/pdflogo.jpg";
             var tags = fileList[i].tags;
             var location = fileList[i].location;
             var filetype = fileList[i].filetype.toUpperCase();
@@ -155,13 +170,29 @@ app.controller("homeController", function ($scope, $http, $location) {
         $location.path("/upload");
     }
     $scope.deleteFile = function (filename) {
-        console.log("USER WIL FILE "+ filename +" DELETEN");
-        var xhr = new XMLHttpRequest()
-        xhr.open("POST", "/api/deletefile");
-        xhr.setRequestHeader("x-access-token", token);
-        xhr.setRequestHeader("user", user);
-        xhr.setRequestHeader("filename", filename);
-        xhr.send()
+        bootbox.confirm({
+            title: "Delete "+filename+"?"
+            , message: "You are about to delete "+filename+". Are you sure?"
+            , buttons: {
+                cancel: {
+                    label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
+                }
+                , confirm: {
+                    label: '<i class="glyphicon glyphicon-ok"></i> Confirm'
+                }
+            }
+            , callback: function (result) {
+                if (result) {
+                console.log("USER WIL FILE " + filename + " DELETEN");
+                var xhr = new XMLHttpRequest()
+                xhr.open("POST", "/api/deletefile");
+                xhr.setRequestHeader("x-access-token", token);
+                xhr.setRequestHeader("user", user);
+                xhr.setRequestHeader("filename", filename);
+                xhr.send()
+            }
+            }
+        });
     };
 });
 // -----------------

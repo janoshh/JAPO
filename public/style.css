@@ -27,7 +27,9 @@ button {
     }
 }
 
-
+img {
+ cursor: pointer;
+}
 
 
 .zoek {
