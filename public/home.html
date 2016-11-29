@@ -33,7 +33,7 @@
                 <th>Grootte</th>
                 <th>Actions</th>
             </tr>
-            <tr ng-repeat="pdfItem in fileList" ng-click="showFile(pdfItem.name)">
+            <tr ng-repeat="pdfItem in fileList" ng-click="showFile(pdfItem.location)">
                 <th> {{pdfItem.filetype}} </th>
                 <th> {{pdfItem.customfilename}} </th>
                 <th> {{pdfItem.tags}} </th>
