@@ -9,6 +9,7 @@ var User = require('./models/user');
 var File = require('./models/file');
 var fs = require('fs');
 var busboy = require('connect-busboy');
+var jimp = require("jimp");
 var port = process.env.PORT || 8080;
 // connect to database
 mongoose.connect(config.database);
@@ -109,10 +110,6 @@ apiRoutes.post('/createUser', function (req, res) {
                 if (err) return console.error(err);
                 if (!err) {
                     console.log("New user saved tot db");
-                    res.json({
-                        success: true
-                        , message: 'User created!'
-                    });
                 }
                 // CREATE S3 BUCKET FOR USER
                 s3.listBuckets(function (err, data) {
@@ -126,14 +123,18 @@ apiRoutes.post('/createUser', function (req, res) {
                 s3.createBucket({
                     Bucket: bucket
                 }, function () {
-                    var params = {
-                        Bucket: bucket
-                        , Key: 'Welcome.txt'
-                        , Body: 'Hello and welcome to JAPO!'
-                    };
-                    s3.putObject(params, function (err, data) {
-                        if (err) console.log(err)
-                        else console.log("Successfully created Bucket for user " + bucket);
+                    var fileBuffer = fs.readFileSync(__dirname + "/public/pdf/pdflogo.png");
+                    var thumbFileName = "pdflogo.png";
+                    console.log("Writing to S3");
+                    s3.putObject({
+                        ACL: 'public-read'
+                        , Bucket: bucket
+                        , Key: thumbFileName
+                        , Body: fileBuffer
+                        , ContentType: 'image/png'
+                    }, function (error, response) {
+                        if (error) console.log(error);
+                        console.log("Successfully created Bucket for user " + bucket);
                     });
                 });
             });
@@ -244,12 +245,130 @@ apiRoutes.post('/upload', function (req, res, next) {
                     }
                 });
                 //
+                //-------------------------------------------------
+                // CONVERTER
+                //-------------------------------------------------
+                if (fileType === "jpg" || fileType === "png") {
+                    console.log("CONVERTING JPG");
+                    console.log("Getting file from " + fileLocation);
+                    jimp.read(fileLocation, function (err, image) {
+                        console.log("CREATING THUMBNAIL");
+                        if (err) throw err;
+                        image.resize(256, 256) // resize
+                            .quality(60) // set JPEG quality
+                            .write("thumbnail.jpg", function () {
+                                var fileBuffer = fs.readFileSync("thumbnail.jpg");
+                                var thumbFileName = "thumb_" + filename;
+                                s3.putObject({
+                                    ACL: 'public-read'
+                                    , Bucket: bucket
+                                    , Key: thumbFileName
+                                    , Body: fileBuffer
+                                    , ContentType: 'image/jpg'
+                                }, function (error, response) {
+                                    console.log("thumbnail uploaded");
+                                });
+                            });
+                    });
+                }
+                //-------------------------------------------------
                 res.status(200).end();
             }
         });
     });
     req.busboy.on('finish', function () {
         console.log("Upload succes!");
+    });
+});
+apiRoutes.post('/deleteaccount', function (req, res, next) {
+    console.log("POST OM ACCOUNT TE DELETEN");
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    console.log("Deleting account " + user);
+    //
+    s3.listObjects({
+        Bucket: bucket
+    }, function (err, data) {
+        if (err) {
+            console.log("error listing bucket objects " + err);
+            return;
+        }
+        var items = data.Contents;
+        for (var i = 0; i < items.length; i += 1) {
+            var deleteParams = {
+                Bucket: bucket
+                , Key: items[i].Key
+            };
+            s3.deleteObject(deleteParams, function (err, data) {
+                if (err) {
+                    console.log("delete err " + deleteParams.Key);
+                }
+                else {
+                    console.log("deleted " + deleteParams.Key);
+                }
+            });
+        }
+        s3.deleteBucket({
+            Bucket: bucket
+        }, function (err, data) {
+            if (err) {
+                console.log("error deleting bucket " + err);
+            }
+            else {
+                console.log("delete the bucket " + data);
+                File.find({
+                    user: user
+                }).remove(function (err, data) {
+                    if (err) console.log(err, err.stack);
+                    else console.log("succes");
+                });
+                User.findOne({
+                    name: user
+                }).remove(function (err, data) {
+                    if (err) console.log(err, err.stack);
+                    else console.log("succes");
+                });
+                res.status(200).end();
+            }
+        });
+    });
+});
+apiRoutes.post('/deleteallfiles', function (req, res, next) {
+    console.log("POST OM ALLE FILES TE DELETEN");
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    console.log("Deleting all files " + user);
+    //
+    s3.listObjects({
+        Bucket: bucket
+    }, function (err, data) {
+        if (err) {
+            console.log("error listing bucket objects " + err);
+            return;
+        }
+        var items = data.Contents;
+        for (var i = 0; i < items.length; i += 1) {
+            var deleteParams = {
+                Bucket: bucket
+                , Key: items[i].Key
+            };
+            if (deleteParams.Key != "pdflogo.png") {
+                s3.deleteObject(deleteParams, function (err, data) {
+                    if (err) {
+                        console.log("delete err " + deleteParams.Key);
+                    }
+                    else {
+                        console.log("deleted " + deleteParams.Key);
+                        File.find({
+                            user: user
+                        }).remove(function (err, data) {
+                            if (err) console.log(err, err.stack);
+                            else console.log("succes");
+                        });
+                    }
+                });
+            }
+        }
     });
 });
 apiRoutes.post('/deletefile', function (req, res, next) {
@@ -274,12 +393,12 @@ apiRoutes.post('/deletefile', function (req, res, next) {
         else {
             console.log('delete', data);
             File.findOne({
-                    filename: filename
-                }).remove(function (err, data) {
-                    if (err) console.log(err, err.stack);
-                    else console.log("succes");
-                });
-                //
+                filename: filename
+            }).remove(function (err, data) {
+                if (err) console.log(err, err.stack);
+                else console.log("succes");
+            });
+            //
             res.status(200).end();
         }
     });
