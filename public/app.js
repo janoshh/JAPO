@@ -33,8 +33,7 @@ app.controller("logInController", function ($scope, $http, $location) {
     $scope.validate = function () {
         if ($scope.email != null && $scope.password != null) {
             $scope.button = "btn btn-lg btn-primary btn-block"
-        }
-        else {
+        } else {
             $scope.button = "btn btn-lg btn-primary btn-block disabled"
         }
     };
@@ -44,8 +43,8 @@ app.controller("logInController", function ($scope, $http, $location) {
         var loginPass = $scope.password;
         //post req
         $http.post("/api/authenticate", {
-            "name": emailUser
-            , "password": loginPass
+            "name": emailUser,
+            "password": loginPass
         }).success(function (post) {
             sessionStorage.setItem('japo-token', post.token);
             sessionStorage.setItem('username', emailUser);
@@ -61,8 +60,7 @@ app.controller("registerController", function ($scope, $http, $location) {
         if ($scope.password != null) {
             if ($scope.password.length < 6) {
                 $scope.passLength = "registrationFormAlert help-block";
-            }
-            else {
+            } else {
                 $scope.passLength = "display-none";
             }
             $scope.validate();
@@ -71,12 +69,10 @@ app.controller("registerController", function ($scope, $http, $location) {
     $scope.$watch('confirmPassword', function (newValue, oldValue) {
         if ($scope.confirmPassword === "" || $scope.confirmPassword == null) {
             $scope.icon = "form-control-feedback"
-        }
-        else {
+        } else {
             if ($scope.password === $scope.confirmPassword) {
                 $scope.icon = "glyphicon glyphicon-ok form-control-feedback";
-            }
-            else {
+            } else {
                 $scope.icon = "glyphicon glyphicon-remove form-control-feedback";
             }
             $scope.validate();
@@ -95,8 +91,7 @@ app.controller("registerController", function ($scope, $http, $location) {
     $scope.validate = function () {
         if ($scope.fname != null && $scope.lname != null && $scope.email != null && $scope.password != null && $scope.password === $scope.confirmPassword) {
             $scope.button = "btn btn-lg btn-primary btn-block"
-        }
-        else {
+        } else {
             $scope.button = "btn btn-lg btn-primary btn-block disabled"
         }
     }
@@ -110,10 +105,10 @@ app.controller("registerController", function ($scope, $http, $location) {
         //post req
         if ($scope.password === $scope.confirmPassword) {
             $http.post("/api/createUser", {
-                "fname": fname
-                , "lname": lname
-                , "email": email
-                , "password": password
+                "fname": fname,
+                "lname": lname,
+                "email": email,
+                "password": password
             }).success(function (post) {
                 $location.path("/registered");
             });
@@ -145,11 +140,11 @@ app.controller("homeController", function ($scope, $http, $location) {
     var fileList;
     $scope.fileList = [];
     $http({
-        method: 'GET'
-        , url: '/api/getFiles'
-        , headers: {
-            'x-access-token': token
-            , 'user': user
+        method: 'GET',
+        url: '/api/getFiles',
+        headers: {
+            'x-access-token': token,
+            'user': user
         }
     }).then(function (response) {
         fileList = response.data.files[0];
@@ -209,12 +204,12 @@ app.controller("homeController", function ($scope, $http, $location) {
             , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
-                }
-                , confirm: {
+                },
+                confirm: {
                     label: '<i class="glyphicon glyphicon-ok"></i> Confirm'
                 }
-            }
-            , callback: function (result) {
+            },
+            callback: function (result) {
                 if (result) {
                     var xhr = new XMLHttpRequest()
                     xhr.open("POST", "/api/deleteaccount");
@@ -274,6 +269,11 @@ app.controller("homeController", function ($scope, $http, $location) {
             }
         });
     };
+
+    $scope.showFile = function (loc) {
+        globalLoc = loc;
+        $location.path("/pdfJSview");
+    }
 });
 // -----------------
 // Upload Controller
@@ -361,8 +361,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         $scope.$apply(function () {
             if (evt.lengthComputable) {
                 $scope.progress = Math.round(evt.loaded * 100 / evt.total)
-            }
-            else {
+            } else {
                 $scope.progress = 'unable to compute'
             }
         })
@@ -412,3 +411,11 @@ function humanFileSize(bytes, si) {
     } while (Math.abs(bytes) >= thresh && u < units.length - 1);
     return bytes.toFixed(1) + ' ' + units[u];
 }
+
+//----------------------
+//pdfJSviewer controller
+//----------------------
+
+app.controller("pdfJSviewerController", function ($scope, $http, $location) {
+    $scope.uri = encodeURIComponent(globalLoc);
+});
