@@ -1,6 +1,5 @@
 var jq = $.noConflict();
 var app = angular.module('Japo-app', ['ngRoute']);
-var globalLoc;
 app.config(function ($routeProvider) {
     $routeProvider.when("/", {
         templateUrl: "login.html"
@@ -14,10 +13,9 @@ app.config(function ($routeProvider) {
         templateUrl: "login.html"
     }).when("/accountdeleted", {
         templateUrl: "accountdeleted.html"
-    }).when("/pdfJSviewer", {
-        templateUrl: "pdfJSviewer.html"
+    }).when("/show", {
+        templateUrl: "show.html"
     })
-    
 });
 // -----------------
 // Log In Controller
@@ -33,7 +31,8 @@ app.controller("logInController", function ($scope, $http, $location) {
     $scope.validate = function () {
         if ($scope.email != null && $scope.password != null) {
             $scope.button = "btn btn-lg btn-primary btn-block"
-        } else {
+        }
+        else {
             $scope.button = "btn btn-lg btn-primary btn-block disabled"
         }
     };
@@ -43,8 +42,8 @@ app.controller("logInController", function ($scope, $http, $location) {
         var loginPass = $scope.password;
         //post req
         $http.post("/api/authenticate", {
-            "name": emailUser,
-            "password": loginPass
+            "name": emailUser
+            , "password": loginPass
         }).success(function (post) {
             sessionStorage.setItem('japo-token', post.token);
             sessionStorage.setItem('username', emailUser);
@@ -60,7 +59,8 @@ app.controller("registerController", function ($scope, $http, $location) {
         if ($scope.password != null) {
             if ($scope.password.length < 6) {
                 $scope.passLength = "registrationFormAlert help-block";
-            } else {
+            }
+            else {
                 $scope.passLength = "display-none";
             }
             $scope.validate();
@@ -69,10 +69,12 @@ app.controller("registerController", function ($scope, $http, $location) {
     $scope.$watch('confirmPassword', function (newValue, oldValue) {
         if ($scope.confirmPassword === "" || $scope.confirmPassword == null) {
             $scope.icon = "form-control-feedback"
-        } else {
+        }
+        else {
             if ($scope.password === $scope.confirmPassword) {
                 $scope.icon = "glyphicon glyphicon-ok form-control-feedback";
-            } else {
+            }
+            else {
                 $scope.icon = "glyphicon glyphicon-remove form-control-feedback";
             }
             $scope.validate();
@@ -91,7 +93,8 @@ app.controller("registerController", function ($scope, $http, $location) {
     $scope.validate = function () {
         if ($scope.fname != null && $scope.lname != null && $scope.email != null && $scope.password != null && $scope.password === $scope.confirmPassword) {
             $scope.button = "btn btn-lg btn-primary btn-block"
-        } else {
+        }
+        else {
             $scope.button = "btn btn-lg btn-primary btn-block disabled"
         }
     }
@@ -105,10 +108,10 @@ app.controller("registerController", function ($scope, $http, $location) {
         //post req
         if ($scope.password === $scope.confirmPassword) {
             $http.post("/api/createUser", {
-                "fname": fname,
-                "lname": lname,
-                "email": email,
-                "password": password
+                "fname": fname
+                , "lname": lname
+                , "email": email
+                , "password": password
             }).success(function (post) {
                 $location.path("/registered");
             });
@@ -118,7 +121,7 @@ app.controller("registerController", function ($scope, $http, $location) {
 // ---------------
 // Home Controller
 // ---------------
-app.controller("homeController", function ($scope, $http, $location) {
+app.controller("homeController", function ($scope, $http, $location, fileService) {
     // Show List or Grid
     $scope.documentsMessage = "Loading documents...";
     $scope.$watch('value', function (newValue) {
@@ -140,11 +143,11 @@ app.controller("homeController", function ($scope, $http, $location) {
     var fileList;
     $scope.fileList = [];
     $http({
-        method: 'GET',
-        url: '/api/getFiles',
-        headers: {
-            'x-access-token': token,
-            'user': user
+        method: 'GET'
+        , url: '/api/getFiles'
+        , headers: {
+            'x-access-token': token
+            , 'user': user
         }
     }).then(function (response) {
         fileList = response.data.files[0];
@@ -195,7 +198,7 @@ app.controller("homeController", function ($scope, $http, $location) {
     }
     $scope.showFile = function (loc) {
         globalLoc = loc;
-        $location.path("/pdfJSview");
+        $location.path("/show");
     }
     $scope.deleteAccount = function () {
         bootbox.confirm({
@@ -204,12 +207,12 @@ app.controller("homeController", function ($scope, $http, $location) {
             , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
-                },
-                confirm: {
+                }
+                , confirm: {
                     label: '<i class="glyphicon glyphicon-ok"></i> Confirm'
                 }
-            },
-            callback: function (result) {
+            }
+            , callback: function (result) {
                 if (result) {
                     var xhr = new XMLHttpRequest()
                     xhr.open("POST", "/api/deleteaccount");
@@ -269,10 +272,22 @@ app.controller("homeController", function ($scope, $http, $location) {
             }
         });
     };
-
-    $scope.showFile = function (loc) {
-        globalLoc = loc;
-        $location.path("/pdfJSview");
+    $scope.showFile = function (file) {
+        fileService.saveFile(file);
+        $location.path("/show");
+        /*
+        window.open('/getfile?file=' + name + '&user=' + user, '_blank')
+        $http({
+            method: 'GET'
+            , url: '/api/getfile?file=' + name + '&user=' + user
+            , headers: {
+                'x-access-token': token
+                , 'filesize': size
+            }
+        }).then(function (response) {
+            console.log(response);
+        });
+        */
     }
 });
 // -----------------
@@ -361,7 +376,8 @@ app.controller("uploadController", function ($scope, $http, $location) {
         $scope.$apply(function () {
             if (evt.lengthComputable) {
                 $scope.progress = Math.round(evt.loaded * 100 / evt.total)
-            } else {
+            }
+            else {
                 $scope.progress = 'unable to compute'
             }
         })
@@ -387,16 +403,114 @@ app.controller("uploadController", function ($scope, $http, $location) {
         $location.path("/home");
     }
 });
-
-
 //----------------------
-//pdfJSviewer controller
+//show controller
 //----------------------
-
-app.controller("pdfJSviewerController", function ($scope, $http, $location) {
-    $scope.uri = encodeURIComponent(globalLoc);
+app.controller("show", function ($scope, $http, $location, fileService) {
+    $scope.goBack = function () {
+        $location.path("/home");
+    }
+    
+    $scope.file = fileService.getFile();
+    var url = "http://localhost:8080/getfile?file=" + $scope.file.name + "&user=test@account.com";
+    var pdfDoc = null
+        , pageNum = 1
+        , pageRendering = false
+        , pageNumPending = null
+        , scale = 0.8
+        , canvas = document.getElementById('the-canvas')
+        , ctx = canvas.getContext('2d');
+    /**
+     * Get page info from document, resize canvas accordingly, and render page.
+     * @param num Page number.
+     */
+    function renderPage(num) {
+        pageRendering = true;
+        // Using promise to fetch the page
+        pdfDoc.getPage(num).then(function (page) {
+            var viewport = page.getViewport(scale);
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            // Render PDF page into canvas context
+            var renderContext = {
+                canvasContext: ctx
+                , viewport: viewport
+            };
+            var renderTask = page.render(renderContext);
+            // Wait for rendering to finish
+            renderTask.promise.then(function () {
+                pageRendering = false;
+                if (pageNumPending !== null) {
+                    // New page rendering is pending
+                    renderPage(pageNumPending);
+                    pageNumPending = null;
+                }
+            });
+        });
+        // Update page counters
+        document.getElementById('page_num').textContent = pageNum;
+    }
+    /**
+     * If another page rendering in progress, waits until the rendering is
+     * finised. Otherwise, executes rendering immediately.
+     */
+    function queueRenderPage(num) {
+        if (pageRendering) {
+            pageNumPending = num;
+        }
+        else {
+            renderPage(num);
+        }
+    }
+    /**
+     * Displays previous page.
+     */
+    function onPrevPage() {
+        if (pageNum <= 1) {
+            return;
+        }
+        pageNum--;
+        queueRenderPage(pageNum);
+    }
+    document.getElementById('prev').addEventListener('click', onPrevPage);
+    /**
+     * Displays next page.
+     */
+    function onNextPage() {
+        if (pageNum >= pdfDoc.numPages) {
+            return;
+        }
+        pageNum++;
+        queueRenderPage(pageNum);
+    }
+    document.getElementById('next').addEventListener('click', onNextPage);
+    /**
+     * Asynchronously downloads PDF.
+     */
+    PDFJS.getDocument(url).then(function (pdfDoc_) {
+        pdfDoc = pdfDoc_;
+        document.getElementById('page_count').textContent = pdfDoc.numPages;
+        // Initial/first page rendering
+        renderPage(pageNum);
+    });
 });
-
+//
+//
+app.service('fileService', function () {
+    var file;
+    var saveFile = function (newFile) {
+        file = newFile;
+    };
+    var getFile = function () {
+        return file;
+    };
+    return {
+        saveFile: saveFile
+        , getFile: getFile
+    };
+});
+//
+//
 // Size van Bytes naar kb, mb, gb,... omzetten
 function humanFileSize(bytes, si) {
     var thresh = si ? 1000 : 1024;
@@ -411,11 +525,3 @@ function humanFileSize(bytes, si) {
     } while (Math.abs(bytes) >= thresh && u < units.length - 1);
     return bytes.toFixed(1) + ' ' + units[u];
 }
-
-//----------------------
-//pdfJSviewer controller
-//----------------------
-
-app.controller("pdfJSviewerController", function ($scope, $http, $location) {
-    $scope.uri = encodeURIComponent(globalLoc);
-});

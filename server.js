@@ -280,6 +280,23 @@ apiRoutes.post('/upload', function (req, res, next) {
         console.log("Upload succes!");
     });
 });
+app.get('/getfile', function (req, res, next) {
+    var user = req.query.user;
+    var bucket = user.replace("@", "-");
+    var filename = req.query.file;
+    //
+    var params = {
+        Bucket: bucket
+        , Key: filename
+    }
+
+    res.writeHead(200, {
+        'Content-Type': 'application/pdf'
+    });
+
+    var fileStream = s3.getObject(params).createReadStream();
+    fileStream.pipe(res);
+});
 apiRoutes.post('/deleteaccount', function (req, res, next) {
     console.log("POST OM ACCOUNT TE DELETEN");
     var user = req.headers['user'];

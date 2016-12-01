@@ -25,7 +25,7 @@
     <div>
         <h3>{{documentsMessage}}</h3></div>
     <div id="collection">
-        <div ng-repeat="pdfItem in fileList" class="collectionItem well well-sm" ng-click="showFile(pdfItem.location)"> <img ng-src="{{pdfItem.thumbnail}}">
+        <div ng-repeat="pdfItem in fileList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
             <h4>{{pdfItem.customfilename}}
             <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
             <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
