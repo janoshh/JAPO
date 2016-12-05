@@ -41,7 +41,9 @@ body:after {
         padding-left: 80px;
     }
 }
-
+#layout{
+    margin-top: 8px;
+}
 img {
  cursor: pointer;
 }
@@ -83,6 +85,7 @@ tr:nth-child(even) {
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
 .collectionItem {
     display: block;
     text-align: center;
@@ -90,15 +93,16 @@ tr:nth-child(even) {
     max-width: 30%;
     margin: 10px;
 }
+
 .collectionItem > img {
     border-radius: 15%;
     margin-left: auto;
     margin-right: auto;
-    max-width: 100%;
+    max-width: 50%;
 }
 #top {
     min-height: 6em;
-    border-bottom: 1px solid black;
+    border-bottom: 2px dashed #046ca3;
 }
 #main {
     width: 85%;
@@ -112,4 +116,14 @@ tr:nth-child(even) {
 
 .float-right{
     float: right;
+}
+
+#uploadMain{
+    max-width: 50%;
+    margin: 0 auto;
+}
+
+#drop{
+    font-size: 5em;
+    margin-bottom: 10px;
 }

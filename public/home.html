@@ -2,7 +2,7 @@
     <div id="top">
         <!--zoekbalk-->
         <div class="col-lg-6 col-md-6 col-s-12 col-xs-12">
-            <input type="text" class="form-control has-feedback" placeholder="Search"> <span class="glyphicon glyphicon-search form-control-feedback zoek"></span> </div>
+            <input type="text" ng-model="search" ng-change="searchChange()" class="form-control has-feedback" placeholder="Search" id="search"> <span class="glyphicon glyphicon-search form-control-feedback zoek"></span> </div>
         <div class="col-lg-6 col-md-6 col-s-12 col-xs-12">
             <div class="col-lg-3 col-md-3 col-s-3 col-xs-3">
                 <button class="btn btn-primary" ng-click="goToUpload()">Upload</button>
@@ -21,37 +21,143 @@
         </div>
     </div>
     <div>
-        <input id="slider" type="range" name="range" ng-model="value" min="30" max="100"> </div>
-    <div>
-        <h3>{{documentsMessage}}</h3></div>
-    <div id="collection">
-        <div ng-repeat="pdfItem in fileList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
-            <h4>{{pdfItem.customfilename}}
+        <div id="layout">
+            <button ng-click="grid()" class="btn btn-primary">
+                <span class="glyphicon glyphicon-th"></span></button>
+            <button ng-click="table()" class="btn btn-primary">
+                <span class="glyphicon glyphicon-list"></span></button>
+        </div>
+        <div>
+            <h3>{{documentsMessage}}</h3></div>
+        <div id="collection">
+            <div ng-show="notSearching">
+                <div ng-repeat="pdfItem in fileList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+                    <h4>{{pdfItem.customfilename}}
             <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
             <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
                 </h4> </div>
+            </div>
+            <div ng-hide="notSearching">
+
+                <h2>Name</h2>
+                <div id="homeShow">
+                    <div ng-repeat="pdfItem in sortedNameList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+                        <h4>{{pdfItem.customfilename}}
+            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
+            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+                </h4> </div>
+                </div>
+
+                <h2>Tag</h2>
+                <div id="homeShow">
+                    <div ng-repeat="pdfItem in sortedTagList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+                        <h4>{{pdfItem.customfilename}}
+            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
+            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+                </h4> </div>
+                </div>
+
+                <h2>Date</h2>
+                <div id="homeShow">
+                    <div ng-repeat="pdfItem in sortedDateList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+                        <h4>{{pdfItem.customfilename}}
+            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
+            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+                </h4> </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="collectionsList">
+            <div ng-show="notSearching">
+                <table>
+                    <tr class="bold">
+                        <th>Type</th>
+                        <th>Title</th>
+                        <th>Tags</th>
+                        <th>Datum</th>
+                        <th>Grootte</th>
+                        <th>Actions</th>
+                    </tr>
+                    <tr ng-repeat="pdfItem in fileList" ng-click="showFile(pdfItem)">
+                        <th> {{pdfItem.filetype}} </th>
+                        <th> {{pdfItem.customfilename}} </th>
+                        <th> {{pdfItem.tags}} </th>
+                        <th> {{pdfItem.date}} </th>
+                        <th> {{pdfItem.size}} </th>
+                        <th>
+                            <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+                            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
+                        </th>
+                    </tr>
+                </table>
+            </div>
+
+            <div ng-hide="notSearching">
+
+
+                <div id="homeShow">
+                    <table>
+                        <tr class="bold">
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Tags</th>
+                            <th>Datum</th>
+                            <th>Grootte</th>
+                            <th>Actions</th>
+                        </tr>
+                    </table>
+                    <table>
+
+                        <h2>Name</h2>
+
+                        <tr ng-repeat="pdfItem in sortedNameList" ng-click="showFile(pdfItem)">
+                            <th> {{pdfItem.filetype}} </th>
+                            <th> {{pdfItem.customfilename}} </th>
+                            <th> {{pdfItem.tags}} </th>
+                            <th> {{pdfItem.date}} </th>
+                            <th> {{pdfItem.size}} </th>
+                            <th>
+                                <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+                                <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
+                            </th>
+                        </tr>
+                    </table>
+                </div>
+
+                <h2>Tag</h2>
+                <div id="homeShow">
+                    <table>
+                        <tr ng-repeat="pdfItem in sortedTagList" ng-click="showFile(pdfItem)">
+                            <th> {{pdfItem.filetype}} </th>
+                            <th> {{pdfItem.customfilename}} </th>
+                            <th> {{pdfItem.tags}} </th>
+                            <th> {{pdfItem.date}} </th>
+                            <th> {{pdfItem.size}} </th>
+                            <th>
+                                <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+                                <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
+                            </th>
+                        </tr>
+                    </table>
+                </div>
+
+                <h2>Date</h2>
+                <div id="homeShow">
+                    <table>
+                        <tr ng-repeat="pdfItem in sortedDateList" ng-click="showFile(pdfItem)">
+                            <th> {{pdfItem.filetype}} </th>
+                            <th> {{pdfItem.customfilename}} </th>
+                            <th> {{pdfItem.tags}} </th>
+                            <th> {{pdfItem.date}} </th>
+                            <th> {{pdfItem.size}} </th>
+                            <th>
+                                <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+                                <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
+                            </th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div id="collectionsList">
-        <table>
-            <tr class="bold">
-                <th>Type</th>
-                <th>Title</th>
-                <th>Tags</th>
-                <th>Datum</th>
-                <th>Grootte</th>
-                <th>Actions</th>
-            </tr>
-            <tr ng-repeat="pdfItem in fileList" ng-click="showFile(pdfItem.location)">
-                <th> {{pdfItem.filetype}} </th>
-                <th> {{pdfItem.customfilename}} </th>
-                <th> {{pdfItem.tags}} </th>
-                <th> {{pdfItem.date}} </th>
-                <th> {{pdfItem.size}} </th>
-                <th>
-                    <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
-                    <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
-                </th>
-            </tr>
-        </table>
-    </div>
-</div>
