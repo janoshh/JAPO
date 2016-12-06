@@ -38,37 +38,31 @@
                 </h4> </div>
             </div>
 
-            <div ng-hide="nsName" id="homeName">
-                <div id="homeShow">
-                    <h2>Name</h2>
-                    <div ng-repeat="pdfItem in sortedNameList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
-                        <h4>{{pdfItem.customfilename}}
+            <div ng-hide="nsName" class="col-md-12 col-xs-12">
+                <h2>Name</h2>
+                <div ng-repeat="pdfItem in sortedNameList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+                    <h4>{{pdfItem.customfilename}}
             <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
             <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
                 </h4> </div>
-                </div>
             </div>
 
-            <div ng-hide="nsTag">
-                <div id="homeShow">
-                    <h2>Tag</h2>
-                    <div ng-repeat="pdfItem in sortedTagList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
-                        <h4>{{pdfItem.customfilename}}
+            <div ng-hide="nsTag" class="col-md-12 col-xs-12">
+                <h2>Tag</h2>
+                <div ng-repeat="pdfItem in sortedTagList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+                    <h4>{{pdfItem.customfilename}}
             <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
             <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
                 </h4> </div>
-                </div>
             </div>
 
-            <div ng-hide="nsDate">
-                <div id="homeShow">
-                    <h2>Date</h2>
-                    <div ng-repeat="pdfItem in sortedDateList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
-                        <h4>{{pdfItem.customfilename}}
+            <div ng-hide="nsDate" class="col-md-12 col-xs-12">
+                <h2>Date</h2>
+                <div ng-repeat="pdfItem in sortedDateList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+                    <h4>{{pdfItem.customfilename}}
             <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
             <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
                 </h4> </div>
-                </div>
             </div>
         </div>
 

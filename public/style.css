@@ -127,8 +127,3 @@ tr:nth-child(even) {
     font-size: 5em;
     margin-bottom: 10px;
 }
-
-#homeShow{
-    float: left;
-    display: inline-block;
-}
