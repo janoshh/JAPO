@@ -248,13 +248,14 @@ apiRoutes.post('/upload', function (req, res, next) {
                 //-------------------------------------------------
                 // CONVERTER
                 //-------------------------------------------------
-                if (fileType === "jpg" || fileType === "png") {
+                var ft = fileType.toLowerCase();
+                if (ft === "jpg" || ft === "png" || ft === "jpeg") {
                     console.log("CONVERTING JPG");
                     console.log("Getting file from " + fileLocation);
                     jimp.read(fileLocation, function (err, image) {
                         console.log("CREATING THUMBNAIL");
                         if (err) throw err;
-                        image.resize(256, 256) // resize
+                        image.resize(242, 243) // resize
                             .quality(60) // set JPEG quality
                             .write("thumbnail.jpg", function () {
                                 var fileBuffer = fs.readFileSync("thumbnail.jpg");
@@ -430,7 +431,6 @@ apiRoutes.get('/getFiles', function (req, res) {
         }).toArray(function (err, data) {
             //console.log(data); // it will print your collection data
             files.push(data);
-            console.log(files);
             return res.status(200).send({
                 files: files
             });

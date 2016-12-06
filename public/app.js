@@ -121,7 +121,8 @@ app.controller("registerController", function ($scope, $http, $location) {
 // ---------------
 // Home Controller
 // ---------------
-app.controller("homeController", function ($scope, $http, $location, fileService) {
+app.controller("homeController", function ($scope, $http, $location, fileService, $interval) {
+    //$interval(getFiles(true), 5000);
     // Show List or Grid
     $scope.documentsMessage = "Loading documents...";
     $scope.$watch('value', function (newValue) {
@@ -142,54 +143,73 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.user = user;
     var fileList;
     $scope.fileList = [];
-    $http({
-        method: 'GET'
-        , url: '/api/getFiles'
-        , headers: {
-            'x-access-token': token
-            , 'user': user
-        }
-    }).then(function (response) {
-        fileList = response.data.files[0];
-        for (i = 0; i < fileList.length; i++) {
-            var name = fileList[i].filename;
-            var customfilename = fileList[i].customfilename;
-            if (customfilename === "undefined") {
-                customfilename = name
+
+    function getFiles() {
+        console.log("Getting Files");
+        $http({
+            method: 'GET'
+            , url: '/api/getFiles'
+            , headers: {
+                'x-access-token': token
+                , 'user': user
             }
-            if (customfilename.lastIndexOf('.') > 0) {
-                customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
+        }).then(function (response) {
+            fileList = response.data.files[0];
+            console.log(fileList);
+            for (i = 0; i < fileList.length; i++) {
+                var name = fileList[i].filename;
+                var customfilename = fileList[i].customfilename;
+                if (customfilename === "undefined") {
+                    customfilename = name
+                }
+                if (customfilename.lastIndexOf('.') > 0) {
+                    customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
+                }
+                if (customfilename.length > 25) {
+                    customfilename = customfilename.substring(0, 15) + "...";
+                }
+                var size = humanFileSize(fileList[i].size, true);
+                var date = fileList[i].date;
+                date = date.substring(0, date.indexOf('T'));
+                var tags = fileList[i].tags;
+                if (tags === "undefined") {
+                    tags = "";
+                }
+                var location = fileList[i].location;
+                var filetype = fileList[i].filetype.toUpperCase();
+                if (filetype === 'PDF') {
+                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/pdflogo.png";
+                }
+                else {
+                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
+                }
+                var file = {
+                    name, customfilename, size, thumbnail, date, tags, location, filetype
+                };
+                $scope.fileList.push(file);
             }
-            if (customfilename.length > 25) {
-                customfilename = customfilename.substring(0, 25) + "...";
-            }
-            var size = humanFileSize(fileList[i].size, true);
-            var date = fileList[i].date;
-            date = date.substring(0, date.indexOf('T'));
-            var tags = fileList[i].tags;
-            if (tags === "undefined") {
-                tags = "";
-            }
-            var location = fileList[i].location;
-            var filetype = fileList[i].filetype.toUpperCase();
-            if (filetype === 'PDF') {
-                var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/pdflogo.png";
+            if ($scope.fileList.length > 0) {
+                $scope.documentsMessage = "";
             }
             else {
-                var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
+                $scope.documentsMessage = "You have not yet uploaded any documents.";
             }
-            var file = {
-                name, customfilename, size, thumbnail, date, tags, location, filetype
-            };
-            $scope.fileList.push(file);
+        });
+    }
+
+    function containsObject(obj, list) {
+        var i;
+        for (i = 0; i < list.length; i++) {
+            if (list[i].name === obj.name) {
+                return true;
+            }
         }
-        if ($scope.fileList.length > 0) {
-            $scope.documentsMessage = "";
-        }
-        else {
-            $scope.documentsMessage = "You have not yet uploaded any documents.";
-        }
-    });
+        return false;
+    }
+    getFiles();
+    $scope.refresh = function () {
+        location.reload();
+    }
     $scope.goToUpload = function () {
         $location.path("/upload");
     }
@@ -219,11 +239,10 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     xhr.setRequestHeader("x-access-token", token);
                     xhr.setRequestHeader("user", user);
                     xhr.send()
-                    $location.path("/login");
+                    $location.path("/accountdeleted");
                 }
             }
         });
-        $location.path("/accountdeleted");
     }
     $scope.deleteAllFiles = function () {
         bootbox.confirm({
@@ -407,12 +426,12 @@ app.controller("uploadController", function ($scope, $http, $location) {
 //show controller
 //----------------------
 app.controller("show", function ($scope, $http, $location, fileService) {
+    var user = sessionStorage.getItem("username");
     $scope.goBack = function () {
         $location.path("/home");
     }
-    
     $scope.file = fileService.getFile();
-    var url = "http://localhost:8080/getfile?file=" + $scope.file.name + "&user=test@account.com";
+    var url = "http://localhost:8080/getfile?file=" + $scope.file.name + "&user=" + user;
     var pdfDoc = null
         , pageNum = 1
         , pageRendering = false

@@ -20,12 +20,15 @@
             </div>
         </div>
     </div>
+    <div class="container-fluid">
+        <input id="slider" type="range" name="range" ng-model="value" min="30" max="100">
+        <button class="btn btn-primary float-right" ng-click="refresh()"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
+    </div>
     <div>
-        <input id="slider" type="range" name="range" ng-model="value" min="30" max="100"> </div>
-    <div>
-        <h3>{{documentsMessage}}</h3></div>
+        <h3>{{documentsMessage}}</h3>
+    </div>
     <div id="collection">
-        <div ng-repeat="pdfItem in fileList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+        <div ng-repeat="pdfItem in fileList" class="collectionItem well well-sm container" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
             <h4>{{pdfItem.customfilename}}
             <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
             <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
@@ -37,11 +40,11 @@
                 <th>Type</th>
                 <th>Title</th>
                 <th>Tags</th>
-                <th>Datum</th>
-                <th>Grootte</th>
+                <th>Date</th>
+                <th>Size</th>
                 <th>Actions</th>
             </tr>
-            <tr ng-repeat="pdfItem in fileList" ng-click="showFile(pdfItem.location)">
+            <tr ng-repeat="pdfItem in fileList" ng-click="showFile(pdfItem)">
                 <th> {{pdfItem.filetype}} </th>
                 <th> {{pdfItem.customfilename}} </th>
                 <th> {{pdfItem.tags}} </th>
