@@ -120,15 +120,17 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     // Show List or Grid
     $scope.documentsMessage = "Loading documents...";
     jq('#collectionsList').hide();
-    $scope.grid = function() {
-            jq('#collection').show();
-            jq('#collectionsList').hide();
-        }
-    $scope.table = function() {
-            jq('#collection').hide();
-            jq('#collectionsList').show();
-        }
-    $scope.notSearching = true;
+    $scope.grid = function () {
+        jq('#collection').show();
+        jq('#collectionsList').hide();
+    }
+    $scope.table = function () {
+        jq('#collection').hide();
+        jq('#collectionsList').show();
+    }
+    $scope.nsName = true;
+    $scope.nsTag = true;
+    $scope.nsDate = true;
     var token = sessionStorage.getItem("japo-token");
     var user = sessionStorage.getItem("username");
     $scope.user = user;
@@ -281,15 +283,14 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
 
     $scope.searchChange = function () {
-        console.log($scope.notSearching);
-        
         text = $scope.search;
         var customNameList = [];
         var tagList = [];
         var dateList = [];
-        if (text != "") {       // || text != null || $scope.fileList != null
-            $scope.notSearching = false;
-            console.log(text);
+        if (text != "") { // || text != null || $scope.fileList != null
+            $scope.nsName = false;
+            $scope.nsTag = false;
+            $scope.nsDate = false;
             for (i = 0; i < $scope.fileList.length; i++) {
                 if ($scope.fileList[i].customfilename.toLowerCase().indexOf(text.toLowerCase()) > -1) {
                     customNameList.push($scope.fileList[i]);
@@ -306,8 +307,20 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             $scope.sortedTagList = tagList;
             $scope.sortedDateList = dateList;
 
+            if (customNameList == null || customNameList == "") {
+                $scope.nsName = true;
+            }
+            if (tagList == null || tagList == "") {
+                $scope.nsTag = true;
+            }
+            if (dateList == null || dateList == "") {
+                $scope.nsDate = true;
+            }
+            
         } else {
-            $scope.notSearching = true;
+            $scope.nsName = true;
+            $scope.nsTag = true;
+            $scope.nsDate = true;
         }
     }
 });
