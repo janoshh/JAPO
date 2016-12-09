@@ -150,11 +150,11 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     function getFiles() {
         console.log("Getting Files");
         $http({
-            method: 'GET'
-            , url: '/api/getFiles'
-            , headers: {
-                'x-access-token': token
-                , 'user': user
+            method: 'GET',
+            url: '/api/getFiles',
+            headers: {
+                'x-access-token': token,
+                'user': user
             }
         }).then(function (response) {
             fileList = response.data.files[0];
@@ -182,8 +182,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 var filetype = fileList[i].filetype.toUpperCase();
                 if (filetype === 'PDF') {
                     var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/pdflogo.png";
-                }
-                else {
+                } else {
                     var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
                 }
                 var file = {
@@ -193,8 +192,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             }
             if ($scope.fileList.length > 0) {
                 $scope.documentsMessage = "";
-            }
-            else {
+            } else {
                 $scope.documentsMessage = "You have not yet uploaded any documents.";
             }
         });
@@ -362,7 +360,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             if (dateList == null || dateList == "") {
                 $scope.nsDate = true;
             }
-            
+
         } else {
             $scope.nsName = true;
             $scope.nsTag = true;
@@ -481,7 +479,70 @@ app.controller("uploadController", function ($scope, $http, $location) {
     $scope.goBack = function () {
         $location.path("/home");
     }
+
+
+    console.log("in video functie!");
+    var isSrtreaming = false,
+        v = document.getElementById("video"),
+        c = document.getElementById("canvas"),
+        con = c.getContext('2d'),
+        w = 360,
+        h = 360;
+
+    v.addEventListener('canplay', function (e) {
+        if (!isSrtreaming) {
+            //videoWidth isn't always set correctly in all browsers
+            if (v.videoWidth > 0) h = v.videoHeight / (v.videoWidth / w);
+            c.setAttribute("width", w);
+            c.setAttribute("height", h);
+            //reverse the canvas image
+            con.translate(w, 0);
+            con.scale(-1, 1);
+            isSrtreaming = true;
+        }
+    }, false);
+
+    v.addEventListener('play', function () {
+        //every 33 milsec copy the video image to the canvas
+        setInterval(function () {
+            if (v.paused || v.ended) return;
+            con.fillRect(0, 0, w, h);
+            con.drawImage(v, 0, 0, w, h);
+        }, 33);
+    }, false);
+
+    navigator.getUserMedia == (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    if (navigator.getUserMedia) {
+        //request acces to video only
+        navigator.getUserMedia({
+                video: true,
+                audio: false
+            },
+            function (stream) {
+                var url = window.URL || window.webkitURL;
+                v.src = url ? url.createObjectURL(stream) : stream;
+                v.play();
+            },
+            function (error) {
+                alert("Something went wrong. (error code " + error.code + ")");
+                return;
+            }
+        );
+    } else {
+        alert("sorry, the browser you are using doesn\'t support getUserMedia");
+        return;
+    }
+
+    /*------------------- take snapshot from canvas ------------------------*/
+
+    $scope.capture = function () {
+        var c = document.getElementById('canvas');
+        var context = c.getContext('2d');
+        // save canvas image as data url (png format by default)
+        $scope.dataURL = c.toDataURL();
+    }
 });
+
 //----------------------
 //show controller
 //----------------------
@@ -492,13 +553,13 @@ app.controller("show", function ($scope, $http, $location, fileService) {
     }
     $scope.file = fileService.getFile();
     var url = "http://localhost:8080/getfile?file=" + $scope.file.name + "&user=" + user;
-    var pdfDoc = null
-        , pageNum = 1
-        , pageRendering = false
-        , pageNumPending = null
-        , scale = 0.8
-        , canvas = document.getElementById('the-canvas')
-        , ctx = canvas.getContext('2d');
+    var pdfDoc = null,
+        pageNum = 1,
+        pageRendering = false,
+        pageNumPending = null,
+        scale = 0.8,
+        canvas = document.getElementById('the-canvas'),
+        ctx = canvas.getContext('2d');
     /**
      * Get page info from document, resize canvas accordingly, and render page.
      * @param num Page number.
