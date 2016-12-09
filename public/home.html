@@ -20,16 +20,13 @@
             </div>
         </div>
     </div>
-    <div class="container-fluid">
-        <input id="slider" type="range" name="range" ng-model="value" min="30" max="100">
-        <button class="btn btn-primary float-right" ng-click="refresh()"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
-    </div>
     <div>
-        <div id="layout">
+        <div id="layout" class="container-fluid">
             <button ng-click="grid()" class="btn btn-primary">
                 <span class="glyphicon glyphicon-th"></span></button>
-            <button ng-click="table()" class="btn btn-primary">
+            <button ng-click="list()" class="btn btn-primary">
                 <span class="glyphicon glyphicon-list"></span></button>
+            <button class="btn btn-primary float-right" ng-click="refresh()"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
         </div>
         <div>
             <h3>{{documentsMessage}}</h3></div>
@@ -37,8 +34,8 @@
             <div ng-show="nsName && nsTag && nsDate">
                 <div ng-repeat="pdfItem in fileList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
                     <h4>{{pdfItem.customfilename}}
-            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
-            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+            <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"> </a>
+            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
                 </h4> </div>
             </div>
 

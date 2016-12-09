@@ -124,16 +124,25 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.grid = function () {
         jq('#collection').show();
         jq('#collectionsList').hide();
+        sessionStorage.setItem('listOrGrid', "grid");
     }
-    $scope.table = function () {
+    $scope.list = function () {
         jq('#collection').hide();
         jq('#collectionsList').show();
+        sessionStorage.setItem('listOrGrid', "list");
     }
     $scope.nsName = true;
     $scope.nsTag = true;
     $scope.nsDate = true;
     var token = sessionStorage.getItem("japo-token");
     var user = sessionStorage.getItem("username");
+    var listOrGrid = sessionStorage.getItem("listOrGrid");
+    if (listOrGrid === "grid") {
+        $scope.grid();
+    }
+    else {
+        $scope.list();
+    }
     $scope.user = user;
     var fileList;
     $scope.fileList = [];
@@ -301,6 +310,22 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             console.log(response);
         });
         */
+    }
+    
+     $scope.downloadFile = function (file) {
+        /*
+        window.open('/getfile?file=' + name + '&user=' + user, '_blank')
+        */
+        $http({
+            method: 'GET'
+            , url: '/getfile?file=' + file.name + '&user=' + user
+            , headers: {
+                'x-access-token': token
+            }
+        }).then(function (response) {
+            console.log(response);
+        });
+        
     }
 
     $scope.searchChange = function () {
