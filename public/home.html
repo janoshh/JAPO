@@ -20,16 +20,18 @@
             </div>
         </div>
     </div>
-    <div class="container-fluid">
-        <button class="btn btn-primary float-right" ng-click="refresh()"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
-    </div>
     <div>
         <div id="layout" class="container-fluid">
-            <button ng-click="grid()" class="btn btn-primary">
-                <span class="glyphicon glyphicon-th"></span></button>
-            <button ng-click="list()" class="btn btn-primary">
-                <span class="glyphicon glyphicon-list"></span></button>
-            <button class="btn btn-primary float-right" ng-click="refresh()"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
+            <div class="col-lg-2">
+                <button ng-click="grid()" class="btn btn-primary"> <span class="glyphicon glyphicon-th"></span></button>
+                <button ng-click="list()" class="btn btn-primary"> <span class="glyphicon glyphicon-list"></span></button>
+            </div>
+            <div class="col-lg-8">
+                <div class="progress" style="margin-top:5px;">
+                    <div class="progress-bar" role="progressbar" style="width:{{capacityBlueUsed}}%"> FREE ACCOUNT | {{capacityUsed}}% USED </div>
+                    <div class="progress-bar progress-bar-danger" role="progressbar" style="width:{{capacityRedUsed}}%"></div>
+                </div>
+            </div>
         </div>
         <div>
             <h3>{{documentsMessage}}</h3></div>
@@ -41,71 +43,64 @@
             <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
                 </h4> </div>
             </div>
-
             <div ng-hide="nsName" class="col-md-12 col-xs-12">
                 <h2>Name</h2>
                 <div ng-repeat="pdfItem in sortedNameList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
                     <h4>{{pdfItem.customfilename}}
-            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
-            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+            <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"> </a>
+            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
                 </h4> </div>
             </div>
-
             <div ng-hide="nsTag" class="col-md-12 col-xs-12">
                 <h2>Tag</h2>
                 <div ng-repeat="pdfItem in sortedTagList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
                     <h4>{{pdfItem.customfilename}}
-            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
-            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+            <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"> </a>
+            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
                 </h4> </div>
             </div>
-
             <div ng-hide="nsDate" class="col-md-12 col-xs-12">
                 <h2>Date</h2>
                 <div ng-repeat="pdfItem in sortedDateList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
                     <h4>{{pdfItem.customfilename}}
-            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png"> </a>
-            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
+            <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"> </a>
+            <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
                 </h4> </div>
             </div>
         </div>
-
         <div id="collectionsList">
             <div ng-show="nsName && nsTag && nsDate">
                 <table>
                     <tr class="bold">
-                        <th>Type</th>
-                        <th>Title</th>
-                        <th>Tags</th>
-                        <th>Datum</th>
-                        <th>Grootte</th>
+                        <th ng-click="sortBy('filetype')">Type</th>
+                        <th ng-click="sortBy('customfilename')">Title</th>
+                        <th ng-click="sortBy('tags')">Tags</th>
+                        <th ng-click="sortBy('date')">Date</th>
+                        <th ng-click="sortBy('size')">Size</th>
                         <th>Actions</th>
                     </tr>
-                    <tr ng-repeat="pdfItem in fileList" ng-click="showFile(pdfItem)">
+                    <tr ng-repeat="pdfItem in fileList | orderBy:propertyName:reverse" ng-click="showFile(pdfItem)">
                         <th> {{pdfItem.filetype}} </th>
                         <th> {{pdfItem.customfilename}} </th>
                         <th> {{pdfItem.tags}} </th>
                         <th> {{pdfItem.date}} </th>
-                        <th> {{pdfItem.size}} </th>
+                        <th> {{pdfItem.humansize}} </th>
                         <th>
-                            <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
-                            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
+                            <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
+                            <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file" style="float: right; margin-right:10px;"> </a>
                         </th>
                     </tr>
                 </table>
             </div>
-
             <div ng-hide="nsName || nsTag || nsDate">
-
-
                 <div id="homeShow">
                     <table>
                         <tr class="bold">
                             <th>Type</th>
                             <th>Title</th>
                             <th>Tags</th>
-                            <th>Datum</th>
-                            <th>Grootte</th>
+                            <th>Date</th>
+                            <th>Size</th>
                             <th>Actions</th>
                         </tr>
                     </table>
@@ -119,10 +114,10 @@
                         <th> {{pdfItem.customfilename}} </th>
                         <th> {{pdfItem.tags}} </th>
                         <th> {{pdfItem.date}} </th>
-                        <th> {{pdfItem.size}} </th>
+                        <th> {{pdfItem.humansize}} </th>
                         <th>
-                            <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
-                            <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
+                            <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
+                            <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file" style="float: right; margin-right:10px;"> </a>
                         </th>
                     </tr>
                 </table>
@@ -136,10 +131,10 @@
                             <th> {{pdfItem.customfilename}} </th>
                             <th> {{pdfItem.tags}} </th>
                             <th> {{pdfItem.date}} </th>
-                            <th> {{pdfItem.size}} </th>
+                            <th> {{pdfItem.humansize}} </th>
                             <th>
-                                <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
-                                <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
+                                <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
+                                <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file" style="float: right; margin-right:10px;"> </a>
                             </th>
                         </tr>
                     </table>
@@ -154,10 +149,10 @@
                             <th> {{pdfItem.customfilename}} </th>
                             <th> {{pdfItem.tags}} </th>
                             <th> {{pdfItem.date}} </th>
-                            <th> {{pdfItem.size}} </th>
+                            <th> {{pdfItem.humansize}} </th>
                             <th>
-                                <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name)" title="Delete file"> </a>
-                                <a href="{{pdfItem.location}}" download="{{pdfItem.name}}" title="Download file"> <img src="donwloadIcon.png" style="float: right; margin-right:10px;"> </a>
+                                <a> <img src="deleteIcon.png" style="float: right;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
+                                <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file" style="float: right; margin-right:10px;"> </a>
                             </th>
                         </tr>
                     </table>

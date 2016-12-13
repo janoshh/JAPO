@@ -1,54 +1,47 @@
 <div ng-controller="uploadController">
     <div id="uploadMain">
-
-        <div id="title">
-            <h1>Upload a file</h1></div>
-
-        <div class="col-md-4 col-xs-12 col-lg-4" id="files">
-            <!--class="row"-->
-            <h4>Select a File to Upload</h4>
-            <div id="selectFile">
-                <input type="file" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" />
+        <div id="filesection">
+            <div id="title">
+                <h1>Upload a file</h1></div>
+            <div class="col-lg-6 col-md-6 col-xs-12" id="files">
+                <!--class="row"-->
+                <h4>Select a File to Upload</h4>
+                <div id="selectFile">
+                    <input type="file" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" /> </div>
             </div>
-        </div>
-
-        <div class="col-md-4 col-xs-12 col-lg-4" id="files">
-            <h4>Take a picture!</h4>
-            <div>
-                <video id='video'></video>
-                <canvas id="canvas"></canvas>
-                <div id="capture">
-                    <button class="btn btn-primary" ng-click="capture()"><span class="glyphicon glyphicon-camera"></span></button>
-                </div>
+            <div class="col-lg-6 col-md-6 col-xs-12" id="files">
+                <h4>Drop files here</h4>
+                <div id="dropbox" class="dropbox" ng-class="dropClass"><span class="glyphicon glyphicon-inbox" id="drop"></span></div>
             </div>
-        </div>
-
-        <div class="col-md-4 col-xs-12 col-lg-4" id="files">
-            <h4>Drop files here</h4>
-            <div id="dropbox" class="dropbox" ng-class="dropClass"><span class="glyphicon glyphicon-inbox" id="drop"></span></div>
-        </div>
-
-        <div class="col-md-12 col-xs-12" id="specsFile">
-            <p>Enter custom filename (leave blank to keep original filename):
-                <input type="text" ng-model="customFilename" class="form-control has-feedback" id="uploadSpecsInput">
-            </p>
-            <p>Enter custom tags:
-                <input type="text" ng-model="tags" class="form-control has-feedback" id="uploadSpecsInput">
-            </p>
-
-            <div ng-show="files.length">
-                <div ng-repeat="file in files.slice(0)"> <span>{{file.webkitRelativePath || file.name}}</span> (<span ng-switch="file.size > 1024*1024">
+            <div class="col-md-12 col-xs-12" id="specsFile">
+                <p>Enter custom filename (leave blank to keep original filename):
+                    <input type="text" ng-model="customFilename" class="form-control has-feedback" id="uploadSpecsInput"> </p>
+                <p>Enter custom tags:
+                    <input type="text" ng-model="tags" class="form-control has-feedback" id="uploadSpecsInput"> </p>
+                <div ng-show="files.length">
+                    <div ng-repeat="file in files.slice(0)"> <span>{{file.webkitRelativePath || file.name}}</span> (<span ng-switch="file.size > 1024*1024">
                 <span ng-switch-when="true">{{file.size / 1024 / 1024 | number:2}} MB</span> <span ng-switch-default>{{file.size / 1024 | number:2}} kB</span> </span>) </div>
-
-                <input type="button" ng-click="uploadFile()" value="Upload" />
-                <div ng-show="progressVisible">
-                    <div class="percent">{{progress}}%</div>
-                    <div class="progress-bar">
-                        <div class="uploaded" ng-style="{'width': progress+'%'}"></div>
+                    <input type="button" ng-click="uploadFile()" value="Upload" />
+                    <div ng-show="progressVisible">
+                        <div class="percent">{{progress}}%</div>
+                        <div class="progress-bar">
+                            <div class="uploaded" ng-style="{'width': progress+'%'}"></div>
+                        </div>
                     </div>
                 </div>
-                <button class="btn btn-primary" type="button" ng-click="goBack()">Home</button>
             </div>
+        </div>
+        <div id="processinggif" class="row">
+            <h1>Processing</h1>
+            <div ng-show="files.length">
+                <div ng-repeat="file in files.slice(0)">
+                    <h2>{{file.webkitRelativePath || file.name}}</h2> </div> <img src="/processing.gif"> </div>
+        </div>
+        <div id="notEnoughSpace">
+            <h1>Oops, sorry...</h1>
+            <h3>We coundn't upload your file because it would exceed your non-premium storage limit.</h3>
+            <h3>Please become a premium member to enjoy unlimited storage space.</h3>
+            <button class="btn btn-primary float-right" ng-click="goBack()">Go back to home</button>
         </div>
     </div>
 </div>

@@ -31,7 +31,8 @@ app.controller("logInController", function ($scope, $http, $location) {
     $scope.validate = function () {
         if ($scope.email != null && $scope.password != null) {
             $scope.button = "btn btn-lg btn-primary btn-block"
-        } else {
+        }
+        else {
             $scope.button = "btn btn-lg btn-primary btn-block disabled"
         }
     };
@@ -41,8 +42,8 @@ app.controller("logInController", function ($scope, $http, $location) {
         var loginPass = $scope.password;
         //post req
         $http.post("/api/authenticate", {
-            "name": emailUser,
-            "password": loginPass
+            "name": emailUser
+            , "password": loginPass
         }).success(function (post) {
             sessionStorage.setItem('japo-token', post.token);
             sessionStorage.setItem('username', emailUser);
@@ -58,7 +59,8 @@ app.controller("registerController", function ($scope, $http, $location) {
         if ($scope.password != null) {
             if ($scope.password.length < 6) {
                 $scope.passLength = "registrationFormAlert help-block";
-            } else {
+            }
+            else {
                 $scope.passLength = "display-none";
             }
             $scope.validate();
@@ -67,10 +69,12 @@ app.controller("registerController", function ($scope, $http, $location) {
     $scope.$watch('confirmPassword', function (newValue, oldValue) {
         if ($scope.confirmPassword === "" || $scope.confirmPassword == null) {
             $scope.icon = "form-control-feedback"
-        } else {
+        }
+        else {
             if ($scope.password === $scope.confirmPassword) {
                 $scope.icon = "glyphicon glyphicon-ok form-control-feedback";
-            } else {
+            }
+            else {
                 $scope.icon = "glyphicon glyphicon-remove form-control-feedback";
             }
             $scope.validate();
@@ -89,7 +93,8 @@ app.controller("registerController", function ($scope, $http, $location) {
     $scope.validate = function () {
         if ($scope.fname != null && $scope.lname != null && $scope.email != null && $scope.password != null && $scope.password === $scope.confirmPassword) {
             $scope.button = "btn btn-lg btn-primary btn-block"
-        } else {
+        }
+        else {
             $scope.button = "btn btn-lg btn-primary btn-block disabled"
         }
     }
@@ -103,10 +108,10 @@ app.controller("registerController", function ($scope, $http, $location) {
         //post req
         if ($scope.password === $scope.confirmPassword) {
             $http.post("/api/createUser", {
-                "fname": fname,
-                "lname": lname,
-                "email": email,
-                "password": password
+                "fname": fname
+                , "lname": lname
+                , "email": email
+                , "password": password
             }).success(function (post) {
                 $location.path("/registered");
             });
@@ -146,15 +151,16 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.user = user;
     var fileList;
     $scope.fileList = [];
+    $scope.capacityUsed = 0;
 
     function getFiles() {
         console.log("Getting Files");
         $http({
-            method: 'GET',
-            url: '/api/getFiles',
-            headers: {
-                'x-access-token': token,
-                'user': user
+            method: 'GET'
+            , url: '/api/getFiles'
+            , headers: {
+                'x-access-token': token
+                , 'user': user
             }
         }).then(function (response) {
             fileList = response.data.files[0];
@@ -171,7 +177,10 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 if (customfilename.length > 25) {
                     customfilename = customfilename.substring(0, 15) + "...";
                 }
-                var size = humanFileSize(fileList[i].size, true);
+                var humansize = humanFileSize(fileList[i].size, true);
+                var size = parseInt(fileList[i].size);
+                // Count all file sizes together
+                $scope.capacityUsed += parseInt(fileList[i].size);
                 var date = fileList[i].date;
                 date = date.substring(0, date.indexOf('T'));
                 var tags = fileList[i].tags;
@@ -182,19 +191,31 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 var filetype = fileList[i].filetype.toUpperCase();
                 if (filetype === 'PDF') {
                     var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/pdflogo.png";
-                } else {
+                }
+                else {
                     var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
                 }
                 var file = {
-                    name, customfilename, size, thumbnail, date, tags, location, filetype
+                    name, customfilename, size, humansize, thumbnail, date, tags, location, filetype
                 };
                 $scope.fileList.push(file);
             }
             if ($scope.fileList.length > 0) {
                 $scope.documentsMessage = "";
-            } else {
+            }
+            else {
                 $scope.documentsMessage = "You have not yet uploaded any documents.";
             }
+            $scope.capacityUsed = humanFileSize($scope.capacityUsed, true);
+            $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '');
+            if ($scope.capacityUsed > 85) {
+                $scope.capacityBlueUsed = 85;
+                $scope.capacityRedUsed = $scope.capacityUsed - 85;
+            }
+            else {
+                $scope.capacityBlueUsed = $scope.capacityUsed;
+            }
+            maxCapacity = 100
         });
     }
 
@@ -207,10 +228,13 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         }
         return false;
     }
+    $scope.propertyName = 'customfilename';
+    $scope.reverse = true;
+    $scope.sortBy = function (propertyName) {
+        $scope.reverse = ($scope.propertyName === propertyName) ? !$scope.reverse : false;
+        $scope.propertyName = propertyName;
+    };
     getFiles();
-    $scope.refresh = function () {
-        location.reload();
-    }
     $scope.goToUpload = function () {
         $location.path("/upload");
     }
@@ -223,17 +247,17 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.deleteAccount = function () {
         bootbox.confirm({
-            title: "Delete account?",
-            message: "You are about to delete your account. This will delete all files and cannot be undone. Are you sure?",
-            buttons: {
+            title: "Delete account?"
+            , message: "You are about to delete your account. This will delete all files and cannot be undone. Are you sure?"
+            , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
-                },
-                confirm: {
+                }
+                , confirm: {
                     label: '<i class="glyphicon glyphicon-ok"></i> Confirm'
                 }
-            },
-            callback: function (result) {
+            }
+            , callback: function (result) {
                 if (result) {
                     var xhr = new XMLHttpRequest()
                     xhr.open("POST", "/api/deleteaccount");
@@ -247,22 +271,28 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.deleteAllFiles = function () {
         bootbox.confirm({
-            title: "Delete all files?",
-            message: "You are about to delete all your files. Are you sure?",
-            buttons: {
+            title: "Delete all files?"
+            , message: "You are about to delete all your files. Are you sure?"
+            , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
-                },
-                confirm: {
+                }
+                , confirm: {
                     label: '<i class="glyphicon glyphicon-ok"></i> Confirm'
                 }
-            },
-            callback: function (result) {
+            }
+            , callback: function (result) {
                 if (result) {
                     var xhr = new XMLHttpRequest()
                     xhr.open("POST", "/api/deleteallfiles");
                     xhr.setRequestHeader("x-access-token", token);
                     xhr.setRequestHeader("user", user);
+                    xhr.onload = function () {
+                        if (xhr.status === 200) {
+                            $location.path("/home");
+                            $scope.$apply();
+                        }
+                    }
                     xhr.send()
                 }
             }
@@ -270,23 +300,29 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.deleteFile = function (filename) {
         bootbox.confirm({
-            title: "Delete " + filename + "?",
-            message: "You are about to delete " + filename + ". Are you sure?",
-            buttons: {
+            title: "Delete " + filename + "?"
+            , message: "You are about to delete " + filename + ". Are you sure?"
+            , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
-                },
-                confirm: {
+                }
+                , confirm: {
                     label: '<i class="glyphicon glyphicon-ok"></i> Confirm'
                 }
-            },
-            callback: function (result) {
+            }
+            , callback: function (result) {
                 if (result) {
                     var xhr = new XMLHttpRequest()
                     xhr.open("POST", "/api/deletefile");
                     xhr.setRequestHeader("x-access-token", token);
                     xhr.setRequestHeader("user", user);
                     xhr.setRequestHeader("filename", filename);
+                    xhr.onload = function () {
+                        if (xhr.status === 200) {
+                            $location.path("/home");
+                            $scope.$apply();
+                        }
+                    }
                     xhr.send()
                 }
             }
@@ -309,23 +345,32 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         });
         */
     }
-    
-     $scope.downloadFile = function (file) {
+    $scope.downloadFile = function (file) {
         /*
         window.open('/getfile?file=' + name + '&user=' + user, '_blank')
         */
+        var title = file.name;
+        console.log(title);
         $http({
             method: 'GET'
             , url: '/getfile?file=' + file.name + '&user=' + user
-            , headers: {
-                'x-access-token': token
-            }
-        }).then(function (response) {
-            console.log(response);
+        }).success(function (data, status, headers, config) {
+            // TODO when WS success
+            var file = new Blob([data], {
+                type: 'application/csv'
+            });
+            //trick to download store a file having its URL
+            var fileURL = URL.createObjectURL(file);
+            var a = document.createElement('a');
+            a.href = fileURL;
+            a.target = '_blank';
+            a.download = title;
+            document.body.appendChild(a);
+            a.click();
+        }).error(function (data, status, headers, config) {
+            //TODO when WS error
         });
-        
     }
-
     $scope.searchChange = function () {
         text = $scope.search;
         var customNameList = [];
@@ -346,11 +391,9 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     dateList.push($scope.fileList[i]);
                 }
             }
-
             $scope.sortedNameList = customNameList;
             $scope.sortedTagList = tagList;
             $scope.sortedDateList = dateList;
-
             if (customNameList == null || customNameList == "") {
                 $scope.nsName = true;
             }
@@ -360,19 +403,21 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             if (dateList == null || dateList == "") {
                 $scope.nsDate = true;
             }
-
-        } else {
+        }
+        else {
             $scope.nsName = true;
             $scope.nsTag = true;
             $scope.nsDate = true;
         }
     }
 });
-
 // -----------------
 // Upload Controller
 // -----------------
 app.controller("uploadController", function ($scope, $http, $location) {
+    jq("#filesection").show();
+    jq('#notEnoughSpace').hide();
+    jq("#processinggif").hide();
     //============== DRAG & DROP =============
     var dropbox = document.getElementById("dropbox")
         // init event handlers
@@ -447,6 +492,16 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.setRequestHeader("tags", $scope.tags);
         xhr.setRequestHeader("customFilename", $scope.customFilename);
         $scope.progressVisible = true
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                $location.path("/home");
+                $scope.$apply();
+            }
+            if (xhr.status === 409) {
+                jq("#processinggif").hide();
+                jq('#notEnoughSpace').show();
+            }
+        };
         xhr.send(fd)
     }
 
@@ -454,21 +509,18 @@ app.controller("uploadController", function ($scope, $http, $location) {
         $scope.$apply(function () {
             if (evt.lengthComputable) {
                 $scope.progress = Math.round(evt.loaded * 100 / evt.total)
-            } else {
+            }
+            else {
                 $scope.progress = 'unable to compute'
             }
+            jq("#processinggif").show();
+            jq("#filesection").hide();
         })
     }
 
-    function uploadComplete(evt) {
-        /* This event is raised when the server send back a response */
-        //alert(evt.target.responseText)
-        //$location.path("/home");
-    }
+    function uploadComplete(evt) {}
 
-    function uploadFailed(evt) {
-        //alert("There was an error attempting to upload the file.")
-    }
+    function uploadFailed(evt) {}
 
     function uploadCanceled(evt) {
         $scope.$apply(function () {
@@ -479,70 +531,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     $scope.goBack = function () {
         $location.path("/home");
     }
-
-
-    console.log("in video functie!");
-    var isSrtreaming = false,
-        v = document.getElementById("video"),
-        c = document.getElementById("canvas"),
-        con = c.getContext('2d'),
-        w = 360,
-        h = 360;
-
-    v.addEventListener('canplay', function (e) {
-        if (!isSrtreaming) {
-            //videoWidth isn't always set correctly in all browsers
-            if (v.videoWidth > 0) h = v.videoHeight / (v.videoWidth / w);
-            c.setAttribute("width", w);
-            c.setAttribute("height", h);
-            //reverse the canvas image
-            con.translate(w, 0);
-            con.scale(-1, 1);
-            isSrtreaming = true;
-        }
-    }, false);
-
-    v.addEventListener('play', function () {
-        //every 33 milsec copy the video image to the canvas
-        setInterval(function () {
-            if (v.paused || v.ended) return;
-            con.fillRect(0, 0, w, h);
-            con.drawImage(v, 0, 0, w, h);
-        }, 33);
-    }, false);
-
-    navigator.getUserMedia == (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
-    if (navigator.getUserMedia) {
-        //request acces to video only
-        navigator.getUserMedia({
-                video: true,
-                audio: false
-            },
-            function (stream) {
-                var url = window.URL || window.webkitURL;
-                v.src = url ? url.createObjectURL(stream) : stream;
-                v.play();
-            },
-            function (error) {
-                alert("Something went wrong. (error code " + error.code + ")");
-                return;
-            }
-        );
-    } else {
-        alert("sorry, the browser you are using doesn\'t support getUserMedia");
-        return;
-    }
-
-    /*------------------- take snapshot from canvas ------------------------*/
-
-    $scope.capture = function () {
-        var c = document.getElementById('canvas');
-        var context = c.getContext('2d');
-        // save canvas image as data url (png format by default)
-        $scope.dataURL = c.toDataURL();
-    }
 });
-
 //----------------------
 //show controller
 //----------------------
@@ -553,13 +542,13 @@ app.controller("show", function ($scope, $http, $location, fileService) {
     }
     $scope.file = fileService.getFile();
     var url = "http://localhost:8080/getfile?file=" + $scope.file.name + "&user=" + user;
-    var pdfDoc = null,
-        pageNum = 1,
-        pageRendering = false,
-        pageNumPending = null,
-        scale = 0.8,
-        canvas = document.getElementById('the-canvas'),
-        ctx = canvas.getContext('2d');
+    var pdfDoc = null
+        , pageNum = 1
+        , pageRendering = false
+        , pageNumPending = null
+        , scale = 0.8
+        , canvas = document.getElementById('the-canvas')
+        , ctx = canvas.getContext('2d');
     /**
      * Get page info from document, resize canvas accordingly, and render page.
      * @param num Page number.
@@ -573,8 +562,8 @@ app.controller("show", function ($scope, $http, $location, fileService) {
             canvas.width = viewport.width;
             // Render PDF page into canvas context
             var renderContext = {
-                canvasContext: ctx,
-                viewport: viewport
+                canvasContext: ctx
+                , viewport: viewport
             };
             var renderTask = page.render(renderContext);
             // Wait for rendering to finish
@@ -597,7 +586,8 @@ app.controller("show", function ($scope, $http, $location, fileService) {
     function queueRenderPage(num) {
         if (pageRendering) {
             pageNumPending = num;
-        } else {
+        }
+        else {
             renderPage(num);
         }
     }
@@ -632,15 +622,12 @@ app.controller("show", function ($scope, $http, $location, fileService) {
         // Initial/first page rendering
         renderPage(pageNum);
     });
-
     /* -------------------------------
     text extracten uit pdf voor search
     ---------------------------------*/
     //functie uitvoeren als pdf geladen is nog implementeren ..
     this.pdfToText = function (data, callbackPageDone, callbackAllDone) {
-
         console.assert(url instanceof ArrayBuffer || typeof url == 'string');
-
         PDFJS.getDocument(url).then(function (pdf) {
             var full_text = "";
             var total = pdf.numPages;
@@ -651,22 +638,17 @@ app.controller("show", function ($scope, $http, $location, fileService) {
                     var n = page.pageNumber;
                     page.getTextContent().then(function (textContent) {
                         if (null != textContent.items) {
-
                             var page_text = "";
                             var last_block = null;
-
                             for (var k = 0; k < textContent.items.length; k++) {
                                 var block = textContent.items[k];
                                 if (last_block != null && last_block.str[last_block.str.length - 1] != ' ') {
-                                    if (block.x < last_block.x)
-                                        page_text += "\r\n";
-                                    else if (last_block.y != block.y && (last_block.str.match(/^(\s?[a-zA-Z])$|^(.+\s[a-zA-Z])$/) == null))
-                                        page_text += ' ';
+                                    if (block.x < last_block.x) page_text += "\r\n";
+                                    else if (last_block.y != block.y && (last_block.str.match(/^(\s?[a-zA-Z])$|^(.+\s[a-zA-Z])$/) == null)) page_text += ' ';
                                 }
                                 page_text += block.str;
                                 last_block = block;
                             }
-
                             textContent != null && console.log("page " + n + " finished."); //" content: \n" + page_text);
                             layers[n] = page_text + "\n\n";
                         }
@@ -674,10 +656,8 @@ app.controller("show", function ($scope, $http, $location, fileService) {
                         callbackPageDone(self.complete, total);
                         if (self.complete == total) {
                             window.setTimeout(function () {
-
                                 var num_pages = Object.keys(layers).length;
-                                for (var j = 1; j <= num_pages; j++)
-                                    full_text += layers[j];
+                                for (var j = 1; j <= num_pages; j++) full_text += layers[j];
                                 callbackAllDone(full_text);
                                 console.log(full_text);
                             }, 1000);
@@ -687,12 +667,10 @@ app.controller("show", function ($scope, $http, $location, fileService) {
             } // of for
         });
     }; // end of pdfToText()
-
     //zoeken in full_text  string en krijgt plaatsnummer terug
     $scope.searchPDF = function () {
         var result = full_text.search(document.getElementById('searchBox').value);
     }
-
 });
 //
 //
@@ -705,8 +683,8 @@ app.service('fileService', function () {
         return file;
     };
     return {
-        saveFile: saveFile,
-        getFile: getFile
+        saveFile: saveFile
+        , getFile: getFile
     };
 });
 //

@@ -11,7 +11,11 @@ var fs = require('fs');
 var busboy = require('connect-busboy');
 var jimp = require("jimp");
 var port = process.env.PORT || 8080;
-// connect to database
+//
+// Max Capacity of non-premium member:
+var maxCapacity = 100000000
+    //
+    // connect to database
 mongoose.connect(config.database);
 //
 // Connect to database;
@@ -198,87 +202,120 @@ apiRoutes.get('/check', function (req, res) {
 apiRoutes.post('/upload', function (req, res, next) {
     var fileSize = req.headers['file-size'];
     var user = req.headers['user'];
-    var bucket = user.replace("@", "-");
-    var tags = req.headers['tags'];
-    var customFilename = req.headers['customfilename'];
-    var metadata = {
-        "x-amz-meta-tags": tags
-    };
-    var fileType;
-    //
-    req.pipe(req.busboy);
-    req.busboy.on('file', function (fieldname, file, filename) {
-        //
-        var params = {
-            Bucket: bucket
-            , Key: filename
-            , Body: file
-            , ContentLength: fileSize
-            , Metadata: metadata
-            , ACL: 'public-read'
-        };
-        // Wegschrijven naar Amazon S3
-        s3.upload(params, function (err, data) {
-            if (err) console.log(err)
-            else {
-                //console.log("Succesfully added in bucket " + bucket);
-                //
-                var fileLocation;
-                // Get Extension / Filetype
-                fileType = filename.substr(filename.lastIndexOf('.') + 1);
-                fileLocation = data.Location;
-                //
-                // Wegschrijven naar MongoDB
-                file = new File({
-                    user: user
-                    , filename: filename
-                    , customfilename: customFilename
-                    , filetype: fileType
-                    , size: fileSize
-                    , date: Date.now()
-                    , tags: tags
-                    , location: fileLocation
-                });
-                file.save(function (err, userObj) {
-                    if (err) {
-                        console.log(err);
-                    }
-                });
-                //
-                //-------------------------------------------------
-                // CONVERTER
-                //-------------------------------------------------
-                var ft = fileType.toLowerCase();
-                if (ft === "jpg" || ft === "png" || ft === "jpeg") {
-                    console.log("CONVERTING JPG");
-                    console.log("Getting file from " + fileLocation);
-                    jimp.read(fileLocation, function (err, image) {
-                        console.log("CREATING THUMBNAIL");
-                        if (err) throw err;
-                        image.resize(242, 243) // resize
-                            .quality(60) // set JPEG quality
-                            .write("thumbnail.jpg", function () {
-                                var fileBuffer = fs.readFileSync("thumbnail.jpg");
-                                var thumbFileName = "thumb_" + filename;
-                                s3.putObject({
-                                    ACL: 'public-read'
-                                    , Bucket: bucket
-                                    , Key: thumbFileName
-                                    , Body: fileBuffer
-                                    , ContentType: 'image/jpg'
-                                }, function (error, response) {
-                                    console.log("thumbnail uploaded");
+    var capacityUsed = 0;
+    // Check is non-premium user has enough storage capacity left to upload new file
+    File.find({
+        user: user
+    }, function (err, filedata) {
+        if (err) throw err;
+        else {
+            User.find({
+                name: user
+            }, function (err, userdata) {
+                if (err) throw err;
+                else {
+                    if (userdata[0].premium === false) {
+                        for (var i = 0; i < filedata.length; i += 1) {
+                            capacityUsed += parseInt(filedata[i].size);
+                        }
+                        capacityUsed += parseInt(fileSize);
+                        if (capacityUsed > maxCapacity) {
+                            res.status(409).end();
+                            return false;
+                        }
+                        else {
+                            var bucket = user.replace("@", "-");
+                            var tags = req.headers['tags'];
+                            var customFilename = req.headers['customfilename'];
+                            var metadata = {
+                                "x-amz-meta-tags": tags
+                            };
+                            var fileType;
+                            //
+                            req.pipe(req.busboy);
+                            req.busboy.on('file', function (fieldname, file, filename) {
+                                //
+                                var params = {
+                                    Bucket: bucket
+                                    , Key: filename
+                                    , Body: file
+                                    , ContentLength: fileSize
+                                    , Metadata: metadata
+                                    , ACL: 'public-read'
+                                };
+                                // Wegschrijven naar Amazon S3
+                                s3.upload(params, function (err, data) {
+                                    if (err) console.log(err)
+                                    else {
+                                        //console.log("Succesfully added in bucket " + bucket);
+                                        //
+                                        var fileLocation;
+                                        // Get Extension / Filetype
+                                        fileType = filename.substr(filename.lastIndexOf('.') + 1);
+                                        fileLocation = data.Location;
+                                        //
+                                        // Wegschrijven naar MongoDB
+                                        file = new File({
+                                            user: user
+                                            , filename: filename
+                                            , customfilename: customFilename
+                                            , filetype: fileType
+                                            , size: fileSize
+                                            , date: Date.now()
+                                            , tags: tags
+                                            , location: fileLocation
+                                        });
+                                        file.save(function (err, userObj) {
+                                            if (err) {
+                                                console.log(err);
+                                            }
+                                        });
+                                        //
+                                        //-------------------------------------------------
+                                        // CONVERTER
+                                        //-------------------------------------------------
+                                        var ft = fileType.toLowerCase();
+                                        if (ft === "jpg" || ft === "png" || ft === "jpeg") {
+                                            console.log("CONVERTING JPG");
+                                            console.log("Getting file from " + fileLocation);
+                                            jimp.read(fileLocation, function (err, image) {
+                                                console.log("CREATING THUMBNAIL");
+                                                if (err) throw err;
+                                                image.resize(242, 243) // resize
+                                                    .quality(60) // set JPEG quality
+                                                    .write("thumbnail.jpg", function () {
+                                                        var fileBuffer = fs.readFileSync("thumbnail.jpg");
+                                                        var thumbFileName = "thumb_" + filename;
+                                                        s3.putObject({
+                                                            ACL: 'public-read'
+                                                            , Bucket: bucket
+                                                            , Key: thumbFileName
+                                                            , Body: fileBuffer
+                                                            , ContentType: 'image/jpg'
+                                                        }, function (error, response) {
+                                                            console.log("thumbnail uploaded");
+                                                            res.status(200).end();
+                                                        });
+                                                    });
+                                            });
+                                        }
+                                        else {
+                                        //-------------------------------------------------
+                                        res.status(200).end();
+                                            }
+                                    }
                                 });
                             });
-                    });
+                            /*
+                            req.busboy.on('finish', function () {
+                                console.log("Upload succes!");
+                            });
+                            */
+                        }
+                    }
                 }
-                //-------------------------------------------------
-                res.status(200).end();
-            }
-        });
-    });
-    req.busboy.on('finish', function () {
-        console.log("Upload succes!");
+            });
+        }
     });
 });
 app.get('/getfile', function (req, res, next) {
@@ -290,11 +327,9 @@ app.get('/getfile', function (req, res, next) {
         Bucket: bucket
         , Key: filename
     }
-
     res.writeHead(200, {
         'Content-Type': 'application/pdf'
     });
-
     var fileStream = s3.getObject(params).createReadStream();
     fileStream.pipe(res);
 });
@@ -352,7 +387,6 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
     });
 });
 apiRoutes.post('/deleteallfiles', function (req, res, next) {
-    console.log("POST OM ALLE FILES TE DELETEN");
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     console.log("Deleting all files " + user);
@@ -361,7 +395,6 @@ apiRoutes.post('/deleteallfiles', function (req, res, next) {
         Bucket: bucket
     }, function (err, data) {
         if (err) {
-            console.log("error listing bucket objects " + err);
             return;
         }
         var items = data.Contents;
@@ -381,8 +414,8 @@ apiRoutes.post('/deleteallfiles', function (req, res, next) {
                             user: user
                         }).remove(function (err, data) {
                             if (err) console.log(err, err.stack);
-                            else console.log("succes");
                         });
+                        res.status(200).end();
                     }
                 });
             }
