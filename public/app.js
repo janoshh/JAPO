@@ -154,6 +154,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.capacityUsed = 0;
 
     function getFiles() {
+        $scope.capacityUsed = 0;
         console.log("Getting Files");
         $http({
             method: 'GET'
@@ -190,7 +191,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 var location = fileList[i].location;
                 var filetype = fileList[i].filetype.toUpperCase();
                 if (filetype === 'PDF') {
-                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/pdflogo.png";
+                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name + ".jpg";
                 }
                 else {
                     var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
@@ -207,7 +208,12 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 $scope.documentsMessage = "You have not yet uploaded any documents.";
             }
             $scope.capacityUsed = humanFileSize($scope.capacityUsed, true);
-            $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '');
+            if ($scope.capacityUsed.match('kB')) {
+                $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '') / 100;
+            }
+            else {
+                $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '');
+            }
             if ($scope.capacityUsed > 85) {
                 $scope.capacityBlueUsed = 85;
                 $scope.capacityRedUsed = $scope.capacityUsed - 85;
@@ -263,8 +269,13 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     xhr.open("POST", "/api/deleteaccount");
                     xhr.setRequestHeader("x-access-token", token);
                     xhr.setRequestHeader("user", user);
+                    xhr.onload = function () {
+                        if (xhr.status === 200) {
+                            $location.path("/accountdeleted");
+                            $scope.$apply();
+                        }
+                    }
                     xhr.send()
-                    $location.path("/accountdeleted");
                 }
             }
         });
@@ -331,24 +342,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.showFile = function (file) {
         fileService.saveFile(file);
         $location.path("/show");
-        /*
-        window.open('/getfile?file=' + name + '&user=' + user, '_blank')
-        $http({
-            method: 'GET'
-            , url: '/api/getfile?file=' + name + '&user=' + user
-            , headers: {
-                'x-access-token': token
-                , 'filesize': size
-            }
-        }).then(function (response) {
-            console.log(response);
-        });
-        */
     }
     $scope.downloadFile = function (file) {
-        /*
-        window.open('/getfile?file=' + name + '&user=' + user, '_blank')
-        */
         var title = file.name;
         console.log(title);
         $http({
@@ -359,7 +354,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             var file = new Blob([data], {
                 type: 'application/csv'
             });
-            //trick to download store a file having its URL
+            //trick to download a file having its URL
             var fileURL = URL.createObjectURL(file);
             var a = document.createElement('a');
             a.href = fileURL;
@@ -368,7 +363,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             document.body.appendChild(a);
             a.click();
         }).error(function (data, status, headers, config) {
-            //TODO when WS error
+            console.log(data);
         });
     }
     $scope.searchChange = function () {
@@ -418,6 +413,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     jq("#filesection").show();
     jq('#notEnoughSpace').hide();
     jq("#processinggif").hide();
+    jq("#uploadError").hide();
     //============== DRAG & DROP =============
     var dropbox = document.getElementById("dropbox")
         // init event handlers
@@ -471,38 +467,52 @@ app.controller("uploadController", function ($scope, $http, $location) {
             $scope.progressVisible = false
         });
     };
+    $scope.updateFile = function () {
+        console.log("updaten");
+        jq("#uploadError").hide();
+    }
     $scope.tags;
     $scope.customFilename;
     $scope.uploadFile = function () {
         var fd = new FormData()
         for (var i in $scope.files) {
-            fd.append("uploadedFile", $scope.files[i])
+            fd.append("uploadedFile", $scope.files[i]);
         }
-        var token = sessionStorage.getItem("japo-token");
-        var user = sessionStorage.getItem("username");
-        var xhr = new XMLHttpRequest()
-        xhr.upload.addEventListener("progress", uploadProgress, false);
-        xhr.addEventListener("load", uploadComplete, false);
-        xhr.addEventListener("error", uploadFailed, false);
-        xhr.addEventListener("abort", uploadCanceled, false);
-        xhr.open("POST", "/api/upload");
-        xhr.setRequestHeader("x-access-token", token);
-        xhr.setRequestHeader("user", user);
-        xhr.setRequestHeader("file-size", $scope.files[i].size);
-        xhr.setRequestHeader("tags", $scope.tags);
-        xhr.setRequestHeader("customFilename", $scope.customFilename);
-        $scope.progressVisible = true
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                $location.path("/home");
-                $scope.$apply();
-            }
-            if (xhr.status === 409) {
-                jq("#processinggif").hide();
-                jq('#notEnoughSpace').show();
-            }
-        };
-        xhr.send(fd)
+        var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.')+1);
+        console.log(fileType);
+        if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {
+            var token = sessionStorage.getItem("japo-token");
+            var user = sessionStorage.getItem("username");
+            var xhr = new XMLHttpRequest()
+            xhr.upload.addEventListener("progress", uploadProgress, false);
+            xhr.addEventListener("load", uploadComplete, false);
+            xhr.addEventListener("error", uploadFailed, false);
+            xhr.addEventListener("abort", uploadCanceled, false);
+            xhr.open("POST", "/api/upload");
+            xhr.setRequestHeader("x-access-token", token);
+            xhr.setRequestHeader("user", user);
+            xhr.setRequestHeader("file-size", $scope.files[i].size);
+            xhr.setRequestHeader("tags", $scope.tags);
+            xhr.setRequestHeader("customFilename", $scope.customFilename);
+            $scope.progressVisible = true
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    //$location.path("/home");
+                    //$scope.$apply();
+                    console.log("Uploading complete, showing pdf... ");
+                    console.log($scope.files[0].name);
+                    showPdf($scope.files[0].name);
+                }
+                if (xhr.status === 409) {
+                    jq("#processinggif").hide();
+                    jq('#notEnoughSpace').show();
+                }
+            };
+            xhr.send(fd)
+        }
+        else {
+            jq("#uploadError").show();
+        }
     }
 
     function uploadProgress(evt) {
@@ -517,7 +527,72 @@ app.controller("uploadController", function ($scope, $http, $location) {
             jq("#filesection").hide();
         })
     }
+    //_____________________________________________________________
+    function showPdf(fname) {
+        var user = sessionStorage.getItem("username");
+        var url = "/getfile?file=" + fname + "&user=" + user;
+        var pdfDoc = null
+            , pageNum = 1
+            , pageRendering = false
+            , pageNumPending = null
+            , scale = 1
+            , canvas = document.getElementById('the-canvas')
+            , ctx = canvas.getContext('2d');
 
+        function renderPage(num) {
+            pageRendering = true;
+            // Using promise to fetch the page
+            pdfDoc.getPage(num).then(function (page) {
+                var viewport = page.getViewport(scale);
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                // Render PDF page into canvas context
+                var renderContext = {
+                    canvasContext: ctx
+                    , viewport: viewport
+                };
+                var renderTask = page.render(renderContext);
+                // Wait for rendering to finish
+                renderTask.promise.then(function () {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        // New page rendering is pending
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                    var canvas = document.getElementById("the-canvas");
+                    var img = canvas.toDataURL("image/png");
+                    var user = sessionStorage.getItem("username");
+                    var xhr = new XMLHttpRequest()
+                    xhr.open("POST", "/pdfthumbnail");
+                    xhr.setRequestHeader("user", user);
+                    xhr.setRequestHeader("filename", fname);
+                    xhr.onload = function () {
+                        if (xhr.status === 200) {
+                            $location.path("/home");
+                            $scope.$apply();
+                        }
+                    };
+                    xhr.send(img);
+                });
+            });
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            }
+            else {
+                renderPage(num);
+            }
+        }
+        PDFJS.getDocument(url).then(function (pdfDoc_) {
+            pdfDoc = pdfDoc_;
+            // Initial/first page rendering
+            renderPage(pageNum);
+        });
+    }
+    //_____________________________________________________________
     function uploadComplete(evt) {}
 
     function uploadFailed(evt) {}
@@ -528,7 +603,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
             })
             //alert("The upload has been canceled by the user or the browser dropped the connection.")
     }
-    $scope.goBack = function () {
+    $scope.goToHome = function () {
         $location.path("/home");
     }
 });
@@ -540,7 +615,7 @@ app.controller("show", function ($scope, $http, $location, fileService) {
     jq('#showSection').hide();
     jq('#imageSection').hide();
     var user = sessionStorage.getItem("username");
-    $scope.goBack = function () {
+    $scope.goToHome = function () {
         $location.path("/home");
     }
     $scope.file = fileService.getFile();

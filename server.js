@@ -42,7 +42,10 @@ app.get("/", function (req, res) {
     res.sendFile(public + "index.html");
 });
 var AWS = require('aws-sdk');
-AWS.config.update({"accessKeyId": "AKIAICHHXLJ2FNLSXCKA", "secretAccessKey": "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"});
+AWS.config.update({
+    "accessKeyId": "AKIAICHHXLJ2FNLSXCKA"
+    , "secretAccessKey": "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"
+});
 var s3 = new AWS.S3();
 // ---------------------------------------------------------
 // get an instance of the router for api routes
@@ -113,24 +116,15 @@ apiRoutes.post('/createUser', function (req, res) {
             });
             newUser.save(function (err, newUser) {
                 if (err) return console.error(err);
-                if (!err) {
-                    console.log("New user saved tot db");
-                }
                 // CREATE S3 BUCKET FOR USER
                 s3.listBuckets(function (err, data) {
-                    if (err) {
-                        console.log("Error", err);
-                    }
-                    else {
-                        console.log("Bucket List", data.Buckets);
-                    }
+                    if (err) console.log("Error", err);
                 });
                 s3.createBucket({
                     Bucket: bucket
                 }, function () {
                     var fileBuffer = fs.readFileSync(__dirname + "/public/pdf/pdflogo.png");
                     var thumbFileName = "pdflogo.png";
-                    console.log("Writing to S3");
                     s3.putObject({
                         ACL: 'public-read'
                         , Bucket: bucket
@@ -139,7 +133,6 @@ apiRoutes.post('/createUser', function (req, res) {
                         , ContentType: 'image/png'
                     }, function (error, response) {
                         if (error) console.log(error);
-                        console.log("Successfully created Bucket for user " + bucket);
                     });
                 });
             });
@@ -248,7 +241,6 @@ apiRoutes.post('/upload', function (req, res, next) {
                                 s3.upload(params, function (err, data) {
                                     if (err) console.log(err)
                                     else {
-                                        //console.log("Succesfully added in bucket " + bucket);
                                         //
                                         var fileLocation;
                                         // Get Extension / Filetype
@@ -277,10 +269,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                                         //-------------------------------------------------
                                         var ft = fileType.toLowerCase();
                                         if (ft === "jpg" || ft === "png" || ft === "jpeg") {
-                                            console.log("CONVERTING JPG");
-                                            console.log("Getting file from " + fileLocation);
                                             jimp.read(fileLocation, function (err, image) {
-                                                console.log("CREATING THUMBNAIL");
                                                 if (err) throw err;
                                                 image.resize(242, 243) // resize
                                                     .quality(60) // set JPEG quality
@@ -294,29 +283,58 @@ apiRoutes.post('/upload', function (req, res, next) {
                                                             , Body: fileBuffer
                                                             , ContentType: 'image/jpg'
                                                         }, function (error, response) {
-                                                            console.log("thumbnail uploaded");
                                                             res.status(200).end();
                                                         });
                                                     });
                                             });
                                         }
                                         else {
-                                        //-------------------------------------------------
-                                        res.status(200).end();
-                                            }
+                                            //-------------------------------------------------
+                                            res.status(200).end();
+                                        }
                                     }
                                 });
                             });
-                            /*
-                            req.busboy.on('finish', function () {
-                                console.log("Upload succes!");
-                            });
-                            */
                         }
                     }
                 }
             });
         }
+    });
+});
+app.post('/pdfthumbnail', function (req, res, next) {
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    var filename = req.headers['filename'];
+    var dataString = '';
+    req.on('data', function (data) {
+        dataString += data;
+    });
+    req.on('end', function () {
+        var base64Data = dataString.replace(/^data:image\/png;base64,/, "");
+        require("fs").writeFile("temp.png", base64Data, 'base64', function (err) {
+            if (err) console.log(err);
+            else {
+                jimp.read("temp.png", function (err, image) {
+                    if (err) throw err;
+                    image.resize(242, 243) // resize
+                        .quality(60) // set JPEG quality
+                        .write("thumbnail.jpg", function () {
+                            var fileBuffer = fs.readFileSync("thumbnail.jpg");
+                            var thumbFileName = "thumb_" + filename + ".jpg";
+                            s3.putObject({
+                                ACL: 'public-read'
+                                , Bucket: bucket
+                                , Key: thumbFileName
+                                , Body: fileBuffer
+                                , ContentType: 'image/jpg'
+                            }, function (error, response) {
+                                res.status(200).end();
+                            });
+                        });
+                });
+            }
+        });
     });
 });
 app.get('/getfile', function (req, res, next) {
@@ -335,7 +353,6 @@ app.get('/getfile', function (req, res, next) {
     fileStream.pipe(res);
 });
 apiRoutes.post('/deleteaccount', function (req, res, next) {
-    console.log("POST OM ACCOUNT TE DELETEN");
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     console.log("Deleting account " + user);
@@ -354,12 +371,8 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
                 , Key: items[i].Key
             };
             s3.deleteObject(deleteParams, function (err, data) {
-                if (err) {
-                    console.log("delete err " + deleteParams.Key);
-                }
-                else {
-                    console.log("deleted " + deleteParams.Key);
-                }
+                if (err) console.log("delete err " + deleteParams.Key);
+
             });
         }
         s3.deleteBucket({
@@ -369,18 +382,15 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
                 console.log("error deleting bucket " + err);
             }
             else {
-                console.log("delete the bucket " + data);
                 File.find({
                     user: user
                 }).remove(function (err, data) {
                     if (err) console.log(err, err.stack);
-                    else console.log("succes");
                 });
                 User.findOne({
                     name: user
                 }).remove(function (err, data) {
                     if (err) console.log(err, err.stack);
-                    else console.log("succes");
                 });
                 res.status(200).end();
             }
@@ -410,7 +420,6 @@ apiRoutes.post('/deleteallfiles', function (req, res, next) {
                         console.log("delete err " + deleteParams.Key);
                     }
                     else {
-                        console.log("deleted " + deleteParams.Key);
                         File.find({
                             user: user
                         }).remove(function (err, data) {
@@ -424,11 +433,9 @@ apiRoutes.post('/deleteallfiles', function (req, res, next) {
     });
 });
 apiRoutes.post('/deletefile', function (req, res, next) {
-    console.log("POST OM FILE TE DELETEN");
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     var filename = req.headers['filename'];
-    console.log("Deleting file " + filename);
     //
     var params = {
         Bucket: bucket
@@ -443,12 +450,10 @@ apiRoutes.post('/deletefile', function (req, res, next) {
     s3.deleteObjects(params, function (err, data) {
         if (err) console.log(err, err.stack);
         else {
-            console.log('delete', data);
             File.findOne({
                 filename: filename
             }).remove(function (err, data) {
                 if (err) console.log(err, err.stack);
-                else console.log("succes");
             });
             //
             res.status(200).end();
@@ -463,7 +468,6 @@ apiRoutes.get('/getFiles', function (req, res) {
         collection.find({
             user: user
         }).toArray(function (err, data) {
-            //console.log(data); // it will print your collection data
             files.push(data);
             return res.status(200).send({
                 files: files

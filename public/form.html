@@ -2,16 +2,23 @@
     <div id="uploadMain">
         <div id="filesection">
             <div id="title">
+                <button class="btn btn-primary" style="float: left" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
                 <h1>Upload a file</h1></div>
             <div class="col-lg-6 col-md-6 col-xs-12" id="files">
                 <!--class="row"-->
                 <h4>Select a File to Upload</h4>
                 <div id="selectFile">
-                    <input type="file" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" /> </div>
+                    <input type="file" ng-click="updateFile()" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" /> </div>
             </div>
             <div class="col-lg-6 col-md-6 col-xs-12" id="files">
                 <h4>Drop files here</h4>
                 <div id="dropbox" class="dropbox" ng-class="dropClass"><span class="glyphicon glyphicon-inbox" id="drop"></span></div>
+            </div>
+            <div id="uploadError">
+                <h3>Oops, sorry...</h3>
+                <p>We coundn't upload your file because this filetype is not supported.</p>
+                <p>Only these filetypes are supported: PDF - JPG - JPEG - PNG .</p>
+                <p>Please select another file.</p>                
             </div>
             <div class="col-md-12 col-xs-12" id="specsFile">
                 <p>Enter custom filename (leave blank to keep original filename):
@@ -41,7 +48,7 @@
             <h1>Oops, sorry...</h1>
             <h3>We coundn't upload your file because it would exceed your non-premium storage limit.</h3>
             <h3>Please become a premium member to enjoy unlimited storage space.</h3>
-            <button class="btn btn-primary float-right" ng-click="goBack()">Go back to home</button>
+            <button class="btn btn-primary" ng-click="goToHome()">Go back to home</button>
         </div>
+        <canvas id="the-canvas" style="display: none;" height="633" width="489"></canvas>
     </div>
-</div>
