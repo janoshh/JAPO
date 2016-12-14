@@ -10,7 +10,7 @@ var File = require('./models/file');
 var fs = require('fs');
 var busboy = require('connect-busboy');
 var jimp = require("jimp");
-var port = process.env.PORT || 8080;
+var port = 80;
 //
 // Max Capacity of non-premium member:
 var maxCapacity = 100000000
