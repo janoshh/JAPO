@@ -541,7 +541,7 @@ app.controller("show", function ($scope, $http, $location, fileService) {
         $location.path("/home");
     }
     $scope.file = fileService.getFile();
-    var url = "http://localhost:8080/getfile?file=" + $scope.file.name + "&user=" + user;
+    var url = "/getfile?file=" + $scope.file.name + "&user=" + user;
     var pdfDoc = null
         , pageNum = 1
         , pageRendering = false
