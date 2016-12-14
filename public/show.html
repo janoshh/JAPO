@@ -1,12 +1,20 @@
 <div ng-controller="show">
-    <a ng-click="goBack()"><h3><span class="glyphicon glyphicon-menu-left"></span>  Home</h3></a>
-    <h1>{{file.customfilename}}</h1>
-    <div>
-        <button id="prev">Previous</button>
-        <button id="next">Next</button> <span>Page: <span id="page_num">0</span> / <span id="page_count">0</span></span>
+    <div class="col-lg-3">
+        <button class="btn btn-primary" ng-click="goBack()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
+        <h1>{{file.customfilename}}</h1>
+        <br>
+        <button class="btn btn-primary" id="prev">Previous</button>
+        <button class="btn btn-primary" id="next">Next</button>
     </div>
-    <div>
+</div>
+<div class="col-lg-9">
+    <div id="loading">
+        <h2>Loading document...</h2> <img src="processing.gif"> 
+    </div>
+    <div id="showSection">
+        <h3>Page: <span id="page_num">0</span> / <span id="page_count">0</span></h3>
         <canvas id="the-canvas" style="border:1px solid black" height="633" width="489"></canvas>
     </div>
     <script src="pdf.js"></script>
+    <div id="imageSection" style="height: 800px;"></div>
 </div>

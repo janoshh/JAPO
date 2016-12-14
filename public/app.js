@@ -536,140 +536,164 @@ app.controller("uploadController", function ($scope, $http, $location) {
 //show controller
 //----------------------
 app.controller("show", function ($scope, $http, $location, fileService) {
+    jq("#loading").show();
+    jq('#showSection').hide();
+    jq('#imageSection').hide();
     var user = sessionStorage.getItem("username");
     $scope.goBack = function () {
         $location.path("/home");
     }
     $scope.file = fileService.getFile();
-    var url = "/getfile?file=" + $scope.file.name + "&user=" + user;
-    var pdfDoc = null
-        , pageNum = 1
-        , pageRendering = false
-        , pageNumPending = null
-        , scale = 0.8
-        , canvas = document.getElementById('the-canvas')
-        , ctx = canvas.getContext('2d');
-    /**
-     * Get page info from document, resize canvas accordingly, and render page.
-     * @param num Page number.
-     */
-    function renderPage(num) {
-        pageRendering = true;
-        // Using promise to fetch the page
-        pdfDoc.getPage(num).then(function (page) {
-            var viewport = page.getViewport(scale);
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            // Render PDF page into canvas context
-            var renderContext = {
-                canvasContext: ctx
-                , viewport: viewport
-            };
-            var renderTask = page.render(renderContext);
-            // Wait for rendering to finish
-            renderTask.promise.then(function () {
-                pageRendering = false;
-                if (pageNumPending !== null) {
-                    // New page rendering is pending
-                    renderPage(pageNumPending);
-                    pageNumPending = null;
-                }
+    console.log($scope.file.filetype);
+    if ($scope.file.filetype === "PDF") {
+        console.log("'t is een PDF");
+        showPdf();
+    }
+    else {
+        console.log("'t is een afbeelding");
+        var img = document.createElement("img");
+        img.setAttribute("src", $scope.file.location);
+        img.setAttribute("height", "100%");
+        img.setAttribute("width", "auto");
+        img.setAttribute("alt", $scope.file.customfilename);
+        document.getElementById("imageSection").appendChild(img);
+        jq("#loading").hide();
+        jq('#imageSection').show();
+    }
+
+    function showPdf() {
+        var url = "/getfile?file=" + $scope.file.name + "&user=" + user;
+        var pdfDoc = null
+            , pageNum = 1
+            , pageRendering = false
+            , pageNumPending = null
+            , scale = 1
+            , canvas = document.getElementById('the-canvas')
+            , ctx = canvas.getContext('2d');
+        /**
+         * Get page info from document, resize canvas accordingly, and render page.
+         * @param num Page number.
+         */
+        function renderPage(num) {
+            pageRendering = true;
+            // Using promise to fetch the page
+            pdfDoc.getPage(num).then(function (page) {
+                var viewport = page.getViewport(scale);
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                // Render PDF page into canvas context
+                var renderContext = {
+                    canvasContext: ctx
+                    , viewport: viewport
+                };
+                var renderTask = page.render(renderContext);
+                // Wait for rendering to finish
+                renderTask.promise.then(function () {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        // New page rendering is pending
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
             });
+            // Update page counters
+            document.getElementById('page_num').textContent = pageNum;
+        }
+        /**
+         * If another page rendering in progress, waits until the rendering is
+         * finised. Otherwise, executes rendering immediately.
+         */
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            }
+            else {
+                renderPage(num);
+            }
+        }
+        /**
+         * Displays previous page.
+         */
+        function onPrevPage() {
+            if (pageNum <= 1) {
+                return;
+            }
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+        document.getElementById('prev').addEventListener('click', onPrevPage);
+        /**
+         * Displays next page.
+         */
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) {
+                return;
+            }
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+        document.getElementById('next').addEventListener('click', onNextPage);
+        /**
+         * Asynchronously downloads PDF.
+         */
+        PDFJS.getDocument(url).then(function (pdfDoc_) {
+            pdfDoc = pdfDoc_;
+            document.getElementById('page_count').textContent = pdfDoc.numPages;
+            // Initial/first page rendering
+            renderPage(pageNum);
+            jq("#loading").hide();
+            jq('#showSection').show();
         });
-        // Update page counters
-        document.getElementById('page_num').textContent = pageNum;
-    }
-    /**
-     * If another page rendering in progress, waits until the rendering is
-     * finised. Otherwise, executes rendering immediately.
-     */
-    function queueRenderPage(num) {
-        if (pageRendering) {
-            pageNumPending = num;
-        }
-        else {
-            renderPage(num);
-        }
-    }
-    /**
-     * Displays previous page.
-     */
-    function onPrevPage() {
-        if (pageNum <= 1) {
-            return;
-        }
-        pageNum--;
-        queueRenderPage(pageNum);
-    }
-    document.getElementById('prev').addEventListener('click', onPrevPage);
-    /**
-     * Displays next page.
-     */
-    function onNextPage() {
-        if (pageNum >= pdfDoc.numPages) {
-            return;
-        }
-        pageNum++;
-        queueRenderPage(pageNum);
-    }
-    document.getElementById('next').addEventListener('click', onNextPage);
-    /**
-     * Asynchronously downloads PDF.
-     */
-    PDFJS.getDocument(url).then(function (pdfDoc_) {
-        pdfDoc = pdfDoc_;
-        document.getElementById('page_count').textContent = pdfDoc.numPages;
-        // Initial/first page rendering
-        renderPage(pageNum);
-    });
-    /* -------------------------------
-    text extracten uit pdf voor search
-    ---------------------------------*/
-    //functie uitvoeren als pdf geladen is nog implementeren ..
-    this.pdfToText = function (data, callbackPageDone, callbackAllDone) {
-        console.assert(url instanceof ArrayBuffer || typeof url == 'string');
-        PDFJS.getDocument(url).then(function (pdf) {
-            var full_text = "";
-            var total = pdf.numPages;
-            callbackPageDone(0, total);
-            var layers = {};
-            for (i = 1; i <= total; i++) {
-                pdf.getPage(i).then(function (page) {
-                    var n = page.pageNumber;
-                    page.getTextContent().then(function (textContent) {
-                        if (null != textContent.items) {
-                            var page_text = "";
-                            var last_block = null;
-                            for (var k = 0; k < textContent.items.length; k++) {
-                                var block = textContent.items[k];
-                                if (last_block != null && last_block.str[last_block.str.length - 1] != ' ') {
-                                    if (block.x < last_block.x) page_text += "\r\n";
-                                    else if (last_block.y != block.y && (last_block.str.match(/^(\s?[a-zA-Z])$|^(.+\s[a-zA-Z])$/) == null)) page_text += ' ';
+        /* -------------------------------
+        text extracten uit pdf voor search
+        ---------------------------------*/
+        //functie uitvoeren als pdf geladen is nog implementeren ..
+        this.pdfToText = function (data, callbackPageDone, callbackAllDone) {
+            console.assert(url instanceof ArrayBuffer || typeof url == 'string');
+            PDFJS.getDocument(url).then(function (pdf) {
+                var full_text = "";
+                var total = pdf.numPages;
+                callbackPageDone(0, total);
+                var layers = {};
+                for (i = 1; i <= total; i++) {
+                    pdf.getPage(i).then(function (page) {
+                        var n = page.pageNumber;
+                        page.getTextContent().then(function (textContent) {
+                            if (null != textContent.items) {
+                                var page_text = "";
+                                var last_block = null;
+                                for (var k = 0; k < textContent.items.length; k++) {
+                                    var block = textContent.items[k];
+                                    if (last_block != null && last_block.str[last_block.str.length - 1] != ' ') {
+                                        if (block.x < last_block.x) page_text += "\r\n";
+                                        else if (last_block.y != block.y && (last_block.str.match(/^(\s?[a-zA-Z])$|^(.+\s[a-zA-Z])$/) == null)) page_text += ' ';
+                                    }
+                                    page_text += block.str;
+                                    last_block = block;
                                 }
-                                page_text += block.str;
-                                last_block = block;
+                                textContent != null && console.log("page " + n + " finished."); //" content: \n" + page_text);
+                                layers[n] = page_text + "\n\n";
                             }
-                            textContent != null && console.log("page " + n + " finished."); //" content: \n" + page_text);
-                            layers[n] = page_text + "\n\n";
-                        }
-                        ++self.complete;
-                        callbackPageDone(self.complete, total);
-                        if (self.complete == total) {
-                            window.setTimeout(function () {
-                                var num_pages = Object.keys(layers).length;
-                                for (var j = 1; j <= num_pages; j++) full_text += layers[j];
-                                callbackAllDone(full_text);
-                                console.log(full_text);
-                            }, 1000);
-                        }
-                    }); // end  of page.getTextContent().then
-                }); // end of page.then
-            } // of for
-        });
-    }; // end of pdfToText()
-    //zoeken in full_text  string en krijgt plaatsnummer terug
-    $scope.searchPDF = function () {
-        var result = full_text.search(document.getElementById('searchBox').value);
+                            ++self.complete;
+                            callbackPageDone(self.complete, total);
+                            if (self.complete == total) {
+                                window.setTimeout(function () {
+                                    var num_pages = Object.keys(layers).length;
+                                    for (var j = 1; j <= num_pages; j++) full_text += layers[j];
+                                    callbackAllDone(full_text);
+                                    console.log(full_text);
+                                }, 1000);
+                            }
+                        }); // end  of page.getTextContent().then
+                    }); // end of page.then
+                } // of for
+            });
+        }; // end of pdfToText()
+        //zoeken in full_text  string en krijgt plaatsnummer terug
+        $scope.searchPDF = function () {
+            var result = full_text.search(document.getElementById('searchBox').value);
+        }
     }
 });
 //
