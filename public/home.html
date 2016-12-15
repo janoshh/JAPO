@@ -37,7 +37,7 @@
             <h3>{{documentsMessage}}</h3></div>
         <div id="collection">
             <div ng-show="nsName && nsTag && nsDate">
-                <div ng-repeat="pdfItem in fileList" class="collectionItem well well-sm" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}">
+                <div ng-repeat="pdfItem in fileList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
                     <h4>{{pdfItem.customfilename}}
             <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"> </a>
             <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>

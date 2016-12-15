@@ -158,3 +158,8 @@ tr:nth-child(even) {
 #selectFile{
     margin-left: 10%;
 }
+
+.gridItem:hover {
+    background-color: cadetblue;
+    border-radius: 10px;
+}

@@ -175,7 +175,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 if (customfilename.lastIndexOf('.') > 0) {
                     customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
                 }
-                if (customfilename.length > 25) {
+                if (customfilename.length > 15) {
                     customfilename = customfilename.substring(0, 15) + "...";
                 }
                 var humansize = humanFileSize(fileList[i].size, true);
@@ -506,6 +506,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
                     }
                 }
                 if (xhr.status === 409) {
+                    console.log("ERRORRRRR");
                     jq("#processinggif").hide();
                     jq('#notEnoughSpace').show();
                 }
