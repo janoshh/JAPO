@@ -478,7 +478,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         for (var i in $scope.files) {
             fd.append("uploadedFile", $scope.files[i]);
         }
-        var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.')+1);
+        var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.') + 1);
         console.log(fileType);
         if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {
             var token = sessionStorage.getItem("japo-token");
@@ -497,11 +497,13 @@ app.controller("uploadController", function ($scope, $http, $location) {
             $scope.progressVisible = true
             xhr.onload = function () {
                 if (xhr.status === 200) {
-                    //$location.path("/home");
-                    //$scope.$apply();
-                    console.log("Uploading complete, showing pdf... ");
-                    console.log($scope.files[0].name);
-                    showPdf($scope.files[0].name);
+                    if (fileType === "pdf") {
+                        showPdf($scope.files[0].name);
+                    }
+                    else {
+                        $location.path("/home");
+                        $scope.$apply();
+                    }
                 }
                 if (xhr.status === 409) {
                     jq("#processinggif").hide();
