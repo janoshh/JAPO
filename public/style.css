@@ -80,7 +80,7 @@ tr:nth-child(even) {
     height: 200px;
     margin: 10px;
 }
-.collectionItem > img {
+.collectionItem  >  img {
     border-radius: 15%;
     margin-left: auto;
     margin-right: auto;
@@ -160,6 +160,29 @@ tr:nth-child(even) {
 }
 
 .gridItem:hover {
-    background-color: cadetblue;
+    background-color: beige;
     border-radius: 10px;
 }
+
+.gridItemBG {
+    width: 100%;
+    height: 100%;
+}
+
+.gridItem > a {
+    position: relative;
+    top: -175px;
+    left: 20px;
+    visibility: hidden;
+}
+
+.gridItem:hover > a {
+    visibility: visible;
+    margin-right: 30px;
+}
+
+.gridItem:hover > a > img {
+    width: 20%;
+    height: auto;
+}
+

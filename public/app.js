@@ -113,7 +113,9 @@ app.controller("registerController", function ($scope, $http, $location) {
                 , "email": email
                 , "password": password
             }).success(function (post) {
-                $location.path("/registered");
+                sessionStorage.setItem('japo-token', post.token);
+                sessionStorage.setItem('username', email);
+                $location.path("/home/");
             });
         }
     }
@@ -155,7 +157,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
 
     function getFiles() {
         $scope.capacityUsed = 0;
-        console.log("Getting Files");
         $http({
             method: 'GET'
             , url: '/api/getFiles'
@@ -641,13 +642,7 @@ app.controller("show", function ($scope, $http, $location, fileService) {
 
     function showPdf() {
         var url = "/getfile?file=" + $scope.file.name + "&user=" + user;
-        var pdfDoc = null
-            , pageNum = 1
-            , pageRendering = false
-            , pageNumPending = null
-            , scale = 1
-            , canvas = document.getElementById('the-canvas')
-            , ctx = canvas.getContext('2d');
+        pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 1, canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
         /**
          * Get page info from document, resize canvas accordingly, and render page.
          * @param num Page number.

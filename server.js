@@ -61,7 +61,6 @@ apiRoutes.post('/authenticate', function (req, res) {
         name: req.body.name
     }, function (err, user) {
         if (err) throw err;
-        debugger;
         if (!user) {
             res.status(422);
             res.json({
@@ -84,7 +83,6 @@ apiRoutes.post('/authenticate', function (req, res) {
                 var token = jwt.sign(user, app.get('superSecret'), {
                     expiresIn: 86400 // expires in 24 hours
                 });
-                //res.redirect(public + "home.html");
                 res.status(200);
                 res.json({
                     success: true
@@ -117,27 +115,21 @@ apiRoutes.post('/createUser', function (req, res) {
             newUser.save(function (err, newUser) {
                 if (err) return console.error(err);
                 // CREATE S3 BUCKET FOR USER
-                s3.listBuckets(function (err, data) {
-                    if (err) console.log("Error", err);
-                });
                 s3.createBucket({
                     Bucket: bucket
                 }, function () {
-                    var fileBuffer = fs.readFileSync(__dirname + "/public/pdf/pdflogo.png");
-                    var thumbFileName = "pdflogo.png";
-                    s3.putObject({
-                        ACL: 'public-read'
-                        , Bucket: bucket
-                        , Key: thumbFileName
-                        , Body: fileBuffer
-                        , ContentType: 'image/png'
-                    }, function (error, response) {
-                        if (error) console.log(error);
+                    var token = jwt.sign(name, app.get('superSecret'));
+                    res.status(200);
+                    res.json({
+                        success: true
+                        , message: 'Enjoy your token!'
+                        , token: token
                     });
                 });
             });
         }
         else {
+            res.status(409);
             res.json({
                 success: false
                 , message: 'This email address is already been used.'
@@ -372,7 +364,6 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
             };
             s3.deleteObject(deleteParams, function (err, data) {
                 if (err) console.log("delete err " + deleteParams.Key);
-
             });
         }
         s3.deleteBucket({
@@ -414,21 +405,19 @@ apiRoutes.post('/deleteallfiles', function (req, res, next) {
                 Bucket: bucket
                 , Key: items[i].Key
             };
-            if (deleteParams.Key != "pdflogo.png") {
-                s3.deleteObject(deleteParams, function (err, data) {
-                    if (err) {
-                        console.log("delete err " + deleteParams.Key);
-                    }
-                    else {
-                        File.find({
-                            user: user
-                        }).remove(function (err, data) {
-                            if (err) console.log(err, err.stack);
-                        });
-                        res.status(200).end();
-                    }
-                });
-            }
+            s3.deleteObject(deleteParams, function (err, data) {
+                if (err) {
+                    console.log("delete err " + deleteParams.Key);
+                }
+                else {
+                    File.find({
+                        user: user
+                    }).remove(function (err, data) {
+                        if (err) console.log(err, err.stack);
+                    });
+                    res.status(200).end();
+                }
+            });
         }
     });
 });
