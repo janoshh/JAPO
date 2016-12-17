@@ -18,7 +18,7 @@
                 <h3>Oops, sorry...</h3>
                 <p>We coundn't upload your file because this filetype is not supported.</p>
                 <p>Only these filetypes are supported: PDF - JPG - JPEG - PNG .</p>
-                <p>Please select another file.</p>                
+                <p>Please select another file.</p>
             </div>
             <div class="col-md-12 col-xs-12" id="specsFile">
                 <p>Enter custom filename (leave blank to keep original filename):
@@ -39,10 +39,14 @@
             </div>
         </div>
         <div id="processinggif" class="row">
-            <h1>Processing</h1>
             <div ng-show="files.length">
                 <div ng-repeat="file in files.slice(0)">
-                    <h2>{{file.webkitRelativePath || file.name}}</h2> </div> <img src="/processing.gif"> </div>
+                    <h1>Processing {{file.webkitRelativePath || file.name}}</h1> </div>
+                <h2>{{currentAction}}</h2> 
+                <h4 ng-show="largeFile">This is a large file and can take longer to process. 
+                    <br>
+                    Please wait...</h4>
+                <img src="/processing.gif"> </div>
         </div>
         <div id="notEnoughSpace">
             <h1>Oops, sorry...</h1>

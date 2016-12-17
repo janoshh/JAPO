@@ -249,6 +249,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                                             , date: Date.now()
                                             , tags: tags
                                             , location: fileLocation
+                                            , content: ""
                                         });
                                         file.save(function (err, userObj) {
                                             if (err) {
@@ -327,6 +328,26 @@ app.post('/pdfthumbnail', function (req, res, next) {
                 });
             }
         });
+    });
+});
+app.post('/pdftext', function (req, res, next) {
+    console.log("UPDATING!");
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    var filename = req.headers['filename'];
+    var dataString = '';
+    req.on('data', function (data) {
+        dataString += data;
+    });
+    req.on('end', function () {
+        File.findOne({
+            user: user
+            , filename: filename
+        }, function (err, doc) {
+            doc.content = dataString;
+            doc.save();
+        });
+        res.status(200).end();
     });
 });
 app.get('/getfile', function (req, res, next) {

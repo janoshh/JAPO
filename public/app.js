@@ -141,6 +141,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.nsName = true;
     $scope.nsTag = true;
     $scope.nsDate = true;
+    $scope.nsContent = true;
     var token = sessionStorage.getItem("japo-token");
     var user = sessionStorage.getItem("username");
     var listOrGrid = sessionStorage.getItem("listOrGrid");
@@ -166,7 +167,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             }
         }).then(function (response) {
             fileList = response.data.files[0];
-            console.log(fileList);
             for (i = 0; i < fileList.length; i++) {
                 var name = fileList[i].filename;
                 var customfilename = fileList[i].customfilename;
@@ -197,8 +197,9 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 else {
                     var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
                 }
+                var content = fileList[i].content;
                 var file = {
-                    name, customfilename, size, humansize, thumbnail, date, tags, location, filetype
+                    name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content
                 };
                 $scope.fileList.push(file);
             }
@@ -346,7 +347,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.downloadFile = function (file) {
         var title = file.name;
-        console.log(title);
         $http({
             method: 'GET'
             , url: '/getfile?file=' + file.name + '&user=' + user
@@ -364,7 +364,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             document.body.appendChild(a);
             a.click();
         }).error(function (data, status, headers, config) {
-            console.log(data);
         });
     }
     $scope.searchChange = function () {
@@ -372,10 +371,12 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         var customNameList = [];
         var tagList = [];
         var dateList = [];
+        var contentList = [];
         if (text != "") { // || text != null || $scope.fileList != null
             $scope.nsName = false;
             $scope.nsTag = false;
             $scope.nsDate = false;
+            $scope.nsContent = false;
             for (i = 0; i < $scope.fileList.length; i++) {
                 if ($scope.fileList[i].customfilename.toLowerCase().indexOf(text.toLowerCase()) > -1) {
                     customNameList.push($scope.fileList[i]);
@@ -386,10 +387,14 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 if ($scope.fileList[i].date.toLowerCase().indexOf(text.toLowerCase()) > -1) {
                     dateList.push($scope.fileList[i]);
                 }
+                if ($scope.fileList[i].content.toLowerCase().indexOf(text.toLowerCase()) > -1) {
+                    contentList.push($scope.fileList[i]);
+                }
             }
             $scope.sortedNameList = customNameList;
             $scope.sortedTagList = tagList;
             $scope.sortedDateList = dateList;
+            $scope.sortedContentList = contentList;
             if (customNameList == null || customNameList == "") {
                 $scope.nsName = true;
             }
@@ -399,11 +404,15 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             if (dateList == null || dateList == "") {
                 $scope.nsDate = true;
             }
+            if (contentList == null || contentList == "") {
+                $scope.nsContent = true;
+            }
         }
         else {
             $scope.nsName = true;
             $scope.nsTag = true;
             $scope.nsDate = true;
+            $scope.nsContent = true;
         }
     }
 });
@@ -415,6 +424,8 @@ app.controller("uploadController", function ($scope, $http, $location) {
     jq('#notEnoughSpace').hide();
     jq("#processinggif").hide();
     jq("#uploadError").hide();
+    $scope.currentAction = "";
+    $scope.largeFile = false;
     //============== DRAG & DROP =============
     var dropbox = document.getElementById("dropbox")
         // init event handlers
@@ -439,7 +450,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
         })
     }, false)
     dropbox.addEventListener("drop", function (evt) {
-            console.log('drop evt:', JSON.parse(JSON.stringify(evt.dataTransfer)))
             evt.stopPropagation()
             evt.preventDefault()
             $scope.$apply(function () {
@@ -459,7 +469,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
         //============== DRAG & DROP =============
     $scope.setFiles = function (element) {
         $scope.$apply(function (scope) {
-            console.log('files:', element.files);
             // Turn the FileList object into an Array
             $scope.files = []
             for (var i = 0; i < element.files.length; i++) {
@@ -469,7 +478,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
         });
     };
     $scope.updateFile = function () {
-        console.log("updaten");
         jq("#uploadError").hide();
     }
     $scope.tags;
@@ -479,9 +487,15 @@ app.controller("uploadController", function ($scope, $http, $location) {
         for (var i in $scope.files) {
             fd.append("uploadedFile", $scope.files[i]);
         }
-        var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.') + 1);
-        console.log(fileType);
+        var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.') + 1).toLowerCase();        
         if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {
+            console.log($scope.files[0]);
+            console.log("FILESIZE = "+($scope.files[0].size));
+            
+            if ((($scope.files[0].size/1024)/1024) > 3) {
+                $scope.largeFile = true;
+            }
+            console.log($scope.largeFile);
             var token = sessionStorage.getItem("japo-token");
             var user = sessionStorage.getItem("username");
             var xhr = new XMLHttpRequest()
@@ -499,6 +513,8 @@ app.controller("uploadController", function ($scope, $http, $location) {
             xhr.onload = function () {
                 if (xhr.status === 200) {
                     if (fileType === "pdf") {
+                        $scope.currentAction = "Processing PDF...";
+                        $scope.$apply();
                         showPdf($scope.files[0].name);
                     }
                     else {
@@ -507,12 +523,13 @@ app.controller("uploadController", function ($scope, $http, $location) {
                     }
                 }
                 if (xhr.status === 409) {
-                    console.log("ERRORRRRR");
                     jq("#processinggif").hide();
                     jq('#notEnoughSpace').show();
                 }
             };
             xhr.send(fd)
+            $scope.currentAction = "Uploading...";
+            $scope.$apply();
         }
         else {
             jq("#uploadError").show();
@@ -564,20 +581,41 @@ app.controller("uploadController", function ($scope, $http, $location) {
                         renderPage(pageNumPending);
                         pageNumPending = null;
                     }
-                    var canvas = document.getElementById("the-canvas");
-                    var img = canvas.toDataURL("image/png");
-                    var user = sessionStorage.getItem("username");
-                    var xhr = new XMLHttpRequest()
-                    xhr.open("POST", "/pdfthumbnail");
-                    xhr.setRequestHeader("user", user);
-                    xhr.setRequestHeader("filename", fname);
-                    xhr.onload = function () {
-                        if (xhr.status === 200) {
-                            $location.path("/home");
-                            $scope.$apply();
-                        }
-                    };
-                    xhr.send(img);
+                    // GET TEXT OUT OF PDF
+                    // -------------------
+                    pdfToText(pdfDoc, function (text) {
+                        $scope.currentAction = "Analyzing text in PDF...";
+                        $scope.$apply();
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("POST", "/pdftext");
+                        xhr.setRequestHeader("user", user);
+                        xhr.setRequestHeader("filename", fname);
+                        xhr.onload = function () {
+                            if (xhr.status === 200) {
+                                pdfthumbnail();
+                            }
+                        };
+                        xhr.send(text);
+                    });
+                    //
+                    function pdfthumbnail() {
+                        $scope.currentAction = "Creating thumbnail...";
+                        $scope.$apply();
+                        var canvas = document.getElementById("the-canvas");
+                        var img = canvas.toDataURL("image/png");
+                        var user = sessionStorage.getItem("username");
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("POST", "/pdfthumbnail");
+                        xhr.setRequestHeader("user", user);
+                        xhr.setRequestHeader("filename", fname);
+                        xhr.onload = function () {
+                            if (xhr.status === 200) {
+                                $location.path("/home");
+                                $scope.$apply();
+                            }
+                        };
+                        xhr.send(img);
+                    }
                 });
             });
         }
@@ -595,6 +633,46 @@ app.controller("uploadController", function ($scope, $http, $location) {
             // Initial/first page rendering
             renderPage(pageNum);
         });
+
+        function pdfToText(data, callbackAllDone) {
+            complete = 0;
+            console.assert(url instanceof ArrayBuffer || typeof url == 'string');
+            PDFJS.getDocument(url).then(function (pdf) {
+                var full_text = "";
+                var total = pdf.numPages;
+                var layers = {};
+                for (i = 1; i <= total; i++) {
+                    pdf.getPage(i).then(function (page) {
+                        var n = page.pageNumber;
+                        page.getTextContent().then(function (textContent) {
+                            if (null != textContent.items) {
+                                var page_text = "";
+                                var last_block = null;
+                                for (var k = 0; k < textContent.items.length; k++) {
+                                    var block = textContent.items[k];
+                                    if (last_block != null && last_block.str[last_block.str.length - 1] != ' ') {
+                                        if (block.x < last_block.x) page_text += "\r\n";
+                                        else if (last_block.y != block.y && (last_block.str.match(/^(\s?[a-zA-Z])$|^(.+\s[a-zA-Z])$/) == null)) page_text += ' ';
+                                    }
+                                    page_text += block.str;
+                                    last_block = block;
+                                }
+                                //textContent != null && console.log("page " + n + " finished."); //" content: \n" + page_text);
+                                layers[n] = page_text + "\n\n";
+                            }
+                            ++complete;
+                            if (complete == total) {
+                                window.setTimeout(function () {
+                                    var num_pages = Object.keys(layers).length;
+                                    for (var j = 1; j <= num_pages; j++) full_text += layers[j];
+                                    callbackAllDone(full_text);
+                                }, 1000);
+                            }
+                        }); // end  of page.getTextContent().then
+                    }); // end of page.then
+                } // of for
+            });
+        }; // end of pdfToText()
     }
     //_____________________________________________________________
     function uploadComplete(evt) {}
@@ -623,13 +701,10 @@ app.controller("show", function ($scope, $http, $location, fileService) {
         $location.path("/home");
     }
     $scope.file = fileService.getFile();
-    console.log($scope.file.filetype);
     if ($scope.file.filetype === "PDF") {
-        console.log("'t is een PDF");
         showPdf();
     }
     else {
-        console.log("'t is een afbeelding");
         var img = document.createElement("img");
         img.setAttribute("src", $scope.file.location);
         img.setAttribute("height", "100%");
@@ -718,55 +793,6 @@ app.controller("show", function ($scope, $http, $location, fileService) {
             jq("#loading").hide();
             jq('#showSection').show();
         });
-        /* -------------------------------
-        text extracten uit pdf voor search
-        ---------------------------------*/
-        //functie uitvoeren als pdf geladen is nog implementeren ..
-        this.pdfToText = function (data, callbackPageDone, callbackAllDone) {
-            console.assert(url instanceof ArrayBuffer || typeof url == 'string');
-            PDFJS.getDocument(url).then(function (pdf) {
-                var full_text = "";
-                var total = pdf.numPages;
-                callbackPageDone(0, total);
-                var layers = {};
-                for (i = 1; i <= total; i++) {
-                    pdf.getPage(i).then(function (page) {
-                        var n = page.pageNumber;
-                        page.getTextContent().then(function (textContent) {
-                            if (null != textContent.items) {
-                                var page_text = "";
-                                var last_block = null;
-                                for (var k = 0; k < textContent.items.length; k++) {
-                                    var block = textContent.items[k];
-                                    if (last_block != null && last_block.str[last_block.str.length - 1] != ' ') {
-                                        if (block.x < last_block.x) page_text += "\r\n";
-                                        else if (last_block.y != block.y && (last_block.str.match(/^(\s?[a-zA-Z])$|^(.+\s[a-zA-Z])$/) == null)) page_text += ' ';
-                                    }
-                                    page_text += block.str;
-                                    last_block = block;
-                                }
-                                textContent != null && console.log("page " + n + " finished."); //" content: \n" + page_text);
-                                layers[n] = page_text + "\n\n";
-                            }
-                            ++self.complete;
-                            callbackPageDone(self.complete, total);
-                            if (self.complete == total) {
-                                window.setTimeout(function () {
-                                    var num_pages = Object.keys(layers).length;
-                                    for (var j = 1; j <= num_pages; j++) full_text += layers[j];
-                                    callbackAllDone(full_text);
-                                    console.log(full_text);
-                                }, 1000);
-                            }
-                        }); // end  of page.getTextContent().then
-                    }); // end of page.then
-                } // of for
-            });
-        }; // end of pdfToText()
-        //zoeken in full_text  string en krijgt plaatsnummer terug
-        $scope.searchPDF = function () {
-            var result = full_text.search(document.getElementById('searchBox').value);
-        }
     }
 });
 //
