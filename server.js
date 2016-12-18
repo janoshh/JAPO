@@ -42,10 +42,6 @@ app.get("/", function (req, res) {
     res.sendFile(public + "index.html");
 });
 var AWS = require('aws-sdk');
-AWS.config.update({
-    "accessKeyId": "AKIAICHHXLJ2FNLSXCKA"
-    , "secretAccessKey": "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"
-});
 var s3 = new AWS.S3();
 // ---------------------------------------------------------
 // get an instance of the router for api routes
