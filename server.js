@@ -13,9 +13,9 @@ var jimp = require("jimp");
 var port = 80;
 //
 // Max Capacity of non-premium member:
-var maxCapacity = 100000000
-    //
-    // connect to database
+var maxCapacity = 100000000;
+//
+// connect to database
 mongoose.connect(config.database);
 //
 // Connect to database;
@@ -185,6 +185,8 @@ apiRoutes.post('/upload', function (req, res, next) {
     var fileSize = req.headers['file-size'];
     var user = req.headers['user'];
     var capacityUsed = 0;
+    console.log(fileSize);
+    console.log(user);
     // Check is non-premium user has enough storage capacity left to upload new file
     File.find({
         user: user
@@ -209,6 +211,8 @@ apiRoutes.post('/upload', function (req, res, next) {
                             var bucket = user.replace("@", "-");
                             var tags = req.headers['tags'];
                             var customFilename = req.headers['customfilename'];
+                            console.log(tags);
+                            console.log(customFilename);
                             var metadata = {
                                 "x-amz-meta-tags": tags
                             };
@@ -291,6 +295,126 @@ apiRoutes.post('/upload', function (req, res, next) {
         }
     });
 });
+
+function compareAllFiles(user, filename, currentContent) {
+    File.find({
+        user: user
+    }, function (err, files) {
+        var newFile;
+        for (i = 0; i < files.length; i++) {
+            if (files[i].filename === filename) {
+                newFile = i;
+            }
+        }
+        var f1 = currentContent;
+        var links = [];
+        for (i = 0; i < files.length; i++) {
+            var linkName = files[i].filename;
+            var currentName = files[newFile].filename;
+            if (currentName != linkName) {
+                var f2 = files[i].content;
+                var match = Math.round(comareFiles(f1, f2) * 100);
+                if (match > 60) {
+                    links.push(linkName);
+                }
+            }
+        }
+        console.log(links);
+        File.findOne({
+            user: user
+            , filename: currentName
+        }, function (err, doc) {
+            for (j = 0; j < links.length; j++) {
+                doc.links.push(links[j]);
+            }
+            doc.save();
+        });
+        for (j = 0; j < links.length; j++) {
+            var index = j;
+            File.findOne({
+                user: user
+                , filename: links[j]
+            }, function (err, doc) {
+                doc.links.push(currentName);
+                doc.save();
+            });
+        }
+    });
+}
+
+function comareFiles(s1, s2) {
+    var longer = s1;
+    var shorter = s2;
+    if (s1.length < s2.length) {
+        longer = s2;
+        shorter = s1;
+    }
+    var longerLength = longer.length;
+    if (longerLength == 0) {
+        return 1.0;
+    }
+    return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+}
+
+function editDistance(s1, s2) {
+    s1 = s1.toLowerCase();
+    s2 = s2.toLowerCase();
+    var costs = new Array();
+    for (var i = 0; i <= s1.length; i++) {
+        var lastValue = i;
+        for (var j = 0; j <= s2.length; j++) {
+            if (i == 0) costs[j] = j;
+            else {
+                if (j > 0) {
+                    var newValue = costs[j - 1];
+                    if (s1.charAt(i - 1) != s2.charAt(j - 1)) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
+                }
+            }
+        }
+        if (i > 0) costs[s2.length] = lastValue;
+    }
+    return costs[s2.length];
+}
+app.post('/uploadimage', function (req, res, next) {
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    var filename = req.headers['filename'];
+    var fileSize = req.headers['file-size'];
+    var tags = req.headers['tags'];
+    var customFilename = req.headers['customfilename'];
+    var dataString = '';
+    req.on('data', function (data) {
+        dataString += data;
+    });
+    req.on('end', function () {
+        var base64Data = dataString.replace(/^data:image\/jpg;base64,/, "");
+        require("fs").writeFile("temp.png", base64Data, 'base64', function (err) {
+            if (err) console.log(err);
+            else {
+                jimp.read("temp.png", function (err, image) {
+                    if (err) throw err;
+                    image.resize(242, 243) // resize
+                        .quality(60) // set JPEG quality
+                        .write("thumbnail.jpg", function () {
+                            var fileBuffer = fs.readFileSync("thumbnail.jpg");
+                            var thumbFileName = "thumb_" + filename + ".jpg";
+                            s3.putObject({
+                                ACL: 'public-read'
+                                , Bucket: bucket
+                                , Key: thumbFileName
+                                , Body: fileBuffer
+                                , ContentType: 'image/jpg'
+                            }, function (error, response) {
+                                res.status(200).end();
+                            });
+                        });
+                });
+            }
+        });
+    });
+});
 app.post('/pdfthumbnail', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
@@ -344,6 +468,7 @@ app.post('/pdftext', function (req, res, next) {
             doc.save();
         });
         res.status(200).end();
+        compareAllFiles(user, filename, dataString);
     });
 });
 app.get('/getfile', function (req, res, next) {
@@ -366,6 +491,7 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
     var bucket = user.replace("@", "-");
     console.log("Deleting account " + user);
     //
+    var counter = 0;
     s3.listObjects({
         Bucket: bucket
     }, function (err, data) {
@@ -381,28 +507,31 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
             };
             s3.deleteObject(deleteParams, function (err, data) {
                 if (err) console.log("delete err " + deleteParams.Key);
+                counter++;
+                if (items.length === counter) {
+                    s3.deleteBucket({
+                        Bucket: bucket
+                    }, function (err, data) {
+                        if (err) {
+                            console.log("error deleting bucket " + err);
+                        }
+                        else {
+                            File.find({
+                                user: user
+                            }).remove(function (err, data) {
+                                if (err) console.log(err, err.stack);
+                            });
+                            User.findOne({
+                                name: user
+                            }).remove(function (err, data) {
+                                if (err) console.log(err, err.stack);
+                            });
+                            res.status(200).end();
+                        }
+                    });
+                }
             });
         }
-        s3.deleteBucket({
-            Bucket: bucket
-        }, function (err, data) {
-            if (err) {
-                console.log("error deleting bucket " + err);
-            }
-            else {
-                File.find({
-                    user: user
-                }).remove(function (err, data) {
-                    if (err) console.log(err, err.stack);
-                });
-                User.findOne({
-                    name: user
-                }).remove(function (err, data) {
-                    if (err) console.log(err, err.stack);
-                });
-                res.status(200).end();
-            }
-        });
     });
 });
 apiRoutes.post('/deleteallfiles', function (req, res, next) {

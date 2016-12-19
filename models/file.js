@@ -12,5 +12,6 @@ module.exports = mongoose.model('File', new Schema({
     date: Date, 
     tags: String,
     location: String,
-    content: String
+    content: String,
+    links: Array
 }));

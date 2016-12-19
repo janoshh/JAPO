@@ -123,7 +123,7 @@ app.controller("registerController", function ($scope, $http, $location) {
 // ---------------
 // Home Controller
 // ---------------
-app.controller("homeController", function ($scope, $http, $location, fileService, $interval) {
+app.controller("homeController", function ($scope, $http, $location, fileService) {
     //$interval(getFiles(true), 5000);
     // Show List or Grid
     $scope.documentsMessage = "Loading documents...";
@@ -198,11 +198,13 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
                 }
                 var content = fileList[i].content;
+                var links = fileList[i].links;
                 var file = {
-                    name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content
+                    name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links
                 };
                 $scope.fileList.push(file);
             }
+            fileService.saveFileList($scope.fileList);
             if ($scope.fileList.length > 0) {
                 $scope.documentsMessage = "";
             }
@@ -228,7 +230,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
 
     function containsObject(obj, list) {
-        var i;
         for (i = 0; i < list.length; i++) {
             if (list[i].name === obj.name) {
                 return true;
@@ -248,10 +249,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.logOut = function () {
         $location.path("/login");
-    }
-    $scope.showFile = function (loc) {
-        globalLoc = loc;
-        $location.path("/show");
     }
     $scope.deleteAccount = function () {
         bootbox.confirm({
@@ -363,8 +360,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             a.download = title;
             document.body.appendChild(a);
             a.click();
-        }).error(function (data, status, headers, config) {
-        });
+        }).error(function (data, status, headers, config) {});
     }
     $scope.searchChange = function () {
         text = $scope.search;
@@ -487,12 +483,12 @@ app.controller("uploadController", function ($scope, $http, $location) {
         for (var i in $scope.files) {
             fd.append("uploadedFile", $scope.files[i]);
         }
-        var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.') + 1).toLowerCase();        
+        console.log(fd);
+        var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.') + 1).toLowerCase();
         if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {
             console.log($scope.files[0]);
-            console.log("FILESIZE = "+($scope.files[0].size));
-            
-            if ((($scope.files[0].size/1024)/1024) > 3) {
+            console.log("FILESIZE = " + ($scope.files[0].size));
+            if ((($scope.files[0].size / 1024) / 1024) > 3) {
                 $scope.largeFile = true;
             }
             console.log($scope.largeFile);
@@ -692,15 +688,31 @@ app.controller("uploadController", function ($scope, $http, $location) {
 //----------------------
 //show controller
 //----------------------
-app.controller("show", function ($scope, $http, $location, fileService) {
+app.controller("show", function ($scope, $http, $location, fileService, $route) {
     jq("#loading").show();
     jq('#showSection').hide();
     jq('#imageSection').hide();
     var user = sessionStorage.getItem("username");
+    //
     $scope.goToHome = function () {
         $location.path("/home");
     }
     $scope.file = fileService.getFile();
+    $scope.fileList = fileService.getFileList();
+    $scope.linksList = [];
+    for (i = 0; i < $scope.fileList.length; i++) {  
+        for (j = 0; j < $scope.file.links.length; j++) {
+            if ($scope.fileList[i].name === $scope.file.links[j]) {
+                $scope.linksList.push($scope.fileList[i]);
+            }
+        }
+    }
+    $scope.showFile = function (file) {
+        console.log("Opening " + file);
+        fileService.saveFile(file);
+        $route.reload();
+    }
+    //
     if ($scope.file.filetype === "PDF") {
         showPdf();
     }
@@ -794,20 +806,30 @@ app.controller("show", function ($scope, $http, $location, fileService) {
             jq('#showSection').show();
         });
     }
+    
 });
 //
 //
 app.service('fileService', function () {
     var file;
+    var fileList;
     var saveFile = function (newFile) {
         file = newFile;
     };
     var getFile = function () {
         return file;
     };
+    var saveFileList = function (newFileList) {
+        fileList = newFileList;
+    };
+    var getFileList = function () {
+        return fileList;
+    };
     return {
         saveFile: saveFile
         , getFile: getFile
+        , saveFileList: saveFileList
+        , getFileList: getFileList
     };
 });
 //
