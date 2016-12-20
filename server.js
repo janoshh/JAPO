@@ -377,39 +377,81 @@ function editDistance(s1, s2) {
     }
     return costs[s2.length];
 }
-app.post('/uploadimage', function (req, res, next) {
+apiRoutes.post('/uploadimage', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
-    var filename = req.headers['filename'];
-    var fileSize = req.headers['file-size'];
-    var tags = req.headers['tags'];
-    var customFilename = req.headers['customfilename'];
     var dataString = '';
     req.on('data', function (data) {
         dataString += data;
     });
     req.on('end', function () {
-        var base64Data = dataString.replace(/^data:image\/jpg;base64,/, "");
-        require("fs").writeFile("temp.png", base64Data, 'base64', function (err) {
+        fs = require('fs');
+        fs.writeFile('log.txt', dataString, function (err) {
+            if (err) return console.log(err);
+        });
+        dataString = dataString.substring(dataString.indexOf("8bit") + 4);
+        dataString = dataString.substring(0, dataString.indexOf("--"));
+        require("fs").writeFile("temp.png", dataString, 'base64', function (err) {
             if (err) console.log(err);
             else {
-                jimp.read("temp.png", function (err, image) {
-                    if (err) throw err;
-                    image.resize(242, 243) // resize
-                        .quality(60) // set JPEG quality
-                        .write("thumbnail.jpg", function () {
-                            var fileBuffer = fs.readFileSync("thumbnail.jpg");
-                            var thumbFileName = "thumb_" + filename + ".jpg";
-                            s3.putObject({
-                                ACL: 'public-read'
-                                , Bucket: bucket
-                                , Key: thumbFileName
-                                , Body: fileBuffer
-                                , ContentType: 'image/jpg'
-                            }, function (error, response) {
-                                res.status(200).end();
-                            });
+                var filename = req.headers['filename'];
+                var fileSize = req.headers['file-size'];
+                var tags = req.headers['tags'];
+                var customFilename = req.headers['customfilename'];
+                var file = fs.readFileSync("temp.png");
+                var params = {
+                    Bucket: bucket
+                    , Key: filename
+                    , Body: file
+                    , ACL: 'public-read'
+                };
+                console.log(params);
+                // Wegschrijven naar Amazon S3
+                s3.upload(params, function (err, data) {
+                    if (err) console.log(err)
+                    else {
+                        //
+                        var fileLocation;
+                        // Get Extension / Filetype
+                        fileType = filename.substr(filename.lastIndexOf('.') + 1);
+                        fileLocation = data.Location;
+                        //
+                        // Wegschrijven naar MongoDB
+                        file = new File({
+                            user: user
+                            , filename: filename
+                            , customfilename: customFilename
+                            , filetype: fileType
+                            , size: fileSize
+                            , date: Date.now()
+                            , tags: tags
+                            , location: fileLocation
+                            , content: ""
                         });
+                        file.save(function (err, userObj) {
+                            if (err) {
+                                console.log(err);
+                            }
+                        });
+                        jimp.read("temp.png", function (err, image) {
+                            if (err) throw err;
+                            image.resize(242, 243) // resize
+                                .quality(60) // set JPEG quality
+                                .write("thumbnail.jpg", function () {
+                                    var fileBuffer = fs.readFileSync("thumbnail.jpg");
+                                    var thumbFileName = "thumb_" + filename + ".jpg";
+                                    s3.putObject({
+                                        ACL: 'public-read'
+                                        , Bucket: bucket
+                                        , Key: thumbFileName
+                                        , Body: fileBuffer
+                                        , ContentType: 'image/jpg'
+                                    }, function (error, response) {
+                                        res.status(200).end();
+                                    });
+                                });
+                        });
+                    }
                 });
             }
         });

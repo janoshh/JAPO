@@ -510,12 +510,14 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 if (xhr.status === 200) {
                     if (fileType === "pdf") {
                         $scope.currentAction = "Processing PDF...";
-                        $scope.$apply();
+                        $scope.safeApply();
                         showPdf($scope.files[0].name);
                     }
                     else {
-                        $location.path("/home");
-                        $scope.$apply();
+                        file = $scope.files[0];
+                        processImage(file);
+                        //$location.path("/home");
+                        //$scope.$apply();
                     }
                 }
                 if (xhr.status === 409) {
@@ -525,10 +527,29 @@ app.controller("uploadController", function ($scope, $http, $location) {
             };
             xhr.send(fd)
             $scope.currentAction = "Uploading...";
-            $scope.$apply();
+            $scope.safeApply();
         }
         else {
             jq("#uploadError").show();
+        }
+    }
+    var canvas = document.getElementById("the-canvas");
+    var context = canvas.getContext("2d");
+    
+    $scope.process = function () {
+        var string = OCRAD(context);
+                alert(string);
+    }
+
+    function processImage(file) {
+        var reader = new FileReader();
+        reader.readAsDataURL(file)
+        reader.onload = function (e) {
+            var img = new Image();
+            img.onload = function () {
+                context.drawImage(img, 100, 100)
+            }
+            img.src = e.target.result;
         }
     }
 
@@ -581,7 +602,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
                     // -------------------
                     pdfToText(pdfDoc, function (text) {
                         $scope.currentAction = "Analyzing text in PDF...";
-                        $scope.$apply();
+                        $scope.safeApply();
                         var xhr = new XMLHttpRequest();
                         xhr.open("POST", "/pdftext");
                         xhr.setRequestHeader("user", user);
@@ -596,7 +617,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
                     //
                     function pdfthumbnail() {
                         $scope.currentAction = "Creating thumbnail...";
-                        $scope.$apply();
+                        $scope.safeApply();
                         var canvas = document.getElementById("the-canvas");
                         var img = canvas.toDataURL("image/png");
                         var user = sessionStorage.getItem("username");
@@ -684,6 +705,17 @@ app.controller("uploadController", function ($scope, $http, $location) {
     $scope.goToHome = function () {
         $location.path("/home");
     }
+    $scope.safeApply = function (fn) {
+        var phase = this.$root.$$phase;
+        if (phase == '$apply' || phase == '$digest') {
+            if (fn && (typeof (fn) === 'function')) {
+                fn();
+            }
+        }
+        else {
+            this.$apply(fn);
+        }
+    };
 });
 //----------------------
 //show controller
@@ -700,7 +732,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
     $scope.file = fileService.getFile();
     $scope.fileList = fileService.getFileList();
     $scope.linksList = [];
-    for (i = 0; i < $scope.fileList.length; i++) {  
+    for (i = 0; i < $scope.fileList.length; i++) {
         for (j = 0; j < $scope.file.links.length; j++) {
             if ($scope.fileList[i].name === $scope.file.links[j]) {
                 $scope.linksList.push($scope.fileList[i]);
@@ -708,11 +740,11 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
         }
     }
     $scope.showFile = function (file) {
-        console.log("Opening " + file);
-        fileService.saveFile(file);
-        $route.reload();
-    }
-    //
+            console.log("Opening " + file);
+            fileService.saveFile(file);
+            $route.reload();
+        }
+        //
     if ($scope.file.filetype === "PDF") {
         showPdf();
     }
@@ -806,7 +838,6 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
             jq('#showSection').show();
         });
     }
-    
 });
 //
 //
