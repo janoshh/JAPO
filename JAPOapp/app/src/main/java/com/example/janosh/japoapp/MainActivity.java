@@ -3,6 +3,7 @@ package com.example.janosh.japoapp;
 import java.io.File;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -18,6 +19,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     static EditText cName;
     static EditText tag;
     static ProgressBar pgBar;
+    static TextView viewDoc;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,12 +55,20 @@ public class MainActivity extends AppCompatActivity {
         imgTxt = (TextView)findViewById(R.id.image_text);
         cName = (EditText)findViewById(R.id.customName);
         tag = (EditText)findViewById(R.id.tagName);
-        TextView viewDoc = (TextView)findViewById(R.id.txtDocuments);
+        viewDoc = (TextView)findViewById(R.id.txtDocuments);
 
         upload.setEnabled(false);
         cName.setEnabled(false);
         tag.setEnabled(false);
         pgBar.setVisibility(View.INVISIBLE);
+
+        //welcome
+        Context context = getApplicationContext();
+        CharSequence text = "Welcome!";
+        int duration = Toast.LENGTH_SHORT;
+
+        Toast toast = Toast.makeText(context, text, duration);
+        toast.show();
 
         //permission to write to external storage at runtime (since android 6)
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -94,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
                 capture.setEnabled(false);
                 cName.setEnabled(false);
                 tag.setEnabled(false);
+                viewDoc.setEnabled(false);
                 // load token and username
                 SharedPreferences settings = getSharedPreferences("validation", MODE_PRIVATE);
                 token = settings.getString("token", "Error loading token");
@@ -190,5 +202,6 @@ public class MainActivity extends AppCompatActivity {
         capture.setEnabled(true);
         cName.setEnabled(true);
         tag.setEnabled(true);
+        viewDoc.setEnabled(true);
     }
 }

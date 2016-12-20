@@ -22,7 +22,7 @@ public class MainActivity_login extends AppCompatActivity {
 
     String passwd;
     String user;
-    boolean autoLogin;
+    boolean autoLogin = false;
                                                                             //LOCALSTORAGE gebruiken voor token op te slagen
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +32,7 @@ public class MainActivity_login extends AppCompatActivity {
         email = (EditText) findViewById(R.id.txtMail);
         pass = (EditText) findViewById(R.id.txtPass);
 
-        // load token and username
+        // load password and username for autologin
         SharedPreferences settings = getSharedPreferences("validation", MODE_PRIVATE);
         passwd = settings.getString("pass", "Error loading pass");
         user = settings.getString("user", "Error loading user");
@@ -40,7 +40,7 @@ public class MainActivity_login extends AppCompatActivity {
         if (passwd != "Error loading pass" && user != "Error loading user") {
             Log.d("login: ","automated");
             autoLogin = true;
-            postLogin();
+            //postLogin();
         }
         else {
             Log.d("login: ","not automated login");
@@ -55,8 +55,8 @@ public class MainActivity_login extends AppCompatActivity {
     public void postLogin(){
         final String name = email.getText().toString();
         final String password = pass.getText().toString();
-        //Log.d("name: ",name);
-        //Log.d("pass: ",password);
+        Log.d("TYPED name: ",name);
+        Log.d("TYPED pass: ",password);
 
         Response.Listener<String> responseListener = new Response.Listener<String>(){
             @Override
@@ -90,16 +90,17 @@ public class MainActivity_login extends AppCompatActivity {
             }
         };
 
-        if (autoLogin) {
+        /*if (autoLogin) {
+            Log.d("loginmode: ","autologin");
             LoginRequest loginRequest = new LoginRequest(user, passwd, responseListener);
             RequestQueue queue = Volley.newRequestQueue(MainActivity_login.this);
             queue.add(loginRequest);
-        }
-        else {
+        } else {*/
+            Log.d("loginmode: ","NOT autologin");
             LoginRequest loginRequest = new LoginRequest(name, password, responseListener);
             RequestQueue queue = Volley.newRequestQueue(MainActivity_login.this);
             queue.add(loginRequest);
-        }
+        //}
     }
 }
 
