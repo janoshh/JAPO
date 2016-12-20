@@ -483,15 +483,11 @@ app.controller("uploadController", function ($scope, $http, $location) {
         for (var i in $scope.files) {
             fd.append("uploadedFile", $scope.files[i]);
         }
-        console.log(fd);
         var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.') + 1).toLowerCase();
         if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {
-            console.log($scope.files[0]);
-            console.log("FILESIZE = " + ($scope.files[0].size));
             if ((($scope.files[0].size / 1024) / 1024) > 3) {
                 $scope.largeFile = true;
             }
-            console.log($scope.largeFile);
             var token = sessionStorage.getItem("japo-token");
             var user = sessionStorage.getItem("username");
             var xhr = new XMLHttpRequest()
@@ -514,10 +510,13 @@ app.controller("uploadController", function ($scope, $http, $location) {
                         showPdf($scope.files[0].name);
                     }
                     else {
-                        file = $scope.files[0];
-                        processImage(file);
-                        //$location.path("/home");
-                        //$scope.$apply();
+                        /*file = $scope.files[0];
+                        Tesseract.recognize(file).then(function (result) {
+                                var text = result.text;
+                            });
+                            */
+                            $location.path("/home");
+                            $scope.$apply();
                     }
                 }
                 if (xhr.status === 409) {
@@ -531,25 +530,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
         }
         else {
             jq("#uploadError").show();
-        }
-    }
-    var canvas = document.getElementById("the-canvas");
-    var context = canvas.getContext("2d");
-    
-    $scope.process = function () {
-        var string = OCRAD(context);
-                alert(string);
-    }
-
-    function processImage(file) {
-        var reader = new FileReader();
-        reader.readAsDataURL(file)
-        reader.onload = function (e) {
-            var img = new Image();
-            img.onload = function () {
-                context.drawImage(img, 100, 100)
-            }
-            img.src = e.target.result;
         }
     }
 
@@ -740,7 +720,6 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
         }
     }
     $scope.showFile = function (file) {
-            console.log("Opening " + file);
             fileService.saveFile(file);
             $route.reload();
         }

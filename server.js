@@ -10,6 +10,7 @@ var File = require('./models/file');
 var fs = require('fs');
 var busboy = require('connect-busboy');
 var jimp = require("jimp");
+var tesseract = require('node-tesseract');
 var port = 80;
 //
 // Max Capacity of non-premium member:
@@ -264,21 +265,42 @@ apiRoutes.post('/upload', function (req, res, next) {
                                         if (ft === "jpg" || ft === "png" || ft === "jpeg") {
                                             jimp.read(fileLocation, function (err, image) {
                                                 if (err) throw err;
-                                                image.resize(242, 243) // resize
-                                                    .quality(60) // set JPEG quality
-                                                    .write("thumbnail.jpg", function () {
-                                                        var fileBuffer = fs.readFileSync("thumbnail.jpg");
-                                                        var thumbFileName = "thumb_" + filename;
-                                                        s3.putObject({
-                                                            ACL: 'public-read'
-                                                            , Bucket: bucket
-                                                            , Key: thumbFileName
-                                                            , Body: fileBuffer
-                                                            , ContentType: 'image/jpg'
-                                                        }, function (error, response) {
-                                                            res.status(200).end();
-                                                        });
+                                                image.write("temp.jpg", function () {
+                                                    // Recognize text of any language in any format
+                                                    tesseract.process("temp.jpg", function (err, text) {
+                                                        if (err) {
+                                                            console.error(err);
+                                                        }
+                                                        else {
+                                                            File.findOne({
+                                                                user: user
+                                                                , filename: filename
+                                                            }, function (err, doc) {
+                                                                doc.content = text;
+                                                                doc.save();
+                                                            });
+                                                        }
+                                                        compareAllFiles(user, filename, text);
                                                     });
+                                                    jimp.read("temp.jpg", function (err, image) {
+                                                        if (err) throw err;
+                                                        image.resize(242, 243) // resize
+                                                            .quality(60) // set JPEG quality
+                                                            .write("thumbnail.jpg", function () {
+                                                                var fileBuffer = fs.readFileSync("thumbnail.jpg");
+                                                                var thumbFileName = "thumb_" + filename;
+                                                                s3.putObject({
+                                                                    ACL: 'public-read'
+                                                                    , Bucket: bucket
+                                                                    , Key: thumbFileName
+                                                                    , Body: fileBuffer
+                                                                    , ContentType: 'image/jpg'
+                                                                }, function (error, response) {
+                                                                    res.status(200).end();
+                                                                });
+                                                            });
+                                                    });
+                                                });
                                             });
                                         }
                                         else {
@@ -391,21 +413,20 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
         });
         dataString = dataString.substring(dataString.indexOf("8bit") + 4);
         dataString = dataString.substring(0, dataString.indexOf("--"));
-        require("fs").writeFile("temp.png", dataString, 'base64', function (err) {
+        require("fs").writeFile("temp.jpg", dataString, 'base64', function (err) {
             if (err) console.log(err);
             else {
-                var filename = req.headers['filename'];
                 var fileSize = req.headers['file-size'];
                 var tags = req.headers['tags'];
                 var customFilename = req.headers['customfilename'];
-                var file = fs.readFileSync("temp.png");
+                var filename = customFilename + '.jpg'
+                var file = fs.readFileSync("temp.jpg");
                 var params = {
                     Bucket: bucket
-                    , Key: filename
+                    , Key: customFilename
                     , Body: file
                     , ACL: 'public-read'
                 };
-                console.log(params);
                 // Wegschrijven naar Amazon S3
                 s3.upload(params, function (err, data) {
                     if (err) console.log(err)
@@ -413,13 +434,13 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                         //
                         var fileLocation;
                         // Get Extension / Filetype
-                        fileType = filename.substr(filename.lastIndexOf('.') + 1);
+                        fileType = ".jpg"
                         fileLocation = data.Location;
                         //
                         // Wegschrijven naar MongoDB
                         file = new File({
                             user: user
-                            , filename: filename
+                            , filename: customFilename
                             , customfilename: customFilename
                             , filetype: fileType
                             , size: fileSize
@@ -433,8 +454,24 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                 console.log(err);
                             }
                         });
-                        jimp.read("temp.png", function (err, image) {
+                        jimp.read("temp.jpg", function (err, image) {
                             if (err) throw err;
+                            // Recognize text of any language in any format
+                            tesseract.process("temp.jpg", function (err, text) {
+                                if (err) {
+                                    console.error(err);
+                                }
+                                else {
+                                    File.findOne({
+                                        user: user
+                                        , filename: filename
+                                    }, function (err, doc) {
+                                        doc.content = text;
+                                        doc.save();
+                                    });
+                                }
+                                compareAllFiles(user, filename, text);
+                            });
                             image.resize(242, 243) // resize
                                 .quality(60) // set JPEG quality
                                 .write("thumbnail.jpg", function () {
@@ -493,7 +530,6 @@ app.post('/pdfthumbnail', function (req, res, next) {
     });
 });
 app.post('/pdftext', function (req, res, next) {
-    console.log("UPDATING!");
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     var filename = req.headers['filename'];
