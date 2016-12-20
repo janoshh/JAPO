@@ -25,6 +25,7 @@ import java.io.IOException;
 public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
     long totalSize = 0;
     String filePath, token, user, cName, tag;
+    int statusCode;
 
     public UploadFileToServer(String filePath, String cName, String tag, String token, String user) {
         this.filePath = filePath;
@@ -88,9 +89,8 @@ public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
             HttpResponse response = httpclient.execute(httppost);
             HttpEntity r_entity = response.getEntity();
 
-            int statusCode = response.getStatusLine().getStatusCode();
+            statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200) {
-                // Server response
                 responseString = EntityUtils.toString(r_entity);
             } else {
                 responseString = "Error occurred! Http Status Code: " + statusCode;
@@ -106,11 +106,11 @@ public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
 
     @Override
     protected void onPostExecute(String result) {
-        Log.e("", "Response from server: " + result);
-            super.onPostExecute(result);
-        if(result == "200"){    //wordt er in result 200 terug gegeven?
+        Log.e("Response from server: ", result);
+        super.onPostExecute(result);
+        if (statusCode == 200) {
             MainActivity.onRes();   //clear edittext,  set imgtxt, set pgbar invisible
-        }else{
+        } else {
             MainActivity.onBadRes();    //set imgtxt, set pgbar invisible
         }
     }
