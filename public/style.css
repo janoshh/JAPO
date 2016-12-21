@@ -2,6 +2,7 @@
     font-family: japofont;
     src: url(font.otf);
 }
+
 body {
     font-family: japofont;
     background-image: url(background.jpg);
@@ -9,15 +10,18 @@ body {
     background-repeat: no-repeat;
     background-attachment: fixed;
 }
+
 .margin {
     margin: 15px 0px 15px 0px
 }
+
 @media(max-width: 1000px) {
     #login {
         border-bottom: 2px dashed #046ca3;
         padding-bottom: 20px;
     }
 }
+
 @media(min-width: 1000px) {
     #login {
         border-right: 2px dashed #046ca3;
@@ -28,6 +32,7 @@ body {
         padding-left: 80px;
     }
 }
+
 #layout {
     margin-top: 8px;
 }
@@ -35,28 +40,36 @@ body {
 img {
     cursor: pointer;
 }
+
 a {
     cursor: pointer;
 }
+
 tr {
     cursor: pointer;
 }
+
 .margin {
     margin: 15px 0px 15px 0px
 }
+
 button {
     max-width: 200px;
 }
+
 .zoek {
     margin-right: 2.5%;
 }
+
 .bold > th {
     font-weight: bold !important;
 }
+
 table {
     border-collapse: collapse;
     width: 100%;
 }
+
 td,
 th {
     font-weight: normal;
@@ -64,34 +77,48 @@ th {
     text-align: left;
     padding: 8px;
 }
+
 tr:nth-child(even) {
     background-color: #dddddd;
 }
+
 #slider {
     max-width: 150px;
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
 .collectionItem {
     display: block;
     text-align: center;
     float: left;
-    width: 200px;
-    height: 200px;
+    width: 150px;
+    height: 150px;
     margin: 10px;
 }
-.collectionItem  >  img {
+
+.collectionItem > img {
     border-radius: 15%;
     margin-left: auto;
     margin-right: auto;
     max-width: 75%;
 }
-#top {
-    min-height: 6em;
-    border-bottom: 2px dashed #046ca3;
+
+@media(max-width: 768px) {
+    #top {
+        min-height: 3em;
+        border-bottom: 2px dashed #046ca3;
+    }
 }
 
-@media(min-width: 1000px) {
+@media(min-width: 768px) {
+    #top {
+        min-height: 6em;
+        border-bottom: 2px dashed #046ca3;
+    }
+}
+
+@media(min-width: 768px) {
     #main {
         width: 85%;
         margin: 0 auto;
@@ -99,7 +126,7 @@ tr:nth-child(even) {
     }
 }
 
-@media(max-width: 1000px) {
+@media(max-width: 768px) {
     #main {
         width: 100%;
         margin: 0 auto;
@@ -111,51 +138,75 @@ tr:nth-child(even) {
     width: 500px;
     height: 700px;
 }
+
 .float-right {
     float: right;
 }
 
-#uploadMain {
-    max-width: 70%;
-    margin: 0 auto;
+@media(min-width: 768px) {
+    #uploadMain {
+        max-width: 70%;
+        margin: 0 auto;
+        text-align: center;
+    }
+}
+
+@media(max-width: 768px) {
+    #uploadMain {
+        max-width: 100%;
+        margin: 0 auto;
+        text-align: center;
+    }
 }
 
 #drop {
     font-size: 5em;
     margin-bottom: 10px;
 }
+
 #video {
     position: absolute;
     visibility: hidden;
 }
+
 #canvas {
     margin-bottom: 8px;
 }
+
 #files {
     text-align: center;
     padding-bottom: 20px;
 }
+
 #specsFile {
     text-align: center;
     margin-top: 7%;
     margin-bottom: 7%;
 }
-#uploadMain {
-    text-align: center;
-}
+
 #title {
     padding-bottom: 3%;
     margin-bottom: 7%;
     border-bottom: 2px dashed #046ca3;
 }
+
 #uploadSpecsInput {
     max-width: 42%;
     margin: 0 auto;
 }
-#capture{
+
+@media(max-width: 768px) {
+    #uploadSpecsInput {
+        max-width: 90%;
+        margin: 0 auto;
+    }
+}
+
+#capture {
     text-align: center;
 }
-#selectFile{
+
+#selectFile {
     margin-left: 10%;
 }
 
@@ -171,7 +222,7 @@ tr:nth-child(even) {
 
 .gridItem > a {
     position: relative;
-    top: -175px;
+    top: -150px;
     left: 20px;
     visibility: hidden;
 }
@@ -186,3 +237,30 @@ tr:nth-child(even) {
     height: auto;
 }
 
+@media(max-width: 600px) {
+    th:nth-child(1) {
+        display: none;
+    }
+    th:nth-child(3) {
+        display: none;
+    }
+
+    th:nth-child(5) {
+        display: none;
+    }
+}
+
+@media(max-width: 500px) {
+    th:nth-child(1) {
+        display: none;
+    }
+    th:nth-child(3) {
+        display: none;
+    }
+    th:nth-child(4) {
+        display: none;
+    }
+    th:nth-child(5) {
+        display: none;
+    }
+}

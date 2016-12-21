@@ -15,6 +15,7 @@ var port = 80;
 //
 // Max Capacity of non-premium member:
 var maxCapacity = 100000000;
+var thumbnailSize = 250;
 //
 // connect to database
 mongoose.connect(config.database);
@@ -186,8 +187,6 @@ apiRoutes.post('/upload', function (req, res, next) {
     var fileSize = req.headers['file-size'];
     var user = req.headers['user'];
     var capacityUsed = 0;
-    console.log(fileSize);
-    console.log(user);
     // Check is non-premium user has enough storage capacity left to upload new file
     File.find({
         user: user
@@ -212,8 +211,6 @@ apiRoutes.post('/upload', function (req, res, next) {
                             var bucket = user.replace("@", "-");
                             var tags = req.headers['tags'];
                             var customFilename = req.headers['customfilename'];
-                            console.log(tags);
-                            console.log(customFilename);
                             var metadata = {
                                 "x-amz-meta-tags": tags
                             };
@@ -241,7 +238,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                                         fileLocation = data.Location;
                                         //
                                         // Wegschrijven naar MongoDB
-                                        file = new File({
+                                        fileMongo = new File({
                                             user: user
                                             , filename: filename
                                             , customfilename: customFilename
@@ -252,7 +249,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                                             , location: fileLocation
                                             , content: ""
                                         });
-                                        file.save(function (err, userObj) {
+                                        fileMongo.save(function (err, userObj) {
                                             if (err) {
                                                 console.log(err);
                                             }
@@ -265,13 +262,31 @@ apiRoutes.post('/upload', function (req, res, next) {
                                         if (ft === "jpg" || ft === "png" || ft === "jpeg") {
                                             jimp.read(fileLocation, function (err, image) {
                                                 if (err) throw err;
-                                                image.write("temp.jpg", function () {
+                                                image.resize(thumbnailSize, thumbnailSize) // resize
+                                                    .quality(60) // set JPEG quality
+                                                    .write("thumbnail.jpg", function () {
+                                                        var fileBuffer = fs.readFileSync("thumbnail.jpg");
+                                                        var thumbFileName = "thumb_" + filename;
+                                                        s3.putObject({
+                                                            ACL: 'public-read'
+                                                            , Bucket: bucket
+                                                            , Key: thumbFileName
+                                                            , Body: fileBuffer
+                                                            , ContentType: 'image/jpg'
+                                                        }, function (error, response) {
+                                                            if (error) console.log(error);
+                                                        });
+                                                    });
+                                            });
+                                            jimp.read(fileLocation, function (err, image) {
+                                                image.write("temp.png", function () {
                                                     // Recognize text of any language in any format
-                                                    tesseract.process("temp.jpg", function (err, text) {
+                                                    tesseract.process("temp.png", function (err, text) {
                                                         if (err) {
                                                             console.error(err);
                                                         }
                                                         else {
+                                                            console.log(text);
                                                             File.findOne({
                                                                 user: user
                                                                 , filename: filename
@@ -279,26 +294,9 @@ apiRoutes.post('/upload', function (req, res, next) {
                                                                 doc.content = text;
                                                                 doc.save();
                                                             });
+                                                            res.status(200).end();
+                                                            compareAllFiles(user, filename, text);
                                                         }
-                                                        compareAllFiles(user, filename, text);
-                                                    });
-                                                    jimp.read("temp.jpg", function (err, image) {
-                                                        if (err) throw err;
-                                                        image.resize(242, 243) // resize
-                                                            .quality(60) // set JPEG quality
-                                                            .write("thumbnail.jpg", function () {
-                                                                var fileBuffer = fs.readFileSync("thumbnail.jpg");
-                                                                var thumbFileName = "thumb_" + filename;
-                                                                s3.putObject({
-                                                                    ACL: 'public-read'
-                                                                    , Bucket: bucket
-                                                                    , Key: thumbFileName
-                                                                    , Body: fileBuffer
-                                                                    , ContentType: 'image/jpg'
-                                                                }, function (error, response) {
-                                                                    res.status(200).end();
-                                                                });
-                                                            });
                                                     });
                                                 });
                                             });
@@ -419,7 +417,7 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                 var fileSize = req.headers['file-size'];
                 var tags = req.headers['tags'];
                 var customFilename = req.headers['customfilename'];
-                var filename = customFilename + '.jpg'
+                var filename = customFilename + '.jpg';
                 var file = fs.readFileSync("temp.jpg");
                 var params = {
                     Bucket: bucket
@@ -440,7 +438,7 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                         // Wegschrijven naar MongoDB
                         file = new File({
                             user: user
-                            , filename: customFilename
+                            , filename: filename
                             , customfilename: customFilename
                             , filetype: fileType
                             , size: fileSize
@@ -454,29 +452,13 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                 console.log(err);
                             }
                         });
-                        jimp.read("temp.jpg", function (err, image) {
+                        jimp.read(fileLocation, function (err, image) {
                             if (err) throw err;
-                            // Recognize text of any language in any format
-                            tesseract.process("temp.jpg", function (err, text) {
-                                if (err) {
-                                    console.error(err);
-                                }
-                                else {
-                                    File.findOne({
-                                        user: user
-                                        , filename: filename
-                                    }, function (err, doc) {
-                                        doc.content = text;
-                                        doc.save();
-                                    });
-                                }
-                                compareAllFiles(user, filename, text);
-                            });
-                            image.resize(242, 243) // resize
+                            image.resize(thumbnailSize, thumbnailSize) // resize
                                 .quality(60) // set JPEG quality
                                 .write("thumbnail.jpg", function () {
                                     var fileBuffer = fs.readFileSync("thumbnail.jpg");
-                                    var thumbFileName = "thumb_" + filename + ".jpg";
+                                    var thumbFileName = "thumb_" + filename;
                                     s3.putObject({
                                         ACL: 'public-read'
                                         , Bucket: bucket
@@ -484,10 +466,33 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                         , Body: fileBuffer
                                         , ContentType: 'image/jpg'
                                     }, function (error, response) {
-                                        res.status(200).end();
+                                        if (error) console.log(error);
                                     });
                                 });
                         });
+                        jimp.read(fileLocation, function (err, image) {
+                            image.write("temp.png", function () {
+                                // Recognize text of any language in any format
+                                tesseract.process("temp.png", function (err, text) {
+                                    if (err) {
+                                        console.error(err);
+                                    }
+                                    else {
+                                        console.log(text);
+                                        File.findOne({
+                                            user: user
+                                            , filename: filename
+                                        }, function (err, doc) {
+                                            doc.content = text;
+                                            doc.save();
+                                        });
+                                        res.status(200).end();
+                                        compareAllFiles(user, filename, text);
+                                    }
+                                });
+                            });
+                        });
+                        // END JIMP
                     }
                 });
             }
@@ -509,7 +514,7 @@ app.post('/pdfthumbnail', function (req, res, next) {
             else {
                 jimp.read("temp.png", function (err, image) {
                     if (err) throw err;
-                    image.resize(242, 243) // resize
+                    image.resize(thumbnailSize, thumbnailSize) // resize
                         .quality(60) // set JPEG quality
                         .write("thumbnail.jpg", function () {
                             var fileBuffer = fs.readFileSync("thumbnail.jpg");

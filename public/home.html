@@ -1,18 +1,20 @@
 <div id="main" ng-controller="homeController">
     <div id="top">
         <!--zoekbalk-->
-        <div class="col-lg-6 col-md-6 col-s-12 col-xs-12">
+        <div class="col-lg-6 col-md-6 col-s-8 col-xs-8">
             <input type="text" ng-model="search" ng-change="searchChange()" class="form-control has-feedback" placeholder="Search" id="search"> <span class="glyphicon glyphicon-search form-control-feedback zoek"></span> </div>
-        <div class="col-lg-6 col-md-6 col-s-12 col-xs-12">
-            <div class="col-lg-3 col-md-3 col-s-3 col-xs-3">
-                <button class="btn btn-primary" ng-click="goToUpload()">Upload</button>
+        <div class="col-lg-6 col-md-6 col-s-4 col-xs-4">
+            <div class="col-lg-3 col-md-3 col-s-2 col-xs-2">
+                <button class="btn btn-primary visible-lg visible-md" ng-click="goToUpload()">Upload</button>
+                <button class="btn btn-primary visible-sm visible-xs" ng-click="goToUpload()"><span class="glyphicon glyphicon-cloud-upload"></span></button>
             </div>
-            <div class="col-lg-1 col-md-1 col-s-1 col-xs-1"></div>
-            <div class="col-lg-8 col-md-8 col-s-8 col-xs-8 float-right">
-                <a class="dropdown-toggle" type="button" data-toggle="dropdown">
+            <div class="col-lg-9 col-md-9 col-s-2 col-xs-2">
+                <a class="dropdown-toggle visible-lg visible-md" type="button" data-toggle="dropdown">
                     <label>{{user}}</label> <span class="glyphicon glyphicon-triangle-bottom"></span></a>
+                <button class="btn btn-primary visible-sm visible-xs" style="margin-left: 15px;" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></button>
+                 
                 <ul class="dropdown-menu">
-                    <li><a href="#">Settings</a></li>
+                    <li class="visible-sm visible-xs">{{user}}</li>
                     <li><a ng-click="deleteAllFiles()">Delete All Files</a></li>
                     <li><a ng-click="deleteAccount()">Delete Account</a></li>
                     <li><a ng-click="logOut()">Log out</a></li>
@@ -22,11 +24,11 @@
     </div>
     <div>
         <div id="layout" class="container-fluid">
-            <div class="col-lg-2">
+            <div class="col-lg-3 col-md-3 col-s-2 col-xs-5">
                 <button ng-click="grid()" class="btn btn-primary"> <span class="glyphicon glyphicon-th"></span></button>
                 <button ng-click="list()" class="btn btn-primary"> <span class="glyphicon glyphicon-list"></span></button>
             </div>
-            <div class="col-lg-10">
+            <div class="col-lg-9 col-md-9 col-s-9 col-xs-7">
                 <div class="progress" style="margin-top:5px;">
                     <div class="progress-bar" role="progressbar" style="width:{{capacityBlueUsed}}%"> FREE ACCOUNT | {{capacityUsed}}% USED </div>
                     <div class="progress-bar progress-bar-danger" role="progressbar" style="width:{{capacityRedUsed}}%"></div>
@@ -39,7 +41,7 @@
             <div ng-show="nsName && nsTag && nsDate && nsContent">
                 <div ng-repeat="pdfItem in fileList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> 
                     <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
-                    <h4>{{pdfItem.customfilename}}
+                    <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
                     <a> <img src="donwloadIcon.png" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"> </a>
                     <a> <img src="deleteIcon.png" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"> </a>
@@ -91,7 +93,7 @@
                     </tr>
                     <tr ng-repeat="pdfItem in fileList | orderBy:propertyName:reverse" ng-click="showFile(pdfItem)">
                         <th> {{pdfItem.filetype}} </th>
-                        <th> {{pdfItem.customfilename}} </th>
+                        <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>  {{pdfItem.customfilename}} </th>
                         <th> {{pdfItem.tags}} </th>
                         <th> {{pdfItem.date}} </th>
                         <th> {{pdfItem.humansize}} </th>
@@ -121,7 +123,7 @@
                     <h2>Name</h2>
                     <tr ng-repeat="pdfItem in sortedNameList" ng-click="showFile(pdfItem)">
                         <th> {{pdfItem.filetype}} </th>
-                        <th> {{pdfItem.customfilename}} </th>
+                        <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>  {{pdfItem.customfilename}} </th>
                         <th> {{pdfItem.tags}} </th>
                         <th> {{pdfItem.date}} </th>
                         <th> {{pdfItem.humansize}} </th>
@@ -138,7 +140,7 @@
                     <table>
                         <tr ng-repeat="pdfItem in sortedTagList" ng-click="showFile(pdfItem)">
                             <th> {{pdfItem.filetype}} </th>
-                            <th> {{pdfItem.customfilename}} </th>
+                            <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>  {{pdfItem.customfilename}} </th>
                             <th> {{pdfItem.tags}} </th>
                             <th> {{pdfItem.date}} </th>
                             <th> {{pdfItem.humansize}} </th>
@@ -156,7 +158,7 @@
                     <table>
                         <tr ng-repeat="pdfItem in sortedDateList" ng-click="showFile(pdfItem)">
                             <th> {{pdfItem.filetype}} </th>
-                            <th> {{pdfItem.customfilename}} </th>
+                            <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>  {{pdfItem.customfilename}} </th>
                             <th> {{pdfItem.tags}} </th>
                             <th> {{pdfItem.date}} </th>
                             <th> {{pdfItem.humansize}} </th>
@@ -174,7 +176,7 @@
                     <table>
                         <tr ng-repeat="pdfItem in sortedContentList" ng-click="showFile(pdfItem)">
                             <th> {{pdfItem.filetype}} </th>
-                            <th> {{pdfItem.customfilename}} </th>
+                            <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>  {{pdfItem.customfilename}} </th>
                             <th> {{pdfItem.tags}} </th>
                             <th> {{pdfItem.date}} </th>
                             <th> {{pdfItem.humansize}} </th>
