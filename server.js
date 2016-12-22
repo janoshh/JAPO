@@ -617,6 +617,23 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
         }
     });
 });
+apiRoutes.post('/updatefile', function (req, res, next) {
+    console.log("UPDATING FILE");
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    var filename = req.headers['filename'];
+    var customfilename = req.headers['customfilename'];
+    var tags = req.headers['tags'];
+    File.findOne({
+        user: user
+        , filename: filename
+    }, function (err, doc) {
+        doc.customfilename = customfilename
+        doc.tags = tags;
+        doc.save();
+        res.status(200).end();
+    });
+});
 apiRoutes.post('/deleteallfiles', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");

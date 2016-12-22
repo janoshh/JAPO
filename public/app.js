@@ -124,9 +124,15 @@ app.controller("registerController", function ($scope, $http, $location) {
 // Home Controller
 // ---------------
 app.controller("homeController", function ($scope, $http, $location, fileService) {
-    //$interval(getFiles(true), 5000);
+    
+    if (sessionStorage.getItem('username') === "") {
+        $location.path("/login");
+    }
+    
     // Show List or Grid
     $scope.documentsMessage = "Loading documents...";
+    $scope.searching = false;
+    $scope.editingFile = "";
     jq('#collectionsList').hide();
     $scope.grid = function () {
         jq('#collection').show();
@@ -248,8 +254,98 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         $location.path("/upload");
     }
     $scope.logOut = function () {
+        sessionStorage.setItem('japo-token', "");
+        sessionStorage.setItem('username', "");
         $location.path("/login");
     }
+    $scope.editFile = function (file) {
+        var title = file.name;
+        jq("#editCustomFilename").attr("value", file.customfilename);
+        jq("#editTags").attr("value", file.tags);
+        var modal = bootbox.dialog({
+            message: jq(".form-content").html()
+            , title: title
+            , buttons: [
+                {
+                    label: "Save"
+                    , className: "btn btn-primary pull-left"
+                    , callback: function () {
+                        var form = modal.find(".form");
+                        var items = form.serializeJSON();
+                        var xhr = new XMLHttpRequest()
+                        xhr.open("POST", "/api/updatefile");
+                        xhr.setRequestHeader("x-access-token", token);
+                        xhr.setRequestHeader("user", user);
+                        xhr.setRequestHeader("filename", file.name);
+                        xhr.setRequestHeader("customfilename", items.editCustomFilename);
+                        xhr.setRequestHeader("tags", items.editTags);
+                        xhr.onload = function () {
+                            if (xhr.status === 200) {
+                                location.reload();
+                            }
+                        }
+                        xhr.send();
+                        /* This part you have to complete yourself :D
+                        if (your_form_validation(items)) {
+                          // Make your data save as async and then just call modal.modal("hide");
+                        } else {
+                          // Show some errors, etc on form
+                        }
+                        */
+                        modal.modal("hide");
+                        return false;
+                    }
+          }
+                , {
+                    label: "Close"
+                    , className: "btn btn-default pull-left"
+                    , callback: function () {}
+          }
+        ]
+            , show: false
+            , onEscape: function () {
+                modal.modal("hide");
+            }
+        });
+        modal.modal("show");
+    }
+    jQuery.fn.serializeJSON = function () {
+        var json = {};
+        jQuery.map(jQuery(this).serializeArray(), function (n) {
+            var _ = n.name.indexOf('[');
+            if (_ > -1) {
+                var o = json
+                    , _name;
+                _name = n.name.replace(/\]/gi, '').split('[');
+                for (var i = 0, len = _name.length; i < len; i++) {
+                    if (i == len - 1) {
+                        if (o[_name[i]]) {
+                            if (typeof o[_name[i]] == 'string') {
+                                o[_name[i]] = [o[_name[i]]];
+                            }
+                            o[_name[i]].push(n.value);
+                        }
+                        else {
+                            o[_name[i]] = n.value || '';
+                        }
+                    }
+                    else {
+                        o = o[_name[i]] = o[_name[i]] || {};
+                    }
+                }
+            }
+            else if (json[n.name] !== undefined) {
+                if (!json[n.name].push) {
+                    json[n.name] = [json[n.name]];
+                }
+                json[n.name].push(n.value || '');
+            }
+            else {
+                json[n.name] = n.value || '';
+            }
+        });
+        return json;
+    };
     $scope.deleteAccount = function () {
         bootbox.confirm({
             title: "Delete account?"
@@ -369,6 +465,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         var dateList = [];
         var contentList = [];
         if (text != "") { // || text != null || $scope.fileList != null
+            $scope.searching = true;
+            console.log($scope.searching);
             $scope.nsName = false;
             $scope.nsTag = false;
             $scope.nsDate = false;
@@ -403,8 +501,16 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             if (contentList == null || contentList == "") {
                 $scope.nsContent = true;
             }
+            if ($scope.nsName && $scope.nsTag && $scope.nsDate && $scope.nsContent) {
+                $scope.documentsMessage = "No search results.";
+            }
+            else {
+                $scope.documentsMessage = "";
+            }
         }
         else {
+            $scope.searching = false;
+            console.log($scope.searching);
             $scope.nsName = true;
             $scope.nsTag = true;
             $scope.nsDate = true;
@@ -515,8 +621,8 @@ app.controller("uploadController", function ($scope, $http, $location) {
                                 var text = result.text;
                             });
                             */
-                            $location.path("/home");
-                            $scope.$apply();
+                        $location.path("/home");
+                        $scope.$apply();
                     }
                 }
                 if (xhr.status === 409) {
