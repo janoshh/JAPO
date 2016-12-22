@@ -9,7 +9,7 @@ import java.util.Map;
  */
 
 public class LoginRequest extends StringRequest {
-    private static final String LOGIN_REQUEST_URL = "http://ec2-54-244-181-106.us-west-2.compute.amazonaws.com/api/authenticate";
+    private static final String LOGIN_REQUEST_URL = "http://ec2-54-245-35-219.us-west-2.compute.amazonaws.com/api/authenticate";
     private Map<String, String> params;
 
     public LoginRequest(String name, String password, Response.Listener<String>listener){
