@@ -12,9 +12,10 @@
                 <a class="dropdown-toggle visible-lg visible-md" type="button" data-toggle="dropdown">
                     <label>{{user}} <span class="glyphicon glyphicon-triangle-bottom"></span></label>
                 </a>
-                <button class="btn btn-primary visible-sm visible-xs" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></button>
+                <button class="btn btn-primary visible-sm visible-xs" style="margin-left: 15px;" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></button>
                 <ul class="dropdown-menu">
                     <li class="visible-sm visible-xs">{{user}}</li>
+                    <li><a ng-click="editUser()">Settings</a></li>
                     <li><a ng-click="deleteAllFiles()">Delete All Files</a></li>
                     <li><a ng-click="deleteAccount()">Delete Account</a></li>
                     <li><a ng-click="logOut()">Log out</a></li>
@@ -211,6 +212,22 @@
             <div class="form-group">
                 <label for="password">Tags</label>
                 <input class="form-control" id="editTags" name="editTags"> </div>
+        </form>
+    </div>
+    <div id="editUserForm" style="display:none;">
+        <form class="userForm" role="userForm">
+            <div class="form-group">
+                <label for="oldPassword">Old password</label>
+                <input type="password" class="form-control" id="oldPassword" name="oldPassword">
+                <label for="newPassword">New password</label>
+                <input type="password" class="form-control" id="newPassword" name="newPassword">
+                <label for="confirmNewPassword">Confirm new password</label>
+                <input type="password" class="form-control" id="confirmNewPassword" name="confirmNewPassword"> </div>
+            <hr>
+            <div class="form-group">
+                <label for="premium">Upgrade to premium user</label>
+                <input type="checkbox" id="premium" name="premium"> </div>
+            <h2 class="green" ng-show="userSavedSuccess">Settings saved successfully.</h2>
         </form>
     </div>
 </div>

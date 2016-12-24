@@ -59,7 +59,7 @@ button {
 }
 
 .zoek {
-    margin-right: 2.5%;
+    margin-right: 20px;
 }
 
 .bold > th {
@@ -278,4 +278,8 @@ tr:nth-child(even) {
 
 .red:hover {
     color: darkred;
+}
+
+#search {
+    border-radius: 15px;
 }

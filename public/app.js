@@ -124,15 +124,14 @@ app.controller("registerController", function ($scope, $http, $location) {
 // Home Controller
 // ---------------
 app.controller("homeController", function ($scope, $http, $location, fileService) {
-    
     if (sessionStorage.getItem('username') === "") {
         $location.path("/login");
     }
-    
     // Show List or Grid
     $scope.documentsMessage = "Loading documents...";
     $scope.searching = false;
     $scope.editingFile = "";
+    $scope.userSavedSuccess = false;
     jq('#collectionsList').hide();
     $scope.grid = function () {
         jq('#collection').show();
@@ -257,6 +256,53 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         sessionStorage.setItem('japo-token', "");
         sessionStorage.setItem('username', "");
         $location.path("/login");
+    }
+    $scope.editUser = function () {
+        var modal = bootbox.dialog({
+            message: jq("#editUserForm").html()
+            , title: "Settings " + sessionStorage.getItem('username')
+            , buttons: [
+                {
+                    label: "Save"
+                    , className: "btn btn-primary pull-left"
+                    , callback: function () {
+                        var form = modal.find(".userForm");
+                        var items = form.serializeJSON();
+                        console.log(items);
+                        var xhr = new XMLHttpRequest()
+                        xhr.open("POST", "/api/updateuser");
+                        xhr.setRequestHeader("x-access-token", token);
+                        xhr.setRequestHeader("user", user);
+                        xhr.setRequestHeader("oldpassword", items.oldPassword);
+                        xhr.setRequestHeader("newpassword", items.newPassword);
+                        xhr.setRequestHeader("premium", items.premium);
+                        xhr.onload = function () {
+                            if (xhr.status === 200) {
+                                bootbox.alert("Settings saved succesfully.");
+                                modal.modal("hide");
+                            }
+                            if (xhr.status === 409) {
+                                bootbox.alert("The old password you entered, was incorrect.");
+                            }
+                        }
+                        if (items.newPassword === items.confirmNewPassword) {
+                            xhr.send();
+                        }
+                        return false;
+                    }
+          }
+                , {
+                    label: "Close"
+                    , className: "btn btn-default pull-left"
+                    , callback: function () {}
+          }
+        ]
+            , show: false
+            , onEscape: function () {
+                modal.modal("hide");
+            }
+        });
+        modal.modal("show");
     }
     $scope.editFile = function (file) {
         var title = file.name;

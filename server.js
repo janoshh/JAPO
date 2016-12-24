@@ -618,9 +618,7 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
     });
 });
 apiRoutes.post('/updatefile', function (req, res, next) {
-    console.log("UPDATING FILE");
     var user = req.headers['user'];
-    var bucket = user.replace("@", "-");
     var filename = req.headers['filename'];
     var customfilename = req.headers['customfilename'];
     var tags = req.headers['tags'];
@@ -628,12 +626,40 @@ apiRoutes.post('/updatefile', function (req, res, next) {
         user: user
         , filename: filename
     }, function (err, doc) {
+        if (err) console.log(err);
         doc.customfilename = customfilename
         doc.tags = tags;
         doc.save();
         res.status(200).end();
     });
 });
+apiRoutes.post('/updateuser', function (req, res, next) {
+    var user = req.headers['user'];
+    var oldPassword = req.headers['oldpassword'];
+    var newPassword = req.headers['newpassword'];
+    var premium = req.headers['premium'];
+    User.findOne({
+        name: user
+    }, function (err, doc) {
+        if (err) console.log(err);
+        if (doc.password === oldPassword) {
+            doc.password = newPassword;
+        }
+        else {
+            res.status(409).end();
+            return;
+        }
+        if (doc.premium === "on") {
+            doc.premium = true;
+        }
+        else {
+            doc.premium = false;
+        }
+        doc.save();
+        res.status(200).end();
+    });
+});
+
 apiRoutes.post('/deleteallfiles', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
