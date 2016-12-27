@@ -191,12 +191,18 @@ apiRoutes.post('/upload', function (req, res, next) {
     File.find({
         user: user
     }, function (err, filedata) {
-        if (err) throw err;
+        if (err) {
+            throw err;
+            res.status(500).end();
+        }
         else {
             User.find({
                 name: user
             }, function (err, userdata) {
-                if (err) throw err;
+                if (err) {
+                    throw err;
+                    res.status(500).end();
+                }
                 else {
                     if (userdata[0].premium === false) {
                         for (var i = 0; i < filedata.length; i += 1) {
@@ -211,6 +217,8 @@ apiRoutes.post('/upload', function (req, res, next) {
                             var bucket = user.replace("@", "-");
                             var tags = req.headers['tags'];
                             var customFilename = req.headers['customfilename'];
+                            console.log(req.headers['datefilename']);
+                            var dateFilename = req.headers['datefilename'];
                             var metadata = {
                                 "x-amz-meta-tags": tags
                             };
@@ -221,7 +229,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                                 //
                                 var params = {
                                     Bucket: bucket
-                                    , Key: filename
+                                    , Key: dateFilename
                                     , Body: file
                                     , ContentLength: fileSize
                                     , Metadata: metadata
@@ -229,7 +237,10 @@ apiRoutes.post('/upload', function (req, res, next) {
                                 };
                                 // Wegschrijven naar Amazon S3
                                 s3.upload(params, function (err, data) {
-                                    if (err) console.log(err)
+                                    if (err) {
+                                        console.log(err);
+                                        res.status(500).end();
+                                    }
                                     else {
                                         //
                                         var fileLocation;
@@ -240,7 +251,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                                         // Wegschrijven naar MongoDB
                                         fileMongo = new File({
                                             user: user
-                                            , filename: filename
+                                            , filename: dateFilename
                                             , customfilename: customFilename
                                             , filetype: fileType
                                             , size: fileSize
@@ -252,6 +263,7 @@ apiRoutes.post('/upload', function (req, res, next) {
                                         fileMongo.save(function (err, userObj) {
                                             if (err) {
                                                 console.log(err);
+                                                res.status(500).end();
                                             }
                                         });
                                         //
@@ -261,12 +273,15 @@ apiRoutes.post('/upload', function (req, res, next) {
                                         var ft = fileType.toLowerCase();
                                         if (ft === "jpg" || ft === "png" || ft === "jpeg") {
                                             jimp.read(fileLocation, function (err, image) {
-                                                if (err) throw err;
+                                                if (err) {
+                                                    throw err;
+                                                    res.status(500).end();
+                                                }
                                                 image.resize(thumbnailSize, thumbnailSize) // resize
                                                     .quality(60) // set JPEG quality
                                                     .write("thumbnail.jpg", function () {
                                                         var fileBuffer = fs.readFileSync("thumbnail.jpg");
-                                                        var thumbFileName = "thumb_" + filename;
+                                                        var thumbFileName = "thumb_" + dateFilename;
                                                         s3.putObject({
                                                             ACL: 'public-read'
                                                             , Bucket: bucket
@@ -274,7 +289,10 @@ apiRoutes.post('/upload', function (req, res, next) {
                                                             , Body: fileBuffer
                                                             , ContentType: 'image/jpg'
                                                         }, function (error, response) {
-                                                            if (error) console.log(error);
+                                                            if (error) {
+                                                                console.log(error);
+                                                                res.status(500).end();
+                                                            }
                                                         });
                                                     });
                                             });
@@ -284,18 +302,19 @@ apiRoutes.post('/upload', function (req, res, next) {
                                                     tesseract.process("temp.png", function (err, text) {
                                                         if (err) {
                                                             console.error(err);
+                                                            res.status(500).end();
                                                         }
                                                         else {
-                                                            console.log(text);
+                                                            //console.log(text);
                                                             File.findOne({
                                                                 user: user
-                                                                , filename: filename
+                                                                , filename: dateFilename
                                                             }, function (err, doc) {
                                                                 doc.content = text;
                                                                 doc.save();
                                                             });
                                                             res.status(200).end();
-                                                            compareAllFiles(user, filename, text);
+                                                            compareAllFiles(user, dateFilename, text);
                                                         }
                                                     });
                                                 });
@@ -335,28 +354,52 @@ function compareAllFiles(user, filename, currentContent) {
                 var f2 = files[i].content;
                 var match = Math.round(comareFiles(f1, f2) * 100);
                 if (match > 60) {
-                    links.push(linkName);
+                    var newLink = {
+                        filename: linkName
+                        , percentage: match
+                    };
+                    links.push(newLink);
                 }
             }
         }
-        console.log(links);
-        File.findOne({
-            user: user
-            , filename: currentName
-        }, function (err, doc) {
-            for (j = 0; j < links.length; j++) {
-                doc.links.push(links[j]);
-            }
-            doc.save();
-        });
-        for (j = 0; j < links.length; j++) {
-            var index = j;
+        if (links.length > 0) {
             File.findOne({
                 user: user
-                , filename: links[j]
+                , filename: currentName
             }, function (err, doc) {
-                doc.links.push(currentName);
-                doc.save();
+                if (err) throw (err);
+                else {
+                    var j = 0;
+                    for (j = 0; j < links.length; j++) {
+                        doc.links.push(links[j]);
+                    }
+                    doc.save();
+                }
+            });
+            var i = 0;
+            updateLinks(user, links, currentName, i);
+        }
+    });
+}
+
+var updateLinks = function (user, links, currentName, i) {
+    var currentLinkName = links[i].filename;
+    var currentLinkPercentage = links[i].percentage;
+    File.findOne({
+        user: user
+        , filename: currentLinkName
+    }, function (err, doc) {
+        if (err) throw (err);
+        else {
+            var newLink = {
+                filename: currentName
+                , percentage: currentLinkPercentage
+            };
+            doc.links.push(newLink);
+            doc.save(function (err, product) {
+                if (++i < links.length) {
+                    updateLinks(user, links, currentName, i);
+                }
             });
         }
     });
@@ -659,7 +702,6 @@ apiRoutes.post('/updateuser', function (req, res, next) {
         res.status(200).end();
     });
 });
-
 apiRoutes.post('/deleteallfiles', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");

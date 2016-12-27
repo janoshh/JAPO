@@ -47,11 +47,17 @@
                     <br>
                     Please wait...</h4> <img src="/processing.gif"> </div>
         </div>
+        <div id="somethingWentWrong">
+            <h1>Oops, sorry...</h1>
+            <h3>There may have gone something wrong while uploading your file.</h3>
+            <h3>If your file does not show on in your collection, please try again.</h3>
+            <button class="btn btn-primary" ng-click="goToHome()">Go back to home</button>
+        </div>
         <div id="notEnoughSpace">
             <h1>Oops, sorry...</h1>
             <h3>We coundn't upload your file because it would exceed your non-premium storage limit.</h3>
             <h3>Please become a premium member to enjoy unlimited storage space.</h3>
             <button class="btn btn-primary" ng-click="goToHome()">Go back to home</button>
         </div>
-        <canvas id="the-canvas" style="display: block;" height="633" width="489"></canvas>
+        <canvas id="the-canvas" style="display: none; " height="633" width="489"></canvas>
     </div>

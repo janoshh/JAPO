@@ -178,6 +178,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 if (customfilename === "undefined") {
                     customfilename = name
                 }
+                customfilename = customfilename.substr(customfilename.indexOf("|") + 1, customfilename.length);
                 if (customfilename.lastIndexOf('.') > 0) {
                     customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
                 }
@@ -208,7 +209,26 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links
                 };
                 $scope.fileList.push(file);
+            }            
+            /*
+            duplicates = [];
+            for (i = 0; i < $scope.fileList.length; i++) {
+                for (j = 0; j < $scope.fileList[i].links.length; j++) {
+                    if ($scope.fileList[i].links[j].percentage > 90) {
+                        var newDuplicate = {
+                            file1: $scope.fileList[i].name
+                            , file2: $scope.fileList[i].links[j].filename
+                            , percentage: $scope.fileList[i].links[j].percentage
+                        }
+                        duplicates.push(newDuplicate);
+                    }
+                }
             }
+            if (duplicates.length > 0) {
+                //bootbox.alert("We have reason to believe that you have duplicate files in your collection." + duplicates);
+                console.log(duplicates);
+            }
+            */
             fileService.saveFileList($scope.fileList);
             if ($scope.fileList.length > 0) {
                 $scope.documentsMessage = "";
@@ -268,7 +288,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     , callback: function () {
                         var form = modal.find(".userForm");
                         var items = form.serializeJSON();
-                        console.log(items);
                         var xhr = new XMLHttpRequest()
                         xhr.open("POST", "/api/updateuser");
                         xhr.setRequestHeader("x-access-token", token);
@@ -331,13 +350,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             }
                         }
                         xhr.send();
-                        /* This part you have to complete yourself :D
-                        if (your_form_validation(items)) {
-                          // Make your data save as async and then just call modal.modal("hide");
-                        } else {
-                          // Show some errors, etc on form
-                        }
-                        */
                         modal.modal("hide");
                         return false;
                     }
@@ -512,7 +524,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         var contentList = [];
         if (text != "") { // || text != null || $scope.fileList != null
             $scope.searching = true;
-            console.log($scope.searching);
             $scope.nsName = false;
             $scope.nsTag = false;
             $scope.nsDate = false;
@@ -556,7 +567,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         }
         else {
             $scope.searching = false;
-            console.log($scope.searching);
             $scope.nsName = true;
             $scope.nsTag = true;
             $scope.nsDate = true;
@@ -572,6 +582,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     jq('#notEnoughSpace').hide();
     jq("#processinggif").hide();
     jq("#uploadError").hide();
+    jq('#somethingWentWrong').hide();
     $scope.currentAction = "";
     $scope.largeFile = false;
     //============== DRAG & DROP =============
@@ -633,6 +644,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     $scope.uploadFile = function () {
         var fd = new FormData()
         for (var i in $scope.files) {
+            $scope.files[i].name = Date.now() + $scope.files[i];
             fd.append("uploadedFile", $scope.files[i]);
         }
         var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.') + 1).toLowerCase();
@@ -642,6 +654,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
             }
             var token = sessionStorage.getItem("japo-token");
             var user = sessionStorage.getItem("username");
+            var datefilename = Date.now() + "|" + $scope.files[i].name;
             var xhr = new XMLHttpRequest()
             xhr.upload.addEventListener("progress", uploadProgress, false);
             xhr.addEventListener("load", uploadComplete, false);
@@ -653,23 +666,23 @@ app.controller("uploadController", function ($scope, $http, $location) {
             xhr.setRequestHeader("file-size", $scope.files[i].size);
             xhr.setRequestHeader("tags", $scope.tags);
             xhr.setRequestHeader("customFilename", $scope.customFilename);
+            xhr.setRequestHeader("datefilename", datefilename);
             $scope.progressVisible = true
             xhr.onload = function () {
                 if (xhr.status === 200) {
                     if (fileType === "pdf") {
                         $scope.currentAction = "Processing PDF...";
                         $scope.safeApply();
-                        showPdf($scope.files[0].name);
+                        showPdf(datefilename);
                     }
                     else {
-                        /*file = $scope.files[0];
-                        Tesseract.recognize(file).then(function (result) {
-                                var text = result.text;
-                            });
-                            */
                         $location.path("/home");
                         $scope.$apply();
                     }
+                }
+                if (xhr.status === 500) {
+                    jq("#processinggif").hide();
+                    jq('#somethingWentWrong').show();
                 }
                 if (xhr.status === 409) {
                     jq("#processinggif").hide();
@@ -866,7 +879,8 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
     $scope.linksList = [];
     for (i = 0; i < $scope.fileList.length; i++) {
         for (j = 0; j < $scope.file.links.length; j++) {
-            if ($scope.fileList[i].name === $scope.file.links[j]) {
+            if ($scope.fileList[i].name === $scope.file.links[j].filename) {
+                $scope.fileList[i].percentage = $scope.file.links[j].percentage;
                 $scope.linksList.push($scope.fileList[i]);
             }
         }
@@ -874,6 +888,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
     $scope.showFile = function (file) {
             fileService.saveFile(file);
             $route.reload();
+            $scope.safeApply();
         }
         //
     if ($scope.file.filetype === "PDF") {

@@ -19,5 +19,6 @@
     <div class="col-lg-2 well well-lg" ng-show="linksList.length > 0">
         <h1>Related files</h1>
         <div ng-repeat="pdfItem in linksList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
+            <span class="percentage" class="red">{{pdfItem.percentage}} % </span>
             <h4>{{pdfItem.customfilename}}</h4> </div>
     </div>

@@ -283,3 +283,12 @@ tr:nth-child(even) {
 #search {
     border-radius: 15px;
 }
+
+.percentage {
+    position: absolute;
+    left: 80px;
+    margin-top: 80px;
+    color: dodgerblue;
+    font-size: 30px;
+    font-weight: bolder;
+}
