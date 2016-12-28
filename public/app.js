@@ -177,12 +177,11 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             }
         }).then(function (response) {
             $scope.premium = response.data.premium;
-            console.log(response.data.premium);
             fileList = response.data.files[0];
             for (i = 0; i < fileList.length; i++) {
                 var name = fileList[i].filename;
                 var customfilename = fileList[i].customfilename;
-                if (customfilename === "undefined") {
+                if (customfilename === "undefined" || customfilename === "") {
                     customfilename = name
                 }
                 customfilename = customfilename.substr(customfilename.indexOf("|") + 1, customfilename.length);
@@ -216,6 +215,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links
                 };
                 $scope.fileList.push(file);
+                console.log($scope.fileList);
             }
             duplicates = [];
             for (i = 0; i < $scope.fileList.length; i++) {
@@ -676,6 +676,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     jq('#somethingWentWrong').hide();
     $scope.currentAction = "";
     $scope.largeFile = false;
+    $scope.files = [];
     //============== DRAG & DROP =============
     var dropbox = document.getElementById("dropbox")
         // init event handlers
@@ -725,6 +726,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 $scope.files.push(element.files[i])
             }
             $scope.progressVisible = false
+            $scope.uploadPopup();
         });
     };
     $scope.updateFile = function () {
@@ -732,7 +734,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     }
     $scope.tags;
     $scope.customFilename;
-    $scope.uploadFile = function () {
+    $scope.uploadFile = function (customFilename, tags) {
         var fd = new FormData()
         for (var i in $scope.files) {
             $scope.files[i].name = Date.now() + $scope.files[i];
@@ -755,8 +757,8 @@ app.controller("uploadController", function ($scope, $http, $location) {
             xhr.setRequestHeader("x-access-token", token);
             xhr.setRequestHeader("user", user);
             xhr.setRequestHeader("file-size", $scope.files[i].size);
-            xhr.setRequestHeader("tags", $scope.tags);
-            xhr.setRequestHeader("customFilename", $scope.customFilename);
+            xhr.setRequestHeader("tags", tags);
+            xhr.setRequestHeader("customFilename", customFilename);
             xhr.setRequestHeader("datefilename", datefilename);
             $scope.progressVisible = true
             xhr.onload = function () {
@@ -801,6 +803,40 @@ app.controller("uploadController", function ($scope, $http, $location) {
             jq("#filesection").hide();
         })
     }
+    //$scope.$watch($scope.files, function () {
+    $scope.uploadPopup = function() {
+        if ($scope.files[0] != null) {
+            var modal = bootbox.dialog({
+                message: jq("#fileUploadProperties").html()
+                , title: "Upload " + $scope.files[0].name
+                , buttons: [
+                    {
+                        label: "<span class='glyphicon glyphicon-ok'></span> Upload"
+                        , className: "btn btn-primary pull-right"
+                        , callback: function () {
+                            var form = modal.find(".form");
+                            var items = form.serializeJSON();
+                            $scope.uploadFile(items.customFilename, items.tags);
+                            modal.modal("hide");
+                            return false;
+                        }
+          }
+                , {
+                        label: "<span class='glyphicon glyphicon-remove'></span> Cancel"
+                        , className: "btn btn-default pull-left"
+                        , callback: function () {
+                            modal.modal("hide");
+                        }
+          }
+        ]
+                , show: false
+                , onEscape: function () {
+                    modal.modal("hide");
+                }
+            });
+            modal.modal("show");
+        }
+    };
     //_____________________________________________________________
     function showPdf(fname) {
         var user = sessionStorage.getItem("username");
@@ -951,6 +987,43 @@ app.controller("uploadController", function ($scope, $http, $location) {
         else {
             this.$apply(fn);
         }
+    };
+    jQuery.fn.serializeJSON = function () {
+        var json = {};
+        jQuery.map(jQuery(this).serializeArray(), function (n) {
+            var _ = n.name.indexOf('[');
+            if (_ > -1) {
+                var o = json
+                    , _name;
+                _name = n.name.replace(/\]/gi, '').split('[');
+                for (var i = 0, len = _name.length; i < len; i++) {
+                    if (i == len - 1) {
+                        if (o[_name[i]]) {
+                            if (typeof o[_name[i]] == 'string') {
+                                o[_name[i]] = [o[_name[i]]];
+                            }
+                            o[_name[i]].push(n.value);
+                        }
+                        else {
+                            o[_name[i]] = n.value || '';
+                        }
+                    }
+                    else {
+                        o = o[_name[i]] = o[_name[i]] || {};
+                    }
+                }
+            }
+            else if (json[n.name] !== undefined) {
+                if (!json[n.name].push) {
+                    json[n.name] = [json[n.name]];
+                }
+                json[n.name].push(n.value || '');
+            }
+            else {
+                json[n.name] = n.value || '';
+            }
+        });
+        return json;
     };
 });
 //----------------------
