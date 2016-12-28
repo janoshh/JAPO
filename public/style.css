@@ -16,19 +16,19 @@ body {
 }
 
 @media(max-width: 1000px) {
-    #login {
+    .dashBorderLeft {
         border-bottom: 2px dashed #046ca3;
         padding-bottom: 20px;
     }
 }
 
 @media(min-width: 1000px) {
-    #login {
+    .dashBorderLeft {
         border-right: 2px dashed #046ca3;
         min-height: 500px;
         padding-right: 80px;
     }
-    #register {
+    .dashBorderRight {
         padding-left: 80px;
     }
 }

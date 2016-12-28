@@ -4,14 +4,14 @@
             <div id="title">
                 <button class="btn btn-primary" style="float: left" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
                 <h1>Upload a file</h1></div>
-            <div class="col-lg-6 col-md-6 col-xs-12" id="files">
+            <div class="col-lg-6 col-md-6 col-xs-12 dashBorderLeft" id="files">
                 <!--class="row"-->
-                <h4>Select a File to Upload</h4>
+                <h2>Select a File to Upload</h2>
                 <div id="selectFile">
                     <input type="file" ng-click="updateFile()" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" /> </div>
             </div>
-            <div class="col-lg-6 col-md-6 hidden-s hidden-xs" id="files">
-                <h4>Drop files here</h4>
+            <div class="col-lg-6 col-md-6 hidden-s hidden-xs dashBorderRight" id="files">
+                <h2>Or drop a file here</h2>
                 <div id="dropbox" class="dropbox" ng-class="dropClass"><span class="glyphicon glyphicon-inbox" id="drop"></span></div>
             </div>
             <div id="uploadError">
@@ -20,23 +20,7 @@
                 <p>Only these filetypes are supported: PDF - JPG - JPEG - PNG .</p>
                 <p>Please select another file.</p>
             </div>
-            <div class="col-md-12 col-xs-12" id="specsFile">
-                <p>Enter custom filename (leave blank to keep original filename): </p>
-                <input type="text" ng-model="customFilename" class="form-control has-feedback" id="uploadSpecsInput">
-                <p>Enter custom tags: </p>
-                <input type="text" ng-model="tags" class="form-control has-feedback" id="uploadSpecsInput">
-                <div ng-show="files.length">
-                    <div ng-repeat="file in files.slice(0)"> <span>{{file.webkitRelativePath || file.name}}</span> (<span ng-switch="file.size > 1024*1024">
-                <span ng-switch-when="true">{{file.size / 1024 / 1024 | number:2}} MB</span> <span ng-switch-default>{{file.size / 1024 | number:2}} kB</span> </span>) </div>
-                    <input type="button" ng-click="uploadFile()" value="Upload" />
-                    <div ng-show="progressVisible">
-                        <div class="percent">{{progress}}%</div>
-                        <div class="progress-bar">
-                            <div class="uploaded" ng-style="{'width': progress+'%'}"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
         <div id="processinggif" class="row">
             <div ng-show="files.length">

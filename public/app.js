@@ -1,6 +1,6 @@
 var jq = $.noConflict();
-//var app = angular.module('Japo-app', ["ngAnimate","ngRoute"]);
-var app = angular.module('Japo-app', ["ngRoute"]);
+var app = angular.module('Japo-app', ["ngAnimate", "ngRoute"]);
+//var app = angular.module('Japo-app', ["ngRoute"]);
 app.config(function ($routeProvider) {
     $routeProvider.when("/", {
         templateUrl: "login.html"
@@ -14,7 +14,7 @@ app.config(function ($routeProvider) {
         templateUrl: "login.html"
     }).when("/accountdeleted", {
         templateUrl: "accountdeleted.html"
-    }).when("/show", {
+    }).when("/show/:filename", {
         templateUrl: "show.html"
     })
 });
@@ -107,7 +107,7 @@ app.controller("registerController", function ($scope, $http, $location) {
         var password = $scope.password;
         var confirmPassword = $scope.confirmPassword;
         //post req
-        if ($scope.password === $scope.confirmPassword) {
+        if ($scope.password === $scope.confirmPassword && $scope.password.length >= 6) {
             $http.post("/api/createUser", {
                 "fname": fname
                 , "lname": lname
@@ -188,9 +188,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 if (customfilename.lastIndexOf('.') > 0) {
                     customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
                 }
-                if (customfilename.length > 15) {
-                    customfilename = customfilename.substring(0, 15) + "...";
-                }
+                
                 var humansize = humanFileSize(fileList[i].size, true);
                 var size = parseInt(fileList[i].size);
                 // Count all file sizes together
@@ -215,7 +213,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links
                 };
                 $scope.fileList.push(file);
-                console.log($scope.fileList);
             }
             duplicates = [];
             for (i = 0; i < $scope.fileList.length; i++) {
@@ -316,6 +313,9 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             xhr.onload = function () {
                                 if (xhr.status === 200) {
                                     modal.modal("hide");
+                                    if (i+1 === duplicates.length) {
+                                        location.reload();
+                                    }
                                     handleDuplicates(duplicates, ++i);
                                 }
                             }
@@ -335,6 +335,9 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             xhr.onload = function () {
                                 if (xhr.status === 200) {
                                     modal.modal("hide");
+                                    if (i+1 === duplicates.length) {
+                                        location.reload();
+                                    }
                                     handleDuplicates(duplicates, ++i);
                                 }
                             }
@@ -585,7 +588,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     };
     $scope.showFile = function (file) {
         fileService.saveFile(file);
-        $location.path("/show");
+        $location.path("/show/" + file.name);
     }
     $scope.downloadFile = function (file) {
         var title = file.name;
@@ -595,7 +598,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         }).success(function (data, status, headers, config) {
             // TODO when WS success
             var file = new Blob([data], {
-                type: 'application/csv'
+                type: 'application/pdf'
             });
             //trick to download a file having its URL
             var fileURL = URL.createObjectURL(file);
@@ -804,7 +807,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         })
     }
     //$scope.$watch($scope.files, function () {
-    $scope.uploadPopup = function() {
+    $scope.uploadPopup = function () {
         if ($scope.files[0] != null) {
             var modal = bootbox.dialog({
                 message: jq("#fileUploadProperties").html()
@@ -1029,7 +1032,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
 //----------------------
 //show controller
 //----------------------
-app.controller("show", function ($scope, $http, $location, fileService, $route) {
+app.controller("show", function ($scope, $http, $location, fileService, $route, $routeParams) {
     jq("#loading").show();
     jq('#showSection').hide();
     jq('#imageSection').hide();
@@ -1038,38 +1041,64 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
     $scope.goToHome = function () {
         $location.path("/home");
     }
-    $scope.file = fileService.getFile();
-    $scope.fileList = fileService.getFileList();
-    $scope.linksList = [];
-    for (i = 0; i < $scope.fileList.length; i++) {
-        for (j = 0; j < $scope.file.links.length; j++) {
-            if ($scope.fileList[i].name === $scope.file.links[j].filename) {
-                $scope.fileList[i].percentage = $scope.file.links[j].percentage;
-                $scope.linksList.push($scope.fileList[i]);
-            }
+    $scope.file;
+    $http({
+        method: 'GET'
+        , url: '/getFileInformation?filename=' + $routeParams.filename + '&user=' + user
+    }).success(function (data, status, headers, config) {
+        $scope.file = data.fileInfo;
+        if ($scope.file.customfilename === "undefined" || $scope.file.customfilename === "") {
+            $scope.file.customfilename = $scope.file.filename.split("|")[1];
+        }
+        $scope.linksList = [];
+        getLinkFile(0);
+        publishOnPage();
+    }).error(function (data, status, headers, config) {});
+    //
+    function getLinkFile(i) {
+        if ($scope.linksList.length < $scope.file.links.length) {
+            var index = i;
+            $http({
+                method: 'GET'
+                , url: '/getFileInformation?filename=' + $scope.file.links[index].filename + '&user=' + user
+            }).success(function (data, status, headers, config) {
+                var linkFile = data.fileInfo;
+                if (data.fileInfo.filetype.toUpperCase() === 'PDF') {
+                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + data.fileInfo.filename + ".jpg";
+                }
+                else {
+                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + data.fileInfo.filename;
+                }
+                linkFile.thumbnail = thumbnail;
+                linkFile.percentage = $scope.file.links[index].percentage;
+                if (linkFile.customfilename === "undefined" || linkFile.customfilename === "") {
+                    linkFile.customfilename = linkFile.filename.split("|")[1];
+                }
+                $scope.linksList.push(linkFile);
+                getLinkFile(++index);
+            });
         }
     }
-    $scope.showFile = function (file) {
-            fileService.saveFile(file);
-            $route.reload();
+
+    function publishOnPage() {
+        if ($scope.file.filetype.toUpperCase() === "PDF") {
+            showPdf();
         }
-        //
-    if ($scope.file.filetype === "PDF") {
-        showPdf();
-    }
-    else {
-        var img = document.createElement("img");
-        img.setAttribute("src", $scope.file.location);
-        img.setAttribute("height", "100%");
-        img.setAttribute("width", "auto");
-        img.setAttribute("alt", $scope.file.customfilename);
-        document.getElementById("imageSection").appendChild(img);
-        jq("#loading").hide();
-        jq('#imageSection').show();
+        else {
+            var img = document.createElement("img");
+            img.setAttribute("src", $scope.file.location);
+            img.setAttribute("height", "100%");
+            img.setAttribute("width", "auto");
+            img.setAttribute("alt", $scope.file.customfilename);
+            document.getElementById("imageSection").appendChild(img);
+            jq("#loading").hide();
+            jq('#showSection').hide();
+            jq('#imageSection').show();
+        }
     }
 
     function showPdf() {
-        var url = "/getfile?file=" + $scope.file.name + "&user=" + user;
+        var url = "/getfile?file=" + $scope.file.filename + "&user=" + user;
         pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 1, canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
         /**
          * Get page info from document, resize canvas accordingly, and render page.
@@ -1146,6 +1175,10 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
             jq("#loading").hide();
             jq('#showSection').show();
         });
+    }
+    $scope.showFile = function (file) {
+        fileService.saveFile(file);
+        $location.path("/show/" + file.filename);
     }
 });
 //

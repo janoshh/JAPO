@@ -213,7 +213,8 @@ apiRoutes.post('/upload', function (req, res, next) {
                         if (capacityUsed > maxCapacity) {
                             res.status(409).end();
                             return false;
-                        } else {
+                        }
+                        else {
                             uploadReady = true;
                         }
                     }
@@ -805,6 +806,21 @@ apiRoutes.get('/getFiles', function (req, res) {
                         , premium: premium
                     });
                 })
+            });
+        }
+    })
+});
+app.get('/getFileInformation', function (req, res) {
+    var user = req.query.user;
+    var filename = req.query.filename;
+    File.findOne({
+        user: user
+        , filename: filename
+    }, function (err, doc) {
+        if (err) throw err;
+        else {
+            return res.status(200).send({
+                fileInfo: doc
             });
         }
     })

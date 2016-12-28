@@ -8,9 +8,9 @@
         <div id="loading">
             <h2>Loading document...</h2> <img src="processing.gif"> </div>
         <div id="showSection">
-            <h3>Page: <span id="page_num">0</span> / <span id="page_count">0</span>
-        <button class="btn btn-primary" id="prev">Previous</button>
-        <button class="btn btn-primary" id="next">Next</button></h3>
+            <h3><button class="btn btn-primary" id="prev">Previous</button>
+        <button class="btn btn-primary" id="next">Next</button>
+            Page: <span id="page_num">0</span> / <span id="page_count">0</span></h3>
             <canvas id="the-canvas" style="border:1px solid black" height="633" width="489"></canvas>
         </div>
         <script src="pdf.js"></script>
@@ -18,7 +18,6 @@
     </div>
     <div class="col-lg-2 well well-lg" ng-show="linksList.length > 0">
         <h1>Related files</h1>
-        <div ng-repeat="pdfItem in linksList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
-            <span class="percentage" class="red">{{pdfItem.percentage}} % </span>
+        <div ng-repeat="pdfItem in linksList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;"> <span class="percentage" class="red">{{pdfItem.percentage}} % </span>
             <h4>{{pdfItem.customfilename}}</h4> </div>
     </div>
