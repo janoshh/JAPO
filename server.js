@@ -217,7 +217,6 @@ apiRoutes.post('/upload', function (req, res, next) {
                             var bucket = user.replace("@", "-");
                             var tags = req.headers['tags'];
                             var customFilename = req.headers['customfilename'];
-                            console.log(req.headers['datefilename']);
                             var dateFilename = req.headers['datefilename'];
                             var metadata = {
                                 "x-amz-meta-tags": tags
@@ -381,7 +380,6 @@ function compareAllFiles(user, filename, currentContent) {
         }
     });
 }
-
 var updateLinks = function (user, links, currentName, i) {
     var currentLinkName = links[i].filename;
     var currentLinkPercentage = links[i].percentage;
@@ -460,11 +458,11 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                 var fileSize = req.headers['file-size'];
                 var tags = req.headers['tags'];
                 var customFilename = req.headers['customfilename'];
-                var filename = customFilename + '.jpg';
+                var filename = req.headers['filename'];
                 var file = fs.readFileSync("temp.jpg");
                 var params = {
                     Bucket: bucket
-                    , Key: customFilename
+                    , Key: filename
                     , Body: file
                     , ACL: 'public-read'
                 };
@@ -685,14 +683,16 @@ apiRoutes.post('/updateuser', function (req, res, next) {
         name: user
     }, function (err, doc) {
         if (err) console.log(err);
-        if (doc.password === oldPassword) {
-            doc.password = newPassword;
+        if (newPassword.length > 0) {
+            if (doc.password === oldPassword) {
+                doc.password = newPassword;
+            }
+            else {
+                res.status(409).end();
+                return;
+            }
         }
-        else {
-            res.status(409).end();
-            return;
-        }
-        if (doc.premium === "on") {
+        if (premium === "on") {
             doc.premium = true;
         }
         else {
@@ -757,6 +757,21 @@ apiRoutes.post('/deletefile', function (req, res, next) {
                 filename: filename
             }).remove(function (err, data) {
                 if (err) console.log(err, err.stack);
+                File.find({
+                    user: user
+                }, function (err, docs) {
+                    if (err) console.log(err);
+                    else {
+                        for (i = 0; i < docs.length; i++) {
+                            for (j = 0; j < docs[i].links.length; j++) {
+                                if (docs[i].links[j].filename === filename) {
+                                    docs[i].links.splice(j, 1);
+                                    docs[i].save();
+                                }
+                            }
+                        }
+                    }
+                })
             });
             //
             res.status(200).end();
@@ -767,16 +782,26 @@ apiRoutes.get('/getFiles', function (req, res) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
     var files = [];
-    mongoose.connection.db.collection("files", function (err, collection) {
-        collection.find({
-            user: user
-        }).toArray(function (err, data) {
-            files.push(data);
-            return res.status(200).send({
-                files: files
+    var premium = false;
+    User.findOne({
+        name: user
+    }, function (err, doc) {
+        if (err) throw err;
+        else {
+            premium = doc.premium;
+            mongoose.connection.db.collection("files", function (err, collection) {
+                collection.find({
+                    user: user
+                }).toArray(function (err, data) {
+                    files.push(data);
+                    return res.status(200).send({
+                        files: files
+                        , premium: premium
+                    });
+                })
             });
-        })
-    });
+        }
+    })
 });
 app.use('/api', apiRoutes);
 // =================================================================

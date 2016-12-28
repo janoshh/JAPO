@@ -33,7 +33,6 @@ body {
     }
 }
 
-
 #layout {
     margin-top: 8px;
 }
@@ -210,10 +209,14 @@ tr:nth-child(even) {
     margin-right: auto;
     max-width: 75%;
     box-shadow: 5px 4px 3px #888888;
+    -webkit-transition: max-width 0.2s;
+    /* Safari */
+    transition: max-width 0.2s;
 }
 
 .collectionItem:hover > img {
-    -webkit-transition: max-width 0.2s; /* Safari */
+    -webkit-transition: max-width 0.2s;
+    /* Safari */
     transition: max-width 0.2s;
     max-width: 80%;
 }
@@ -280,6 +283,14 @@ tr:nth-child(even) {
     color: darkred;
 }
 
+.white {
+    color: white;
+}
+
+.white:hover {
+    color: gainsboro;
+}
+
 #search {
     border-radius: 15px;
 }
@@ -291,4 +302,58 @@ tr:nth-child(even) {
     color: dodgerblue;
     font-size: 30px;
     font-weight: bolder;
+}
+
+.leftDiv {
+    float: left;
+    width: 100px;
+}
+
+.rightDiv {
+    float: right;
+    width: calc(100% - 100px);
+}
+
+.dropdown-menu > li > a > .glyphicon:before {
+    margin-right: 10px;
+}
+
+.duplicatesPopup {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    border: solid;
+    border-color: white;
+    border-radius: 15px;
+    border-width: 1px;
+    width: 250px;
+    height: 130px;
+    background-image: -webkit-linear-gradient(top, #337ab7 0, #265a88 100%);
+    background-image: -o-linear-gradient(top, #337ab7 0, #265a88 100%);
+    background-image: -webkit-gradient(linear, left top, left bottom, from(#337ab7), to(#265a88));
+    background-image: linear-gradient(to bottom, #337ab7 0, #265a88 100%);
+    margin: 10px;
+    padding: 10px;
+    box-shadow: 5px 4px 3px #888888;
+    cursor: pointer;
+}
+
+.duplicatesPopup > p {
+    color: aliceblue
+}
+
+.show-animation {
+  transition: all linear 0.8s;
+}
+.show-animation.ng-hide {
+  opacity: 0;
+}
+.show-animation.ng-show {
+  opacity: 1;
+}
+
+hr { 
+    display: block;
+    margin-top: 0.2em !important;
+    margin-bottom: 0.2em !important;
 }

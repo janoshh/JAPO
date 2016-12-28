@@ -1,5 +1,6 @@
 var jq = $.noConflict();
-var app = angular.module('Japo-app', ['ngRoute']);
+//var app = angular.module('Japo-app', ["ngAnimate","ngRoute"]);
+var app = angular.module('Japo-app', ["ngRoute"]);
 app.config(function ($routeProvider) {
     $routeProvider.when("/", {
         templateUrl: "login.html"
@@ -132,6 +133,10 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.searching = false;
     $scope.editingFile = "";
     $scope.userSavedSuccess = false;
+    $scope.premium = false;
+    $scope.duplicatesFound = false;
+    $scope.doNotShowDuplicatesPopup = false;
+    $scope.doNotShowDuplicatesPopup = sessionStorage.getItem("doNotShowDuplicatesPopup");
     jq('#collectionsList').hide();
     $scope.grid = function () {
         jq('#collection').show();
@@ -171,6 +176,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 , 'user': user
             }
         }).then(function (response) {
+            $scope.premium = response.data.premium;
+            console.log(response.data.premium);
             fileList = response.data.files[0];
             for (i = 0; i < fileList.length; i++) {
                 var name = fileList[i].filename;
@@ -209,8 +216,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links
                 };
                 $scope.fileList.push(file);
-            }            
-            /*
+            }
             duplicates = [];
             for (i = 0; i < $scope.fileList.length; i++) {
                 for (j = 0; j < $scope.fileList[i].links.length; j++) {
@@ -220,15 +226,21 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             , file2: $scope.fileList[i].links[j].filename
                             , percentage: $scope.fileList[i].links[j].percentage
                         }
-                        duplicates.push(newDuplicate);
+                        var alreadyInDuplicates = false;
+                        for (l = 0; l < duplicates.length; l++) {
+                            if (newDuplicate.file1 === duplicates[l].file2 && newDuplicate.file2 === duplicates[l].file1) {
+                                alreadyInDuplicates = true;
+                            }
+                        }
+                        if (!alreadyInDuplicates) {
+                            duplicates.push(newDuplicate);
+                        }
                     }
                 }
             }
             if (duplicates.length > 0) {
-                //bootbox.alert("We have reason to believe that you have duplicate files in your collection." + duplicates);
-                console.log(duplicates);
+                $scope.duplicatesFound = true;
             }
-            */
             fileService.saveFileList($scope.fileList);
             if ($scope.fileList.length > 0) {
                 $scope.documentsMessage = "";
@@ -277,43 +289,122 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         sessionStorage.setItem('username', "");
         $location.path("/login");
     }
+    $scope.doNotShowDumplicatePopup = function () {
+        sessionStorage.setItem("doNotShowDuplicatesPopup", true);
+    }
+    $scope.findDuplicates = function () {
+        handleDuplicates(duplicates, 0);
+    }
+
+    function handleDuplicates(duplicates, i) {
+        if (i < duplicates.length) {
+            var f1 = duplicates[i].file1.split("|")[1];
+            var f2 = duplicates[i].file2.split("|")[1];
+            var modal = bootbox.dialog({
+                title: "Duplicate found"
+                , message: '"' + f1 + '" is for ' + duplicates[i].percentage + '% the same as "' + f2 + '"'
+                , buttons: [
+                    {
+                        label: "<span class='glyphicon glyphicon-remove'></span> Delete " + f1
+                        , className: "btn btn-danger pull-left"
+                        , callback: function () {
+                            var xhr = new XMLHttpRequest()
+                            xhr.open("POST", "/api/deletefile");
+                            xhr.setRequestHeader("x-access-token", token);
+                            xhr.setRequestHeader("user", user);
+                            xhr.setRequestHeader("filename", duplicates[i].file1);
+                            xhr.onload = function () {
+                                if (xhr.status === 200) {
+                                    modal.modal("hide");
+                                    handleDuplicates(duplicates, ++i);
+                                }
+                            }
+                            xhr.send()
+                            return false;
+                        }
+          }
+                , {
+                        label: "<span class='glyphicon glyphicon-remove'></span> Delete " + f2
+                        , className: "btn btn-danger pull-left"
+                        , callback: function () {
+                            var xhr = new XMLHttpRequest()
+                            xhr.open("POST", "/api/deletefile");
+                            xhr.setRequestHeader("x-access-token", token);
+                            xhr.setRequestHeader("user", user);
+                            xhr.setRequestHeader("filename", duplicates[i].file2);
+                            xhr.onload = function () {
+                                if (xhr.status === 200) {
+                                    modal.modal("hide");
+                                    handleDuplicates(duplicates, ++i);
+                                }
+                            }
+                            xhr.send()
+                            return false;
+                        }
+            }
+                                , {
+                        label: "<span class='glyphicon glyphicon-ok'></span>  Keep both"
+                        , className: "btn btn-primary pull-right"
+                        , callback: function () {
+                            handleDuplicates(duplicates, ++i);
+                        }
+                                }]
+                , show: false
+                , onEscape: function () {
+                    modal.modal("hide");
+                }
+            });
+            modal.modal("show");
+        }
+    }
     $scope.editUser = function () {
         var modal = bootbox.dialog({
             message: jq("#editUserForm").html()
             , title: "Settings " + sessionStorage.getItem('username')
             , buttons: [
                 {
-                    label: "Save"
+                    label: "<span class='glyphicon glyphicon-ok'></span> Save"
                     , className: "btn btn-primary pull-left"
                     , callback: function () {
                         var form = modal.find(".userForm");
                         var items = form.serializeJSON();
-                        var xhr = new XMLHttpRequest()
-                        xhr.open("POST", "/api/updateuser");
-                        xhr.setRequestHeader("x-access-token", token);
-                        xhr.setRequestHeader("user", user);
-                        xhr.setRequestHeader("oldpassword", items.oldPassword);
-                        xhr.setRequestHeader("newpassword", items.newPassword);
-                        xhr.setRequestHeader("premium", items.premium);
-                        xhr.onload = function () {
-                            if (xhr.status === 200) {
-                                bootbox.alert("Settings saved succesfully.");
-                                modal.modal("hide");
+                        if ((items.newPassword.length >= 6) || (items.oldPassword.length === 0 && items.newPassword.length === 0 && items.confirmNewPassword.length === 0)) {
+                            var xhr = new XMLHttpRequest()
+                            xhr.open("POST", "/api/updateuser");
+                            xhr.setRequestHeader("x-access-token", token);
+                            xhr.setRequestHeader("user", user);
+                            xhr.setRequestHeader("oldpassword", items.oldPassword);
+                            xhr.setRequestHeader("newpassword", items.newPassword);
+                            xhr.setRequestHeader("premium", items.premium);
+                            xhr.onload = function () {
+                                if (xhr.status === 200) {
+                                    bootbox.alert("Settings saved succesfully.");
+                                    modal.modal("hide");
+                                }
+                                if (xhr.status === 409) {
+                                    bootbox.alert("The old password you entered, was incorrect.");
+                                }
                             }
-                            if (xhr.status === 409) {
-                                bootbox.alert("The old password you entered, was incorrect.");
+                            if (items.newPassword === items.confirmNewPassword) {
+                                xhr.send();
                             }
                         }
-                        if (items.newPassword === items.confirmNewPassword) {
-                            xhr.send();
+                        else {
+                            bootbox.alert("Please ensure that the new password contains six characters or more.");
                         }
                         return false;
                     }
           }
                 , {
-                    label: "Close"
+                    label: "<span class='glyphicon glyphicon-remove'></span> Close"
                     , className: "btn btn-default pull-left"
                     , callback: function () {}
+          }, {
+                    label: "<span class='glyphicon glyphicon-remove'></span>  Delete Account"
+                    , className: "btn btn-danger pull-right"
+                    , callback: function () {
+                        $scope.deleteAccount();
+                    }
           }
         ]
             , show: false
@@ -888,7 +979,6 @@ app.controller("show", function ($scope, $http, $location, fileService, $route) 
     $scope.showFile = function (file) {
             fileService.saveFile(file);
             $route.reload();
-            $scope.safeApply();
         }
         //
     if ($scope.file.filetype === "PDF") {
