@@ -48,7 +48,7 @@
             <h3>{{documentsMessage}}</h3></div>
         <div id="collection">
             <div ng-hide="searching">
-                <div ng-repeat="pdfItem in fileList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
+                <div ng-repeat="pdfItem in fileList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
                     <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
@@ -58,7 +58,7 @@
             </div>
             <div ng-hide="nsName" class="col-md-12 col-xs-12">
                 <h2>Name</h2>
-                <div ng-repeat="pdfItem in sortedNameList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
+                <div ng-repeat="pdfItem in sortedNameList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
                     <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
@@ -68,7 +68,7 @@
             </div>
             <div ng-hide="nsTag" class="col-md-12 col-xs-12">
                 <h2>Tag</h2>
-                <div ng-repeat="pdfItem in sortedTagList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
+                <div ng-repeat="pdfItem in sortedTagList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
                     <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
@@ -78,7 +78,7 @@
             </div>
             <div ng-hide="nsDate" class="col-md-12 col-xs-12">
                 <h2>Date</h2>
-                <div ng-repeat="pdfItem in sortedDateList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
+                <div ng-repeat="pdfItem in sortedDateList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
                     <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
@@ -88,7 +88,7 @@
             </div>
             <div ng-hide="nsContent" class="col-md-12 col-xs-12">
                 <h2>Content</h2>
-                <div ng-repeat="pdfItem in sortedContentList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
+                <div ng-repeat="pdfItem in sortedContentList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
                     <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
@@ -239,7 +239,7 @@
                 <input type="checkbox" ng-checked="premium" id="premium" name="premium"> </div>
             <h2 class="green" ng-show="userSavedSuccess">Settings saved successfully.</h2> </form>
     </div>
-    <div class="duplicatesPopup show-animation" ng-show="duplicatesFound && !doNotShowDuplicatesPopup"> <span class="glyphicon glyphicon-remove float-right white" ng-click="duplicatesFound = false; $event.stopPropagation()"></span>
+    <div class="duplicatesPopup show-animation" ng-show="duplicatesFound && !doNotShowDuplicatesPopup"> <span class="glyphicon glyphicon-remove float-right white" ng-click="doNotShowDuplicatesPopup = true; $event.stopPropagation()"></span>
         <p ng-click="findDuplicates()">We noticed there might be some duplicate files in your collection. Click here to take a look at them.</p>
         <p>
             <input type="checkbox" ng-click="doNotShowDumplicatePopup(); $event.stopPropagation()"> Don't show this again.</p>

@@ -134,9 +134,11 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.editingFile = "";
     $scope.userSavedSuccess = false;
     $scope.premium = false;
-    $scope.duplicatesFound = false;
-    $scope.doNotShowDuplicatesPopup = false;
+    $scope.duplicatesFound = false;    
     $scope.doNotShowDuplicatesPopup = sessionStorage.getItem("doNotShowDuplicatesPopup");
+    if ($scope.doNotShowDuplicatesPopup === null) {
+        $scope.doNotShowDuplicatesPopup = false;
+    }
     jq('#collectionsList').hide();
     $scope.grid = false;
     $scope.grid = function () {
@@ -189,16 +191,16 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 , 'user': user
             }
         }).then(function (response) {
-            creatCollection(response);
+            createCollection(response);
         });
     }
     var refreshFileList = $interval(function () {
-        console.log("Refreshing");
         getFileList()
-    }, 3000);
+    }, 10000);
     getFileList();
 
-    function creatCollection(response) {
+    function createCollection(response) {
+        $scope.capacityUsed = 0;
         $scope.fileList.length = 0;
         $scope.premium = response.data.premium;
         fileList = response.data.files[0];
@@ -208,12 +210,16 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             if (customfilename === "undefined" || customfilename === "") {
                 customfilename = name
             }
+            
             customfilename = customfilename.substr(customfilename.indexOf("|") + 1, customfilename.length);
             if (customfilename.lastIndexOf('.') > 0) {
                 customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
             }
+            if (customfilename.length > 15) {
+                customfilename = customfilename.substr(0, 15) + "...";
+            }
             var humansize = humanFileSize(fileList[i].size, true);
-            var size = parseInt(fileList[i].size);
+            var size = parseInt(fileList[i].size);            
             // Count all file sizes together
             $scope.capacityUsed += parseInt(fileList[i].size);
             var date = fileList[i].date;
@@ -278,6 +284,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             $scope.capacityBlueUsed = $scope.capacityUsed;
         }
         maxCapacity = 100
+        console.log($scope.doNotShowDuplicatesPopup);
     }
 
     function containsObject(obj, list) {
@@ -303,7 +310,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         $location.path("/login");
     }
     $scope.doNotShowDumplicatePopup = function () {
-        sessionStorage.setItem("doNotShowDuplicatesPopup", true);
+        sessionStorage.setItem("doNotShowDuplicatesPopup", true);        
     }
     $scope.findDuplicates = function () {
         if (duplicates.length > 0) {
@@ -749,7 +756,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
             for (var i = 0; i < element.files.length; i++) {
                 $scope.files.push(element.files[i]);
                 var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();
-                console.log(fileType);
                 if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) < 0) {
                     allFileTypesGood = false;
                 }

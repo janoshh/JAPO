@@ -272,7 +272,7 @@ function uploadToMongoDB(user, params) {
         , filename: params.Key
         , customfilename: ""
         , filetype: params.fileType
-        , size: params.fileSize
+        , size: params.ContentLength
         , date: Date.now()
         , tags: ""
         , location: params.fileLocation
