@@ -124,7 +124,7 @@ app.controller("registerController", function ($scope, $http, $location) {
 // ---------------
 // Home Controller
 // ---------------
-app.controller("homeController", function ($scope, $http, $location, fileService) {
+app.controller("homeController", function ($scope, $http, $location, fileService, $interval) {
     if (sessionStorage.getItem('username') === "") {
         $location.path("/login");
     }
@@ -179,7 +179,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.fileList = [];
     $scope.capacityUsed = 0;
 
-    function getFiles() {
+    function getFileList() {
         $scope.capacityUsed = 0;
         $http({
             method: 'GET'
@@ -189,85 +189,95 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 , 'user': user
             }
         }).then(function (response) {
-            $scope.premium = response.data.premium;
-            fileList = response.data.files[0];
-            for (i = 0; i < fileList.length; i++) {
-                var name = fileList[i].filename;
-                var customfilename = fileList[i].customfilename;
-                if (customfilename === "undefined" || customfilename === "") {
-                    customfilename = name
-                }
-                customfilename = customfilename.substr(customfilename.indexOf("|") + 1, customfilename.length);
-                if (customfilename.lastIndexOf('.') > 0) {
-                    customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
-                }
-                var humansize = humanFileSize(fileList[i].size, true);
-                var size = parseInt(fileList[i].size);
-                // Count all file sizes together
-                $scope.capacityUsed += parseInt(fileList[i].size);
-                var date = fileList[i].date;
-                date = date.substring(0, date.indexOf('T'));
-                var tags = fileList[i].tags;
-                if (tags === "undefined") {
-                    tags = "";
-                }
-                var location = fileList[i].location;
-                var filetype = fileList[i].filetype.toUpperCase();
-                var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
-                var content = fileList[i].content;
-                var links = fileList[i].links;
-                var file = {
-                    name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links
-                };
-                $scope.fileList.push(file);
+            creatCollection(response);
+        });
+    }
+    var refreshFileList = $interval(function () {
+        console.log("Refreshing");
+        getFileList()
+    }, 3000);
+    getFileList();
+
+    function creatCollection(response) {
+        $scope.fileList.length = 0;
+        $scope.premium = response.data.premium;
+        fileList = response.data.files[0];
+        for (i = 0; i < fileList.length; i++) {
+            var name = fileList[i].filename;
+            var customfilename = fileList[i].customfilename;
+            if (customfilename === "undefined" || customfilename === "") {
+                customfilename = name
             }
-            duplicates = [];
-            for (i = 0; i < $scope.fileList.length; i++) {
-                for (j = 0; j < $scope.fileList[i].links.length; j++) {
-                    if ($scope.fileList[i].links[j].percentage > 90) {
-                        var newDuplicate = {
-                            file1: $scope.fileList[i].name
-                            , file2: $scope.fileList[i].links[j].filename
-                            , percentage: $scope.fileList[i].links[j].percentage
+            customfilename = customfilename.substr(customfilename.indexOf("|") + 1, customfilename.length);
+            if (customfilename.lastIndexOf('.') > 0) {
+                customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
+            }
+            var humansize = humanFileSize(fileList[i].size, true);
+            var size = parseInt(fileList[i].size);
+            // Count all file sizes together
+            $scope.capacityUsed += parseInt(fileList[i].size);
+            var date = fileList[i].date;
+            date = date.substring(0, date.indexOf('T'));
+            var tags = fileList[i].tags;
+            if (tags === "undefined") {
+                tags = "";
+            }
+            var location = fileList[i].location;
+            var filetype = fileList[i].filetype.toUpperCase();
+            var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
+            var content = fileList[i].content;
+            var links = fileList[i].links;
+            var file = {
+                name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links
+            };
+            $scope.fileList.push(file);
+        }
+        duplicates = [];
+        for (i = 0; i < $scope.fileList.length; i++) {
+            for (j = 0; j < $scope.fileList[i].links.length; j++) {
+                if ($scope.fileList[i].links[j].percentage > 90) {
+                    var newDuplicate = {
+                        file1: $scope.fileList[i].name
+                        , file2: $scope.fileList[i].links[j].filename
+                        , percentage: $scope.fileList[i].links[j].percentage
+                    }
+                    var alreadyInDuplicates = false;
+                    for (l = 0; l < duplicates.length; l++) {
+                        if (newDuplicate.file1 === duplicates[l].file2 && newDuplicate.file2 === duplicates[l].file1) {
+                            alreadyInDuplicates = true;
                         }
-                        var alreadyInDuplicates = false;
-                        for (l = 0; l < duplicates.length; l++) {
-                            if (newDuplicate.file1 === duplicates[l].file2 && newDuplicate.file2 === duplicates[l].file1) {
-                                alreadyInDuplicates = true;
-                            }
-                        }
-                        if (!alreadyInDuplicates) {
-                            duplicates.push(newDuplicate);
-                        }
+                    }
+                    if (!alreadyInDuplicates) {
+                        duplicates.push(newDuplicate);
                     }
                 }
             }
-            if (duplicates.length > 0) {
-                $scope.duplicatesFound = true;
-            }
-            fileService.saveFileList($scope.fileList);
-            if ($scope.fileList.length > 0) {
-                $scope.documentsMessage = "";
-            }
-            else {
-                $scope.documentsMessage = "You have not yet uploaded any documents.";
-            }
-            $scope.capacityUsed = humanFileSize($scope.capacityUsed, true);
-            if ($scope.capacityUsed.match('kB')) {
-                $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '') / 100;
-            }
-            else {
-                $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '');
-            }
-            if ($scope.capacityUsed > 85) {
-                $scope.capacityBlueUsed = 85;
-                $scope.capacityRedUsed = $scope.capacityUsed - 85;
-            }
-            else {
-                $scope.capacityBlueUsed = $scope.capacityUsed;
-            }
-            maxCapacity = 100
-        });
+        }
+        if (duplicates.length > 0) {
+            $scope.duplicatesFound = true;
+        }
+        fileService.saveFileList($scope.fileList);
+        if ($scope.fileList.length > 0) {
+            $scope.documentsMessage = "";
+        }
+        else {
+            $scope.documentsMessage = "You have not yet uploaded any documents.";
+        }
+        $scope.capacityUsed = humanFileSize($scope.capacityUsed, true);
+        if ($scope.capacityUsed.match('kB')) {
+            $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '') / 100;
+        }
+        else {
+            $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '');
+        }
+        if ($scope.capacityUsed > 85) {
+            $scope.capacityBlueUsed = 85;
+            $scope.capacityRedUsed = $scope.capacityUsed - 85;
+        }
+        else {
+            $scope.capacityBlueUsed = $scope.capacityUsed;
+        }
+        maxCapacity = 100
     }
 
     function containsObject(obj, list) {
@@ -284,7 +294,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         $scope.reverse = ($scope.propertyName === propertyName) ? !$scope.reverse : false;
         $scope.propertyName = propertyName;
     };
-    getFiles();
     $scope.goToUpload = function () {
         $location.path("/upload");
     }
@@ -729,17 +738,30 @@ app.controller("uploadController", function ($scope, $http, $location) {
                     }
                 })
             }
+            $scope.uploadFile();
         }, false)
         //============== DRAG & DROP =============
     $scope.setFiles = function (element) {
         $scope.$apply(function (scope) {
             // Turn the FileList object into an Array
             $scope.files = []
+            var allFileTypesGood = true;
             for (var i = 0; i < element.files.length; i++) {
-                $scope.files.push(element.files[i])
+                $scope.files.push(element.files[i]);
+                var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();
+                console.log(fileType);
+                if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) < 0) {
+                    allFileTypesGood = false;
+                }
             }
             $scope.progressVisible = false
-            $scope.uploadPopup();
+            if (allFileTypesGood) {
+                $scope.uploadPopup();
+            }
+            else {
+                $scope.files.length = 0;
+                $scope.uploadFileTypeErrorPopup();
+            }
         });
     };
     $scope.updateFile = function () {
@@ -747,7 +769,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     }
     $scope.tags;
     $scope.customFilename;
-    $scope.uploadFile = function (customFilename, tags) {
+    $scope.uploadFile = function () {
         var fd = new FormData()
         for (var i in $scope.files) {
             $scope.files[i].name = Date.now() + $scope.files[i];
@@ -759,14 +781,11 @@ app.controller("uploadController", function ($scope, $http, $location) {
     function uploadNewFile(fd, i) {
         if (i < $scope.files.length) {
             var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();
-            if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {                
+            if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {
                 var token = sessionStorage.getItem("japo-token");
                 var user = sessionStorage.getItem("username");
                 var xhr = new XMLHttpRequest()
                 xhr.upload.addEventListener("progress", uploadProgress, false);
-                xhr.addEventListener("load", uploadComplete, false);
-                xhr.addEventListener("error", uploadFailed, false);
-                xhr.addEventListener("abort", uploadCanceled, false);
                 xhr.open("POST", "/api/upload");
                 xhr.setRequestHeader("x-access-token", token);
                 xhr.setRequestHeader("user", user);
@@ -777,12 +796,10 @@ app.controller("uploadController", function ($scope, $http, $location) {
                     if (xhr.readyState == 4) {
                         status = xhr.status;
                         if (xhr.status === 500) {
-                            jq("#processinggif").hide();
-                            jq('#somethingWentWrong').show();
+                            bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
                         }
                         else if (xhr.status === 409) {
-                            jq("#processinggif").hide();
-                            jq('#notEnoughSpace').show();
+                            bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
                         }
                         else {
                             $location.path("/home");
@@ -792,9 +809,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 };
                 xhr.onload = function () {};
                 xhr.send(fd);
-            }
-            else {
-                jq("#uploadError").show();
             }
         }
     }
@@ -811,29 +825,25 @@ app.controller("uploadController", function ($scope, $http, $location) {
             jq("#filesection").hide();
         })
     }
-    //$scope.$watch($scope.files, function () {
     $scope.uploadPopup = function () {
         if ($scope.files[0] != null) {
+            var title = "Your file is ready for uploading."
+            var message = "New uploaded files will appear automatically in your collection. You can rename your files and add tags there."
+            if ($scope.files.length > 1) {
+                title = "Your files are ready for uploading."
+            }
             var modal = bootbox.dialog({
-                message: jq("#fileUploadProperties").html()
-                , title: "Upload " + $scope.files[0].name
+                message: message
+                , title: title
                 , buttons: [
                     {
-                        label: "<span class='glyphicon glyphicon-ok'></span> Upload"
-                        , className: "btn btn-primary pull-right"
+                        label: "<span class='glyphicon glyphicon-ok'></span> Upload!"
+                        , className: "btn btn-success"
                         , callback: function () {
-                            var form = modal.find(".form");
-                            var items = form.serializeJSON();
-                            $scope.uploadFile(items.customFilename, items.tags);
+                            $scope.uploadFile();
+                            $location.path("/home");
                             modal.modal("hide");
                             return false;
-                        }
-          }
-                , {
-                        label: "<span class='glyphicon glyphicon-remove'></span> Cancel"
-                        , className: "btn btn-default pull-left"
-                        , callback: function () {
-                            modal.modal("hide");
                         }
           }
         ]
@@ -845,16 +855,39 @@ app.controller("uploadController", function ($scope, $http, $location) {
             modal.modal("show");
         }
     };
-    
-    function uploadComplete(evt) {}
-
-    function uploadFailed(evt) {}
-
-    function uploadCanceled(evt) {
-        $scope.$apply(function () {
-                $scope.progressVisible = false
-            })
-            //alert("The upload has been canceled by the user or the browser dropped the connection.")
+    $scope.uploadFileTypeErrorPopup = function () {
+        var title = "Error uploading file."
+        var message = "Sorry, it seems you are trying to upload an unsupported file. Our platform only allows PDF, JPG and PNG files."
+        var modal = bootbox.dialog({
+            message: message
+            , title: title
+            , buttons: [
+                {
+                    label: "<span class='glyphicon glyphicon-ok'></span> Upload another file"
+                    , className: "btn btn-primary"
+                    , callback: function () {
+                        $scope.uploadFile();
+                        $location.path("/upload");
+                        modal.modal("hide");
+                        return false;
+                    }
+          }, {
+                    label: "<span class='glyphicon glyphicon-ok'></span> Go to Home"
+                    , className: "btn btn-default"
+                    , callback: function () {
+                        $scope.uploadFile();
+                        $location.path("/home");
+                        modal.modal("hide");
+                        return false;
+                    }
+          }
+        ]
+            , show: false
+            , onEscape: function () {
+                modal.modal("hide");
+            }
+        });
+        modal.modal("show");
     }
     $scope.goToHome = function () {
         $location.path("/home");

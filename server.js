@@ -19,7 +19,8 @@ var port = 80;
 //
 // Max Capacity of non-premium member:
 var maxCapacity = 100000000;
-var thumbnailSize = 250;7
+var thumbnailSize = 250;
+7
 var dateFileSeperator = "|";
 //
 // connect to database
@@ -295,9 +296,14 @@ function getTextFromPdf(user, params) {
             user: user
             , filename: params.Key
         }, function (err, doc) {
-            doc.content = pages.toString();
-            doc.save();
-            compareAllFiles(user, params.Key, pages.toString());
+            if (doc) {
+                doc.content = pages.toString();
+                doc.save();
+                compareAllFiles(user, params.Key, pages.toString());
+            }
+            else {
+                console.log("No file found");
+            }
         });
     })
 }
@@ -319,7 +325,6 @@ function getTextFromImage(user, params) {
                         doc.content = text;
                         doc.save();
                         compareAllFiles(user, params.Key, text);
-                        fs.unlinkSync(pngFile);
                     });
                 }
             });
@@ -355,13 +360,14 @@ function createThumbnailFromImage(params, pdf) {
                         console.log(error);
                     }
                     // DELETE TEMPORARY FILES FROM SERVER
-                    fileSubstr = params.Key.substr(0,params.Key.indexOf(dateFileSeperator));
-                    console.log("Searching for files starting with "+fileSubstr)
+                    fileSubstr = params.Key.substr(0, params.Key.indexOf(dateFileSeperator));
+                    /*
                     glob("./files/"+fileSubstr+"*", function (er, files) {
                         for (i=0;i<files.length;i++) {
                             fs.unlinkSync(files[i]);
                         }
                     })
+                    */
                 });
             });
     });
@@ -641,7 +647,6 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
         });
     });
 });
-
 app.get('/getfile', function (req, res, next) {
     var user = req.query.user;
     var bucket = user.replace("@", "-");
