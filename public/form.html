@@ -6,21 +6,14 @@
                 <h1>Upload a file</h1></div>
             <div class="col-lg-6 col-md-6 col-xs-12 dashBorderLeft" id="files">
                 <!--class="row"-->
-                <h2>Select a File to Upload</h2>
+                <h2>Select a file to Upload</h2>
                 <div id="selectFile">
                     <input type="file" ng-click="updateFile()" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" /> </div>
             </div>
             <div class="col-lg-6 col-md-6 hidden-s hidden-xs dashBorderRight" id="files">
                 <h2>Or drop a file here</h2>
                 <div id="dropbox" class="dropbox" ng-class="dropClass"><span class="glyphicon glyphicon-inbox" id="drop"></span></div>
-            </div>
-            <div id="uploadError">
-                <h3>Oops, sorry...</h3>
-                <p>We coundn't upload your file because this filetype is not supported.</p>
-                <p>Only these filetypes are supported: PDF - JPG - JPEG - PNG .</p>
-                <p>Please select another file.</p>
-            </div>
-            
+            </div>            
         </div>
         <div id="processinggif" class="row">
             <div ng-show="files.length">
@@ -31,6 +24,12 @@
                     <br>
                     Please wait...</h4> <img src="/processing.gif"> </div>
         </div>
+        <div id="uploadError">
+                <h2>Oops, sorry...</h2>
+                <p>We coundn't upload your file because this filetype is not supported.</p>
+                <p>Only these filetypes are supported: PDF - JPG - JPEG - PNG .</p>
+                <p>Please select another file.</p>
+            </div>
         <div id="somethingWentWrong">
             <h1>Oops, sorry...</h1>
             <h3>There may have gone something wrong while uploading your file.</h3>

@@ -15,10 +15,7 @@
                 <button class="btn btn-primary visible-sm visible-xs" style="margin-left: 15px;" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></button>
                 <ul class="dropdown-menu">
                     <li class="visible-sm visible-xs" style="margin-left: 15px;">{{user}}</li>
-                    <hr  class="visible-sm visible-xs">                    
-                    <li><a ng-click="ng-click=findDuplicates()"><span class="glyphicon glyphicon-duplicate"></span>Find Duplicates</a></li>
-                    <li><a ng-click="deleteAllFiles()"><span class="glyphicon glyphicon-remove"></span>Delete All Files</a></li>
-                    <hr>
+                    <hr class="visible-sm visible-xs">
                     <li><a ng-click="editUser()"><span class="glyphicon glyphicon-cog"></span>Settings</a></li>
                     <li><a ng-click="logOut()"><span class="glyphicon glyphicon-log-out"></span>Log out</a></li>
                 </ul>
@@ -28,11 +25,20 @@
     <div>
         <div id="layout" class="container-fluid">
             <div class="leftDiv">
-                <button ng-click="grid()" class="btn btn-primary"> <span class="glyphicon glyphicon-th"></span></button>
-                <button ng-click="list()" class="btn btn-primary"> <span class="glyphicon glyphicon-list"></span></button>
+                <div class="btn-group btn-group-merge">
+                    <button class="btn btn-primary float-left" data-toggle="dropdown"><span class="glyphicon glyphicon-menu-hamburger" style="margin-right: 5px;"></span>Menu</button>
+                    <ul class="dropdown-menu">
+                        <li><a ng-click="findDuplicates()"><span class="glyphicon glyphicon-duplicate"></span>Find Duplicates</a></li>
+                        <li><a ng-click="deleteAllFiles()"><span class="glyphicon glyphicon-remove"></span>Delete All Files</a></li>
+                        <hr>
+                        <li><a ng-click="grid()"><span class="glyphicon glyphicon-th"></span> Grid view</a></li>
+                        <li><a ng-click="list()"><span class="glyphicon glyphicon-list"></span> List view</a></li>
+                    </ul>
+                    <button ng-click="toggleGridList()" class="btn btn-primary visible-lg visible-md visible-sm" style="height:34px;" title="Change the way your collection is displayed"> <span id="btnToggleGridList" class="glyphicon glyphicon-list"></span></button>
+                </div>
             </div>
             <div class="rightDiv">
-                <div class="progress" style="margin-top:5px;">
+                <div class="progress" style="margin-top:7px;">
                     <div class="progress-bar" role="progressbar" style="width:{{capacityBlueUsed}}%"> FREE ACCOUNT | {{capacityUsed}}% USED </div>
                     <div class="progress-bar progress-bar-danger" role="progressbar" style="width:{{capacityRedUsed}}%"></div>
                 </div>
@@ -45,9 +51,9 @@
                 <div ng-repeat="pdfItem in fileList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
-                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 32px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
-                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 32px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                    <a> <span class="glyphicon glyphicon-remove red" style="font-size: 32px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
+                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-trash" style="font-size: 25px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
                 </div>
             </div>
             <div ng-hide="nsName" class="col-md-12 col-xs-12">
@@ -55,9 +61,9 @@
                 <div ng-repeat="pdfItem in sortedNameList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
-                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 32px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
-                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 32px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                    <a> <span class="glyphicon glyphicon-remove red" style="font-size: 32px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
+                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-trash" style="font-size: 25px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
                 </div>
             </div>
             <div ng-hide="nsTag" class="col-md-12 col-xs-12">
@@ -65,9 +71,9 @@
                 <div ng-repeat="pdfItem in sortedTagList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
-                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 32px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
-                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 32px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                    <a> <span class="glyphicon glyphicon-remove red" style="font-size: 32px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
+                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-trash" style="font-size: 25px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
                 </div>
             </div>
             <div ng-hide="nsDate" class="col-md-12 col-xs-12">
@@ -75,9 +81,9 @@
                 <div ng-repeat="pdfItem in sortedDateList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
-                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 32px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
-                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 32px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                    <a> <span class="glyphicon glyphicon-remove red" style="font-size: 32px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
+                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-trash" style="font-size: 25px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
                 </div>
             </div>
             <div ng-hide="nsContent" class="col-md-12 col-xs-12">
@@ -85,9 +91,9 @@
                 <div ng-repeat="pdfItem in sortedContentList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
                     <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
                 </h4>
-                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 32px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
-                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 32px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                    <a> <span class="glyphicon glyphicon-remove red" style="font-size: 32px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
+                    <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                    <a> <span class="glyphicon glyphicon-trash" style="font-size: 25px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
                 </div>
             </div>
         </div>
@@ -109,9 +115,9 @@
                         <th> {{pdfItem.date}} </th>
                         <th> {{pdfItem.humansize}} </th>
                         <th>
-                            <a> <span class="glyphicon glyphicon-remove red " style="font-size: 20px; float:right; margin-left: 15px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.name}}"></span></a>
-                            <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 15px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                            <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.name}}"></span></a>
+                            <a> <span class="glyphicon glyphicon-trash" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
+                            <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                            <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
                         </th>
                     </tr>
                 </table>
@@ -140,9 +146,9 @@
                         <th> {{pdfItem.date}} </th>
                         <th> {{pdfItem.humansize}} </th>
                         <th>
-                            <a> <span class="glyphicon glyphicon-remove red " style="font-size: 20px; float:right; margin-left: 15px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
-                            <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 15px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                            <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
+                            <a> <span class="glyphicon glyphicon-trash" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
+                            <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                            <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
                         </th>
                     </tr>
                 </table>
@@ -158,9 +164,9 @@
                             <th> {{pdfItem.date}} </th>
                             <th> {{pdfItem.humansize}} </th>
                             <th>
-                                <a> <span class="glyphicon glyphicon-remove red " style="font-size: 20px; float:right; margin-left: 15px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
-                                <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 15px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                                <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
+                                <a> <span class="glyphicon glyphicon-trash" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
+                                <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                                <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
                             </th>
                         </tr>
                     </table>
@@ -177,9 +183,9 @@
                             <th> {{pdfItem.date}} </th>
                             <th> {{pdfItem.humansize}} </th>
                             <th>
-                                <a> <span class="glyphicon glyphicon-remove red " style="font-size: 20px; float:right; margin-left: 15px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
-                                <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 15px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                                <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
+                                <a> <span class="glyphicon glyphicon-trash" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
+                                <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                                <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
                             </th>
                         </tr>
                     </table>
@@ -196,9 +202,9 @@
                             <th> {{pdfItem.date}} </th>
                             <th> {{pdfItem.humansize}} </th>
                             <th>
-                                <a> <span class="glyphicon glyphicon-remove red " style="font-size: 20px; float:right; margin-left: 15px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete file"></span></a>
-                                <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 15px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.name}}"></span></a>
-                                <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download file"></span></a>
+                                <a> <span class="glyphicon glyphicon-trash" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
+                                <a> <span class="glyphicon glyphicon-pencil" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
+                                <a> <span class="glyphicon glyphicon-cloud-download" style="font-size: 20px; float:right; margin-left: 8px;" ng-click="downloadFile(pdfItem); $event.stopPropagation();" title="Download {{pdfItem.customfilename}}"></span></a>
                             </th>
                         </tr>
                     </table>
@@ -231,13 +237,11 @@
                 <h2>Account settings</h2>
                 <label for="premium">Premium user</label>
                 <input type="checkbox" ng-checked="premium" id="premium" name="premium"> </div>
-            <h2 class="green" ng-show="userSavedSuccess">Settings saved successfully.</h2>
-        </form>
+            <h2 class="green" ng-show="userSavedSuccess">Settings saved successfully.</h2> </form>
     </div>
-    
-    <div class="duplicatesPopup show-animation" ng-show="duplicatesFound && !doNotShowDuplicatesPopup" ng-click="findDuplicates()">
-        <span class="glyphicon glyphicon-remove float-right white" ng-click="duplicatesFound = false; $event.stopPropagation()"></span>
-    <p>We noticed there might be some duplicate files in your collection. Click here to take a look at them.</p>
-        <p><input type="checkbox" ng-click="doNotShowDumplicatePopup(); $event.stopPropagation()"> Don't show this again.</p>
+    <div class="duplicatesPopup show-animation" ng-show="duplicatesFound && !doNotShowDuplicatesPopup"> <span class="glyphicon glyphicon-remove float-right white" ng-click="duplicatesFound = false; $event.stopPropagation()"></span>
+        <p ng-click="findDuplicates()">We noticed there might be some duplicate files in your collection. Click here to take a look at them.</p>
+        <p>
+            <input type="checkbox" ng-click="doNotShowDumplicatePopup(); $event.stopPropagation()"> Don't show this again.</p>
     </div>
 </div>

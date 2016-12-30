@@ -138,15 +138,28 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.doNotShowDuplicatesPopup = false;
     $scope.doNotShowDuplicatesPopup = sessionStorage.getItem("doNotShowDuplicatesPopup");
     jq('#collectionsList').hide();
+    $scope.grid = false;
     $scope.grid = function () {
         jq('#collection').show();
         jq('#collectionsList').hide();
+        jq('#btnToggleGridList').removeClass("glyphicon glyphicon-list");
+        jq('#btnToggleGridList').addClass("glyphicon glyphicon-th");
         sessionStorage.setItem('listOrGrid', "grid");
     }
     $scope.list = function () {
         jq('#collection').hide();
         jq('#collectionsList').show();
+        jq('#btnToggleGridList').removeClass("glyphicon glyphicon-th");
+        jq('#btnToggleGridList').addClass("glyphicon glyphicon-list");
         sessionStorage.setItem('listOrGrid', "list");
+    }
+    $scope.toggleGridList = function () {
+        if (sessionStorage.getItem('listOrGrid') === "list") {
+            $scope.grid();
+        }
+        else {
+            $scope.list();
+        }
     }
     $scope.nsName = true;
     $scope.nsTag = true;
@@ -188,7 +201,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 if (customfilename.lastIndexOf('.') > 0) {
                     customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
                 }
-                
                 var humansize = humanFileSize(fileList[i].size, true);
                 var size = parseInt(fileList[i].size);
                 // Count all file sizes together
@@ -201,12 +213,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 }
                 var location = fileList[i].location;
                 var filetype = fileList[i].filetype.toUpperCase();
-                if (filetype === 'PDF') {
-                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name + ".jpg";
-                }
-                else {
-                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
-                }
+                var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
                 var content = fileList[i].content;
                 var links = fileList[i].links;
                 var file = {
@@ -290,7 +297,12 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         sessionStorage.setItem("doNotShowDuplicatesPopup", true);
     }
     $scope.findDuplicates = function () {
-        handleDuplicates(duplicates, 0);
+        if (duplicates.length > 0) {
+            handleDuplicates(duplicates, 0);
+        }
+        else {
+            bootbox.alert("We did not find any duplicates.");
+        }
     }
 
     function handleDuplicates(duplicates, i) {
@@ -313,7 +325,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             xhr.onload = function () {
                                 if (xhr.status === 200) {
                                     modal.modal("hide");
-                                    if (i+1 === duplicates.length) {
+                                    if (i + 1 === duplicates.length) {
                                         location.reload();
                                     }
                                     handleDuplicates(duplicates, ++i);
@@ -335,7 +347,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             xhr.onload = function () {
                                 if (xhr.status === 200) {
                                     modal.modal("hide");
-                                    if (i+1 === duplicates.length) {
+                                    if (i + 1 === duplicates.length) {
                                         location.reload();
                                     }
                                     handleDuplicates(duplicates, ++i);
@@ -677,8 +689,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
     jq("#processinggif").hide();
     jq("#uploadError").hide();
     jq('#somethingWentWrong').hide();
-    $scope.currentAction = "";
-    $scope.largeFile = false;
     $scope.files = [];
     //============== DRAG & DROP =============
     var dropbox = document.getElementById("dropbox")
@@ -743,54 +753,49 @@ app.controller("uploadController", function ($scope, $http, $location) {
             $scope.files[i].name = Date.now() + $scope.files[i];
             fd.append("uploadedFile", $scope.files[i]);
         }
-        var fileType = $scope.files[0].name.substring($scope.files[0].name.lastIndexOf('.') + 1).toLowerCase();
-        if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {
-            if ((($scope.files[0].size / 1024) / 1024) > 3) {
-                $scope.largeFile = true;
+        uploadNewFile(fd, 0);
+    }
+
+    function uploadNewFile(fd, i) {
+        if (i < $scope.files.length) {
+            var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();
+            if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {                
+                var token = sessionStorage.getItem("japo-token");
+                var user = sessionStorage.getItem("username");
+                var xhr = new XMLHttpRequest()
+                xhr.upload.addEventListener("progress", uploadProgress, false);
+                xhr.addEventListener("load", uploadComplete, false);
+                xhr.addEventListener("error", uploadFailed, false);
+                xhr.addEventListener("abort", uploadCanceled, false);
+                xhr.open("POST", "/api/upload");
+                xhr.setRequestHeader("x-access-token", token);
+                xhr.setRequestHeader("user", user);
+                $scope.progressVisible = true
+                xhr.onreadystatechange = function () {
+                    var status;
+                    var data;
+                    if (xhr.readyState == 4) {
+                        status = xhr.status;
+                        if (xhr.status === 500) {
+                            jq("#processinggif").hide();
+                            jq('#somethingWentWrong').show();
+                        }
+                        else if (xhr.status === 409) {
+                            jq("#processinggif").hide();
+                            jq('#notEnoughSpace').show();
+                        }
+                        else {
+                            $location.path("/home");
+                            $scope.$apply();
+                        }
+                    }
+                };
+                xhr.onload = function () {};
+                xhr.send(fd);
             }
-            var token = sessionStorage.getItem("japo-token");
-            var user = sessionStorage.getItem("username");
-            var datefilename = Date.now() + "|" + $scope.files[i].name;
-            var xhr = new XMLHttpRequest()
-            xhr.upload.addEventListener("progress", uploadProgress, false);
-            xhr.addEventListener("load", uploadComplete, false);
-            xhr.addEventListener("error", uploadFailed, false);
-            xhr.addEventListener("abort", uploadCanceled, false);
-            xhr.open("POST", "/api/upload");
-            xhr.setRequestHeader("x-access-token", token);
-            xhr.setRequestHeader("user", user);
-            xhr.setRequestHeader("file-size", $scope.files[i].size);
-            xhr.setRequestHeader("tags", tags);
-            xhr.setRequestHeader("customFilename", customFilename);
-            xhr.setRequestHeader("datefilename", datefilename);
-            $scope.progressVisible = true
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    if (fileType === "pdf") {
-                        $scope.currentAction = "Processing PDF...";
-                        $scope.safeApply();
-                        showPdf(datefilename);
-                    }
-                    else {
-                        $location.path("/home");
-                        $scope.$apply();
-                    }
-                }
-                if (xhr.status === 500) {
-                    jq("#processinggif").hide();
-                    jq('#somethingWentWrong').show();
-                }
-                if (xhr.status === 409) {
-                    jq("#processinggif").hide();
-                    jq('#notEnoughSpace').show();
-                }
-            };
-            xhr.send(fd)
-            $scope.currentAction = "Uploading...";
-            $scope.safeApply();
-        }
-        else {
-            jq("#uploadError").show();
+            else {
+                jq("#uploadError").show();
+            }
         }
     }
 
@@ -840,133 +845,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
             modal.modal("show");
         }
     };
-    //_____________________________________________________________
-    function showPdf(fname) {
-        var user = sessionStorage.getItem("username");
-        var url = "/getfile?file=" + fname + "&user=" + user;
-        var pdfDoc = null
-            , pageNum = 1
-            , pageRendering = false
-            , pageNumPending = null
-            , scale = 1
-            , canvas = document.getElementById('the-canvas')
-            , ctx = canvas.getContext('2d');
-
-        function renderPage(num) {
-            pageRendering = true;
-            // Using promise to fetch the page
-            pdfDoc.getPage(num).then(function (page) {
-                var viewport = page.getViewport(scale);
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                // Render PDF page into canvas context
-                var renderContext = {
-                    canvasContext: ctx
-                    , viewport: viewport
-                };
-                var renderTask = page.render(renderContext);
-                // Wait for rendering to finish
-                renderTask.promise.then(function () {
-                    pageRendering = false;
-                    if (pageNumPending !== null) {
-                        // New page rendering is pending
-                        renderPage(pageNumPending);
-                        pageNumPending = null;
-                    }
-                    // GET TEXT OUT OF PDF
-                    // -------------------
-                    pdfToText(pdfDoc, function (text) {
-                        $scope.currentAction = "Analyzing text in PDF...";
-                        $scope.safeApply();
-                        var xhr = new XMLHttpRequest();
-                        xhr.open("POST", "/pdftext");
-                        xhr.setRequestHeader("user", user);
-                        xhr.setRequestHeader("filename", fname);
-                        xhr.onload = function () {
-                            if (xhr.status === 200) {
-                                pdfthumbnail();
-                            }
-                        };
-                        xhr.send(text);
-                    });
-                    //
-                    function pdfthumbnail() {
-                        $scope.currentAction = "Creating thumbnail...";
-                        $scope.safeApply();
-                        var canvas = document.getElementById("the-canvas");
-                        var img = canvas.toDataURL("image/png");
-                        var user = sessionStorage.getItem("username");
-                        var xhr = new XMLHttpRequest();
-                        xhr.open("POST", "/pdfthumbnail");
-                        xhr.setRequestHeader("user", user);
-                        xhr.setRequestHeader("filename", fname);
-                        xhr.onload = function () {
-                            if (xhr.status === 200) {
-                                $location.path("/home");
-                                $scope.$apply();
-                            }
-                        };
-                        xhr.send(img);
-                    }
-                });
-            });
-        }
-
-        function queueRenderPage(num) {
-            if (pageRendering) {
-                pageNumPending = num;
-            }
-            else {
-                renderPage(num);
-            }
-        }
-        PDFJS.getDocument(url).then(function (pdfDoc_) {
-            pdfDoc = pdfDoc_;
-            // Initial/first page rendering
-            renderPage(pageNum);
-        });
-
-        function pdfToText(data, callbackAllDone) {
-            complete = 0;
-            console.assert(url instanceof ArrayBuffer || typeof url == 'string');
-            PDFJS.getDocument(url).then(function (pdf) {
-                var full_text = "";
-                var total = pdf.numPages;
-                var layers = {};
-                for (i = 1; i <= total; i++) {
-                    pdf.getPage(i).then(function (page) {
-                        var n = page.pageNumber;
-                        page.getTextContent().then(function (textContent) {
-                            if (null != textContent.items) {
-                                var page_text = "";
-                                var last_block = null;
-                                for (var k = 0; k < textContent.items.length; k++) {
-                                    var block = textContent.items[k];
-                                    if (last_block != null && last_block.str[last_block.str.length - 1] != ' ') {
-                                        if (block.x < last_block.x) page_text += "\r\n";
-                                        else if (last_block.y != block.y && (last_block.str.match(/^(\s?[a-zA-Z])$|^(.+\s[a-zA-Z])$/) == null)) page_text += ' ';
-                                    }
-                                    page_text += block.str;
-                                    last_block = block;
-                                }
-                                //textContent != null && console.log("page " + n + " finished."); //" content: \n" + page_text);
-                                layers[n] = page_text + "\n\n";
-                            }
-                            ++complete;
-                            if (complete == total) {
-                                window.setTimeout(function () {
-                                    var num_pages = Object.keys(layers).length;
-                                    for (var j = 1; j <= num_pages; j++) full_text += layers[j];
-                                    callbackAllDone(full_text);
-                                }, 1000);
-                            }
-                        }); // end  of page.getTextContent().then
-                    }); // end of page.then
-                } // of for
-            });
-        }; // end of pdfToText()
-    }
-    //_____________________________________________________________
+    
     function uploadComplete(evt) {}
 
     function uploadFailed(evt) {}
