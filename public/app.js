@@ -203,9 +203,13 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 , 'user': user
             }
         }).then(function (response) {
-            if (arraysEqual(response, previousList)===false) {
+            //if (arraysEqual(response, previousList)) {
+            //    console.log("Lijsten zijn't zelfde");
+            //}
+            //else {
+                console.log("Nieuw gevonden");
                 createCollection(response);
-            }
+            //}
             previousList = response;
         });
     }
