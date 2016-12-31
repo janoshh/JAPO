@@ -20,7 +20,7 @@ var port = 80;
 // Max Capacity of non-premium member:
 var maxCapacity = 100000000;
 var thumbnailSize = 250;
-7
+
 var dateFileSeperator = "|";
 //
 // connect to database

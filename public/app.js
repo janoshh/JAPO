@@ -203,7 +203,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 , 'user': user
             }
         }).then(function (response) {
-            if (!arraysEqual(response, previousList)) {
+            if (arraysEqual(response, previousList)===false) {
                 createCollection(response);
             }
             previousList = response;
@@ -211,6 +211,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     var refreshFileList = $interval(function () {
         getFileList()
+        console.log("REFRESHING");
     }, 10000);
     getFileList();
 
