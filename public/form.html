@@ -3,15 +3,15 @@
         <div id="filesection">
             <div id="title">
                 <button class="btn btn-primary" style="float: left" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
-                <h1>Upload a file</h1></div>
+                <h1>Upload files</h1></div>
             <div class="col-lg-6 col-md-6 col-xs-12 dashBorderLeft" id="files">
                 <!--class="row"-->
-                <h2>Select a file to Upload</h2>
+                <h2>Select files to upload</h2>
                 <div id="selectFile">
                     <input type="file" ng-click="updateFile()" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" /> </div>
             </div>
             <div class="col-lg-6 col-md-6 hidden-s hidden-xs dashBorderRight" id="files">
-                <h2>Or drop a file here</h2>
+                <h2>Or drop your files here</h2>
                 <div id="dropbox" class="dropbox" ng-class="dropClass"><span class="glyphicon glyphicon-inbox" id="drop"></span></div>
             </div>            
         </div>

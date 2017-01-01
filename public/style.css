@@ -82,6 +82,10 @@ tr:nth-child(even) {
     background-color: #dddddd;
 }
 
+tr:hover {
+    background-color: #93d9ff;
+}
+
 #slider {
     max-width: 150px;
     margin-top: 10px;
@@ -339,7 +343,7 @@ tr:nth-child(even) {
     border-bottom-left-radius: 25px;
     border-width: 1px;
     width: 280px;
-    height: 140px;
+    height: 120px;
     background-image: -webkit-linear-gradient(top, firebrick 0, darkred 100%);
     background-image: -o-linear-gradient(top, firebrick 0, darkred 100%);
     background-image: -webkit-gradient(linear, left top, left bottom, from(firebrick), to(darkred));
@@ -372,4 +376,24 @@ hr {
     display: block;
     margin-top: 0.2em !important;
     margin-bottom: 0.2em !important;
+}
+
+.noLink:link {
+    text-decoration: none;
+    color: black;
+}
+
+.noLink:visited {
+    text-decoration: none;
+    color: black;
+}
+
+.noLink:hover {
+    text-decoration: none;
+    color: black;
+}
+
+.noLink:active {
+    text-decoration: none;
+    color: black;
 }

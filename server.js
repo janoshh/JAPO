@@ -20,7 +20,6 @@ var port = 80;
 // Max Capacity of non-premium member:
 var maxCapacity = 100000000;
 var thumbnailSize = 250;
-
 var dateFileSeperator = "|";
 //
 // connect to database
@@ -66,20 +65,20 @@ apiRoutes.post('/authenticate', function (req, res) {
     }, function (err, user) {
         if (err) throw err;
         if (!user) {
-            res.status(422);
             res.json({
                 success: false
                 , message: 'Authentication failed. User not found.'
             });
+            res.status(422);
         }
         else if (user) {
             // check if password matches
             if (user.password != req.body.password) {
-                res.status(422);
                 res.json({
                     success: false
                     , message: 'Authentication failed. Wrong password.'
                 });
+                res.status(422);
             }
             else {
                 // if user is found and password is right
@@ -87,12 +86,12 @@ apiRoutes.post('/authenticate', function (req, res) {
                 var token = jwt.sign(user, app.get('superSecret'), {
                     expiresIn: 86400 // expires in 24 hours
                 });
-                res.status(200);
                 res.json({
                     success: true
                     , message: 'Enjoy your token!'
                     , token: token
                 });
+                res.status(200);
             }
         }
     });
@@ -203,7 +202,7 @@ apiRoutes.post('/upload', function (req, res) {
         ++files;
         var dateFilename = Date.now() + dateFileSeperator + filename;
         var fs = require('fs');
-        var fstream = fs.createWriteStream('./files/' + dateFilename);
+        var fstream = fs.createWriteStream(__dirname + '/files/' + dateFilename);
         var params = {
             Bucket: bucket
             , Key: dateFilename
@@ -222,7 +221,7 @@ apiRoutes.post('/upload', function (req, res) {
                     else {
                         uploadToAmazon(user, uploadList, 0);
                         return true;
-                        //res.status(200);
+                        res.status(200).end();
                     }
                 });
             };
@@ -238,9 +237,10 @@ apiRoutes.post('/upload', function (req, res) {
 function uploadToAmazon(user, uploadList, i) {
     if (i < uploadList.length) {
         params = uploadList[i];
-        var fileBuffer = fs.readFileSync("./files/" + params.Key);
-        var fileSize = getFilesizeInBytes("./files/" + params.Key);
+        var fileBuffer = fs.readFileSync(__dirname + "/files/" + params.Key);
+        var fileSize = getFilesizeInBytes(__dirname + "/files/" + params.Key);
         params.ContentLength = fileSize;
+        params.Body = fileBuffer;
         params.Body = fileBuffer;
         s3.upload(params, function (err, data) {
             if (err) {
@@ -287,7 +287,7 @@ function uploadToMongoDB(user, params) {
 
 function getTextFromPdf(user, params) {
     var extract = require('pdf-text-extract');
-    extract("./files/" + params.Key, function (err, pages) {
+    extract(__dirname + "/files/" + params.Key, function (err, pages) {
         if (err) {
             console.dir(err);
             return
@@ -299,7 +299,9 @@ function getTextFromPdf(user, params) {
             if (doc) {
                 doc.content = pages.toString();
                 doc.save();
-                compareAllFiles(user, params.Key, pages.toString());
+                if (pages.toString().lengt > 0) {
+                    compareAllFiles(user, params.Key, pages.toString());
+                }
             }
             else {
                 console.log("No file found");
@@ -310,7 +312,7 @@ function getTextFromPdf(user, params) {
 
 function getTextFromImage(user, params) {
     jimp.read(params.fileLocation, function (err, image) {
-        var pngFile = "./files/pngtemp.png";
+        var pngFile = __dirname + "/files/pngtemp.png";
         image.write(pngFile, function () {
             // Recognize text of any language in any format
             tesseract.process(pngFile, function (err, text) {
@@ -324,7 +326,9 @@ function getTextFromImage(user, params) {
                     }, function (err, doc) {
                         doc.content = text;
                         doc.save();
-                        compareAllFiles(user, params.Key, text);
+                        if (text.length > 0) {
+                            compareAllFiles(user, params.Key, text);
+                        }
                     });
                 }
             });
@@ -335,10 +339,10 @@ function getTextFromImage(user, params) {
 function createThumbnailFromImage(params, pdf) {
     var file;
     if (pdf) {
-        file = "./files/" + params.Key.substr(0, params.Key.lastIndexOf(".")) + "-0.jpg";
+        file = __dirname + "/files/" + params.Key.substr(0, params.Key.lastIndexOf(".")) + "-0.jpg";
     }
     else {
-        file = "./files/" + params.Key;
+        file = __dirname + "/files/" + params.Key;
     }
     jimp.read(file, function (err, image) {
         if (err) {
@@ -346,8 +350,8 @@ function createThumbnailFromImage(params, pdf) {
         }
         image.resize(thumbnailSize, thumbnailSize) // resize
             .quality(60) // set JPEG quality
-            .write("./files/" + params.Key + "_thumb.jpg", function () {
-                var fileBuffer = fs.readFileSync("./files/" + params.Key + "_thumb.jpg");
+            .write(__dirname + "/files/" + params.Key + "_thumb.jpg", function () {
+                var fileBuffer = fs.readFileSync(__dirname + "/files/" + params.Key + "_thumb.jpg");
                 var thumbFileName = "thumb_" + params.Key;
                 s3.putObject({
                     ACL: 'public-read'
@@ -374,7 +378,7 @@ function createThumbnailFromImage(params, pdf) {
 }
 
 function pdfToImage(params) {
-    var pdfImage = new PDFImage("./files/" + params.Key);
+    var pdfImage = new PDFImage(__dirname + "/files/" + params.Key);
     pdfImage.setConvertExtension("jpg");
     pdfImage.convertPage(0).then(function (imagePath) {
         createThumbnailFromImage(params, true);
@@ -382,6 +386,7 @@ function pdfToImage(params) {
 }
 
 function getFilesizeInBytes(filename) {
+    console.log(filename);
     var stats = fs.statSync(filename)
     var fileSizeInBytes = stats["size"]
     return fileSizeInBytes
@@ -389,7 +394,7 @@ function getFilesizeInBytes(filename) {
 
 function createFilesDir() {
     var fs = require('fs');
-    var dir = './files';
+    var dir = __dirname + 'files';
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
@@ -420,7 +425,7 @@ function checkForEnoughSpace(user, uploadList, callback) {
                             capacityUsed += parseInt(filedata[i].size);
                         }
                         for (var i = 0; i < uploadList.length; i += 1) {
-                            var fileSize = getFilesizeInBytes(uploadList[i].filename);
+                            var fileSize = getFilesizeInBytes(__dirname + "/files/" + uploadList[i].Key);
                             capacityUsed += parseInt(fileSize);
                         }
                         if (capacityUsed > maxCapacity) {
@@ -635,7 +640,9 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                             doc.save();
                                         });
                                         res.status(200).end();
-                                        compareAllFiles(user, filename, text);
+                                        if (text.lengt > 0) {
+                                            compareAllFiles(user, filename, text);
+                                        }
                                     }
                                 });
                             });
@@ -676,40 +683,53 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
             return;
         }
         var items = data.Contents;
-        for (var i = 0; i < items.length; i += 1) {
-            var deleteParams = {
-                Bucket: bucket
-                , Key: items[i].Key
-            };
-            s3.deleteObject(deleteParams, function (err, data) {
-                if (err) console.log("delete err " + deleteParams.Key);
-                counter++;
-                if (items.length === counter) {
-                    s3.deleteBucket({
-                        Bucket: bucket
-                    }, function (err, data) {
-                        if (err) {
-                            console.log("error deleting bucket " + err);
-                        }
-                        else {
-                            File.find({
-                                user: user
-                            }).remove(function (err, data) {
-                                if (err) console.log(err, err.stack);
-                            });
-                            User.findOne({
-                                name: user
-                            }).remove(function (err, data) {
-                                if (err) console.log(err, err.stack);
-                            });
+        if (items.length > 0) {
+            for (var i = 0; i < items.length; i += 1) {
+                var deleteParams = {
+                    Bucket: bucket
+                    , Key: items[i].Key
+                };
+                s3.deleteObject(deleteParams, function (err, data) {
+                    if (err) console.log("delete err " + deleteParams.Key);
+                    counter++;
+                    if (items.length === counter) {
+                        deleteAmazonBucket(bucket, user, function () {
                             res.status(200).end();
-                        }
-                    });
-                }
+                        });
+                    }
+                });
+            }
+        }
+        else {
+            deleteAmazonBucket(bucket, user, function () {
+                res.status(200).end();
             });
         }
     });
 });
+
+function deleteAmazonBucket(bucket, user, callback) {
+    s3.deleteBucket({
+        Bucket: bucket
+    }, function (err, data) {
+        if (err) {
+            console.log("error deleting bucket " + err);
+        }
+        else {
+            File.find({
+                user: user
+            }).remove(function (err, data) {
+                if (err) console.log(err, err.stack);
+            });
+            User.findOne({
+                name: user
+            }).remove(function (err, data) {
+                if (err) console.log(err, err.stack);
+            });
+            callback();
+        }
+    });
+}
 apiRoutes.post('/updatefile', function (req, res, next) {
     var user = req.headers['user'];
     var filename = req.headers['filename'];
@@ -719,11 +739,16 @@ apiRoutes.post('/updatefile', function (req, res, next) {
         user: user
         , filename: filename
     }, function (err, doc) {
-        if (err) console.log(err);
-        doc.customfilename = customfilename
-        doc.tags = tags;
-        doc.save();
-        res.status(200).end();
+        if (err) {
+            console.log(err);
+            res.status(409).end();
+        }
+        else if (doc) {
+            doc.customfilename = customfilename
+            doc.tags = tags;
+            doc.save();
+            res.status(200).end();
+        }
     });
 });
 apiRoutes.post('/updateuser', function (req, res, next) {
@@ -734,24 +759,31 @@ apiRoutes.post('/updateuser', function (req, res, next) {
     User.findOne({
         name: user
     }, function (err, doc) {
-        if (err) console.log(err);
-        if (newPassword.length > 0) {
-            if (doc.password === oldPassword) {
-                doc.password = newPassword;
-            }
-            else {
-                res.status(409).end();
-                return;
-            }
-        }
-        if (premium === "on") {
-            doc.premium = true;
+        if (err) {
+            console.log(err);
+            res.status(409).end();
         }
         else {
-            doc.premium = false;
+            if (doc) {
+                if (newPassword.length > 0) {
+                    if (doc.password === oldPassword) {
+                        doc.password = newPassword;
+                    }
+                    else {
+                        res.status(409).end();
+                        return;
+                    }
+                }
+                if (premium === "on") {
+                    doc.premium = true;
+                }
+                else {
+                    doc.premium = false;
+                }
+                doc.save();
+                res.status(200).end();
+            }
         }
-        doc.save();
-        res.status(200).end();
     });
 });
 apiRoutes.post('/deleteallfiles', function (req, res, next) {
@@ -798,6 +830,8 @@ apiRoutes.post('/deletefile', function (req, res, next) {
             Objects: [
                 {
                     Key: filename
+                }, {
+                    Key: "thumb_" + filename
                 }
         ]
         }

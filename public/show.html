@@ -3,6 +3,14 @@
         <div>
             <button class="btn btn-primary" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
             <h1>{{file.customfilename}}</h1> </div>
+        <div>
+            <h3>Actions</h3>
+            <div class="btn-group btn-group-merge">
+                <button class="btn btn-default" title="Downnload {{pdfItem.customfilename}}"> <a href="{{file.location}}" onclick="event.stopPropagation();" class="noLink" download><span class="glyphicon glyphicon-cloud-download" style="margin-right:5px;"></span>Download</a></button>
+                <button class="btn btn-default" title="Edit {{file.customfilename}}" ng-click="editFile(file)"><span class="glyphicon glyphicon-pencil" style="margin-right:5px;"></span>Edit</button>
+                <button class="btn btn-default" title="Delete {{file.customfilename}}" ng-click="deleteFile(file.filename);"><span class="glyphicon glyphicon-remove" style="margin-right:5px;"></span>Delete</button>
+            </div>
+        </div>
     </div>
     <div class="col-lg-6">
         <div id="loading">
@@ -21,3 +29,14 @@
         <div ng-repeat="pdfItem in linksList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;"> <span class="percentage" class="red">{{pdfItem.percentage}} % </span>
             <h4>{{pdfItem.customfilename}}</h4> </div>
     </div>
+    <div class="form-content" style="display:none;">
+        <form class="form" role="form">
+            <div class="form-group">
+                <label for="customFilename">Custom Filename</label>
+                <input class="form-control" id="editCustomFilename" name="editCustomFilename"> </div>
+            <div class="form-group">
+                <label for="password">Tags</label>
+                <input class="form-control" id="editTags" name="editTags"> </div>
+        </form>
+    </div>
+</div>

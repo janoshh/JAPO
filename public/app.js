@@ -207,8 +207,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             //    console.log("Lijsten zijn't zelfde");
             //}
             //else {
-                console.log("Nieuw gevonden");
-                createCollection(response);
+            console.log("Nieuw gevonden");
+            createCollection(response);
             //}
             previousList = response;
         });
@@ -216,7 +216,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     var refreshFileList = $interval(function () {
         getFileList()
         console.log("REFRESHING");
-    }, 10000);
+    }, 5000);
     getFileList();
 
     function createCollection(response) {
@@ -257,7 +257,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             };
             $scope.fileList.push(file);
         }
-        duplicates = [];
+        $scope.duplicates = [];
         for (i = 0; i < $scope.fileList.length; i++) {
             for (j = 0; j < $scope.fileList[i].links.length; j++) {
                 if ($scope.fileList[i].links[j].percentage > 90) {
@@ -267,18 +267,18 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                         , percentage: $scope.fileList[i].links[j].percentage
                     }
                     var alreadyInDuplicates = false;
-                    for (l = 0; l < duplicates.length; l++) {
-                        if (newDuplicate.file1 === duplicates[l].file2 && newDuplicate.file2 === duplicates[l].file1) {
+                    for (l = 0; l < $scope.duplicates.length; l++) {
+                        if (newDuplicate.file1 === $scope.duplicates[l].file2 && newDuplicate.file2 === $scope.duplicates[l].file1) {
                             alreadyInDuplicates = true;
                         }
                     }
                     if (!alreadyInDuplicates) {
-                        duplicates.push(newDuplicate);
+                        $scope.duplicates.push(newDuplicate);
                     }
                 }
             }
         }
-        if (duplicates.length > 0) {
+        if ($scope.duplicates.length > 0) {
             $scope.duplicatesFound = true;
         }
         fileService.saveFileList($scope.fileList);
@@ -331,18 +331,73 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         sessionStorage.setItem("doNotShowDuplicatesPopup", true);
     }
     $scope.findDuplicates = function () {
-        if (duplicates.length > 0) {
-            handleDuplicates(duplicates, 0);
+        if ($scope.duplicates.length > 0) {
+            handleDuplicates($scope.duplicates);
         }
         else {
             bootbox.alert("We did not find any duplicates.");
         }
     }
 
-    function handleDuplicates(duplicates, i) {
-        if (i < duplicates.length) {
-            var f1 = duplicates[i].file1.split("|")[1];
-            var f2 = duplicates[i].file2.split("|")[1];
+    function handleDuplicates(duplicates) {
+        var title = "We have found a possibly duplicate file."
+        if ($scope.duplicates.length > 1) {
+            title = "We have found " + duplicates.length + " possibly duplicate files."
+        }
+        var modal = bootbox.dialog({
+            title: title
+            , message: "You can take a look at them one by one or delete all duplicate files at once."
+            , buttons: [
+                {
+                    label: '<i class="glyphicon glyphicon-file"></i> One by one'
+                    , className: "btn btn-danger pull-left"
+                    , callback: function () {
+                        deleteDuplicatesOneByOne(duplicates, 0);
+                    }
+          }
+                , {
+                    label: '<i class="glyphicon glyphicon-duplicate"></i> All at once'
+                    , className: "btn btn-danger pull-left"
+                    , callback: function () {
+                        deleteDuplicatesAllAtOnce(duplicates, 0);
+                    }
+            }
+                                , {
+                    label: "<span class='glyphicon glyphicon-ok'></span> Cancel "
+                    , className: "btn btn-default pull-right"
+                    , callback: function () {
+                        modal.modal("hide");
+                    }
+                                }]
+            , show: false
+            , onEscape: function () {
+                modal.modal("hide");
+            }
+        });
+        modal.modal("show");
+    }
+
+    function deleteDuplicatesAllAtOnce(duplicates, i) {
+        var xhr = new XMLHttpRequest()
+        xhr.open("POST", "/api/deletefile");
+        xhr.setRequestHeader("x-access-token", token);
+        xhr.setRequestHeader("user", user);
+        xhr.setRequestHeader("filename", duplicates[i].file1);
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                if (i + 1 === duplicates.length) {
+                    location.reload();
+                }
+                deleteDuplicatesAllAtOnce(duplicates, ++i);
+            }
+        }
+        xhr.send()
+    }
+
+    function deleteDuplicatesOneByOne(duplicates, i) {
+        if (i < $scope.duplicates.length) {
+            var f1 = $scope.duplicates[i].file1.split("|")[1];
+            var f2 = $scope.duplicates[i].file2.split("|")[1];
             var modal = bootbox.dialog({
                 title: "Duplicate found"
                 , message: '"' + f1 + '" is for ' + duplicates[i].percentage + '% the same as "' + f2 + '"'
@@ -362,7 +417,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                                     if (i + 1 === duplicates.length) {
                                         location.reload();
                                     }
-                                    handleDuplicates(duplicates, ++i);
+                                    deleteDuplicatesOneByOne(duplicates, ++i);
                                 }
                             }
                             xhr.send()
@@ -381,10 +436,10 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             xhr.onload = function () {
                                 if (xhr.status === 200) {
                                     modal.modal("hide");
-                                    if (i + 1 === duplicates.length) {
+                                    if (i + 1 === $scope.duplicates.length) {
                                         location.reload();
                                     }
-                                    handleDuplicates(duplicates, ++i);
+                                    deleteDuplicatesOneByOne(duplicates, ++i);
                                 }
                             }
                             xhr.send()
@@ -395,7 +450,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                         label: "<span class='glyphicon glyphicon-ok'></span>  Keep both"
                         , className: "btn btn-primary pull-right"
                         , callback: function () {
-                            handleDuplicates(duplicates, ++i);
+                            deleteDuplicatesOneByOne(duplicates, ++i);
                         }
                                 }]
                 , show: false
@@ -604,8 +659,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.deleteFile = function (filename) {
         bootbox.confirm({
-            title: "Delete " + filename + "?"
-            , message: "You are about to delete " + filename + ". Are you sure?"
+            title: "Delete " + filename.split("|")[1] + "?"
+            , message: "You are about to delete " + filename.split("|")[1] + ". Are you sure?"
             , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
@@ -636,26 +691,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         fileService.saveFile(file);
         $location.path("/show/" + file.name);
     }
-    $scope.downloadFile = function (file) {
-        var title = file.name;
-        $http({
-            method: 'GET'
-            , url: '/getfile?file=' + file.name + '&user=' + user
-        }).success(function (data, status, headers, config) {
-            // TODO when WS success
-            var file = new Blob([data], {
-                type: 'application/pdf'
-            });
-            //trick to download a file having its URL
-            var fileURL = URL.createObjectURL(file);
-            var a = document.createElement('a');
-            a.href = fileURL;
-            a.target = '_blank';
-            a.download = title;
-            document.body.appendChild(a);
-            a.click();
-        }).error(function (data, status, headers, config) {});
-    }
+
     $scope.searchChange = function () {
         text = $scope.search;
         var customNameList = [];
@@ -869,6 +905,14 @@ app.controller("uploadController", function ($scope, $http, $location) {
                             modal.modal("hide");
                             return false;
                         }
+          },{
+                        label: "Cancel"
+                        , className: "btn btn-default"
+                        , callback: function () {
+                            $location.path("/home");
+                            modal.modal("hide");
+                            return false;
+                        }
           }
         ]
                 , show: false
@@ -973,6 +1017,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
     jq('#showSection').hide();
     jq('#imageSection').hide();
     var user = sessionStorage.getItem("username");
+    var token = sessionStorage.getItem("japo-token");
     //
     $scope.goToHome = function () {
         $location.path("/home");
@@ -999,12 +1044,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
                 , url: '/getFileInformation?filename=' + $scope.file.links[index].filename + '&user=' + user
             }).success(function (data, status, headers, config) {
                 var linkFile = data.fileInfo;
-                if (data.fileInfo.filetype.toUpperCase() === 'PDF') {
-                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + data.fileInfo.filename + ".jpg";
-                }
-                else {
-                    var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + data.fileInfo.filename;
-                }
+                var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + data.fileInfo.filename;
                 linkFile.thumbnail = thumbnail;
                 linkFile.percentage = $scope.file.links[index].percentage;
                 if (linkFile.customfilename === "undefined" || linkFile.customfilename === "") {
@@ -1116,6 +1156,122 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         fileService.saveFile(file);
         $location.path("/show/" + file.filename);
     }
+    
+    $scope.editFile = function (file) {
+        console.log(file);
+        var title = file.name;
+        jq("#editCustomFilename").attr("value", file.customfilename);
+        jq("#editTags").attr("value", file.tags);
+        var modal = bootbox.dialog({
+            message: jq(".form-content").html()
+            , title: title
+            , buttons: [
+                {
+                    label: "Save"
+                    , className: "btn btn-primary pull-left"
+                    , callback: function () {
+                        var form = modal.find(".form");
+                        var items = form.serializeJSON();
+                        var xhr = new XMLHttpRequest()
+                        xhr.open("POST", "/api/updatefile");
+                        xhr.setRequestHeader("x-access-token", token);
+                        xhr.setRequestHeader("user", user);
+                        xhr.setRequestHeader("filename", file.filename);
+                        xhr.setRequestHeader("customfilename", items.editCustomFilename);
+                        xhr.setRequestHeader("tags", items.editTags);
+                        xhr.onload = function () {
+                            if (xhr.status === 200) {
+                                location.reload();
+                            }
+                        }
+                        xhr.send();
+                        modal.modal("hide");
+                        return false;
+                    }
+          }
+                , {
+                    label: "Close"
+                    , className: "btn btn-default pull-left"
+                    , callback: function () {}
+          }
+        ]
+            , show: false
+            , onEscape: function () {
+                modal.modal("hide");
+            }
+        });
+        modal.modal("show");
+    }
+    $scope.deleteFile = function (filename) {
+        bootbox.confirm({
+            title: "Delete " + filename.split("|")[1] + "?"
+            , message: "You are about to delete " + filename.split("|")[1] + ". Are you sure?"
+            , buttons: {
+                cancel: {
+                    label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
+                }
+                , confirm: {
+                    label: '<i class="glyphicon glyphicon-ok"></i> Confirm'
+                }
+            }
+            , callback: function (result) {
+                if (result) {
+                    var xhr = new XMLHttpRequest()
+                    xhr.open("POST", "/api/deletefile");
+                    xhr.setRequestHeader("x-access-token", token);
+                    xhr.setRequestHeader("user", user);
+                    xhr.setRequestHeader("filename", filename);
+                    xhr.onload = function () {
+                        if (xhr.status === 200) {
+                            $location.path("/home");
+                            $scope.$apply();
+                        }
+                    }
+                    xhr.send()
+                }
+            }
+        });
+    };
+    
+    jQuery.fn.serializeJSON = function () {
+        var json = {};
+        jQuery.map(jQuery(this).serializeArray(), function (n) {
+            var _ = n.name.indexOf('[');
+            if (_ > -1) {
+                var o = json
+                    , _name;
+                _name = n.name.replace(/\]/gi, '').split('[');
+                for (var i = 0, len = _name.length; i < len; i++) {
+                    if (i == len - 1) {
+                        if (o[_name[i]]) {
+                            if (typeof o[_name[i]] == 'string') {
+                                o[_name[i]] = [o[_name[i]]];
+                            }
+                            o[_name[i]].push(n.value);
+                        }
+                        else {
+                            o[_name[i]] = n.value || '';
+                        }
+                    }
+                    else {
+                        o = o[_name[i]] = o[_name[i]] || {};
+                    }
+                }
+            }
+            else if (json[n.name] !== undefined) {
+                if (!json[n.name].push) {
+                    json[n.name] = [json[n.name]];
+                }
+                json[n.name].push(n.value || '');
+            }
+            else {
+                json[n.name] = n.value || '';
+            }
+        });
+        return json;
+    };
+    
+    
 });
 //
 //
