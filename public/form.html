@@ -4,20 +4,20 @@
             <div id="title">
                 <button class="btn btn-primary" style="float: left" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
                 <h1>Upload files</h1></div>
-            <div class="col-lg-6 col-md-6 col-xs-12 dashBorderLeft" id="files">
+            <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 dashBorderLeft" id="files">
                 <!--class="row"-->
                 <h2>Select files to upload</h2>
                 <div id="selectFile">
-                    <input type="file" ng-click="updateFile()" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" /> </div>
+                    <input type="file" ng-click="processingFiles()" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this);" /> </div>
                 <div>
-                    <h2>Or enter a URL</h2>
+                    <hr>
+                    <h2>Or paste a URL</h2>
                     <div class="container-fluid row">
-                        <input id="url-input" type="url" class="form-control">
-                        <button class="btn btn-success float-right" ng-click="uploadFromUrl()">Upload from URL</button>
+                        <input placeholder="URL..." id="url-input" class="form-control">
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6 col-md-6 hidden-s hidden-xs dashBorderRight" id="files">
+            <div class="col-lg-6 col-md-6 col-sm-12 hidden-xs dashBorderRight" id="files">
                 <h2>Drop your files here</h2>
                 <div id="dropbox" class="dropbox" ng-class="dropClass"><span class="glyphicon glyphicon-inbox" id="drop"></span></div>
             </div>

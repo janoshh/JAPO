@@ -195,7 +195,7 @@ var download = function (uri, filename, callback) {
         //console.log('content-length:', res.headers['content-length']);
         var type = res.headers['content-type'];
         var extension = "." + type.split("/")[1];
-        request(uri).pipe(fs.createWriteStream(__dirname + '/files/' + filename + extension)).on('close', function() {
+        request(uri).pipe(fs.createWriteStream(__dirname + '/files/' + filename + extension)).on('close', function () {
             callback(extension);
         });
     });
@@ -208,26 +208,31 @@ apiRoutes.post('/upload', function (req, res) {
     var uploadList = [];
     if (url) {
         var dateFilename = Date.now() + dateFileSeperator + filename;
-        download(url, dateFilename, function (extension) {
-            console.log('Download done');            
-            var params = {
-                Bucket: bucket
-                , Key: dateFilename+extension
-                , ACL: 'public-read'
-            };
-            uploadList.push(params);
-            checkForEnoughSpace(user, uploadList, function (err) {
-                if (err === "notEnoughSpace") {
-                    res.status(409).end();
-                }
-                else if (err === "error") {
-                    res.status(500).end();
-                }
-                else {
-                    uploadToAmazon(user, uploadList, 0);
-                    res.status(200).end();
-                }
-            });
+        download(url, dateFilename, function (filetype) {
+            if (["pdf", "jpg", "jpeg", "png"].indexOf(filetype) > 0) {
+                console.log('Download done');
+                var params = {
+                    Bucket: bucket
+                    , Key: dateFilename + extension
+                    , ACL: 'public-read'
+                };
+                uploadList.push(params);
+                checkForEnoughSpace(user, uploadList, function (err) {
+                    if (err === "notEnoughSpace") {
+                        res.status(409).end();
+                    }
+                    else if (err === "error") {
+                        res.status(500).end();
+                    }
+                    else {
+                        uploadToAmazon(user, uploadList, 0);
+                        res.status(200).end();
+                    }
+                });
+            }
+            else {
+                res.status(500).end();
+            }
         });
     }
     else {
@@ -337,7 +342,7 @@ function getTextFromPdf(user, params) {
             if (doc) {
                 doc.content = pages.toString();
                 doc.save();
-                if (pages.toString().lengt > 0) {
+                if (pages.toString().length > 0) {
                     compareAllFiles(user, params.Key, pages.toString());
                 }
             }
@@ -504,7 +509,7 @@ function compareAllFiles(user, filename, currentContent) {
             if (currentName != linkName) {
                 var f2 = files[i].content;
                 var match = Math.round(comareFiles(f1, f2) * 100);
-                if (match > 60) {
+                if (match >= 60) {
                     var newLink = {
                         filename: linkName
                         , percentage: match

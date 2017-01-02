@@ -133,7 +133,7 @@ tr:hover {
 
 @media(min-width: 768px) {
     #uploadMain {
-        max-width: 70%;
+        max-width: 85%;
         margin: 0 auto;
         text-align: center;
     }
@@ -396,4 +396,8 @@ hr {
 .noLink:active {
     text-decoration: none;
     color: black;
+}
+
+.shadow-box {
+    box-shadow: 0 4px 23px 5px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0,0,0,0.15);
 }

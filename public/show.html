@@ -1,8 +1,13 @@
 <div ng-controller="show">
-    <div class="col-lg-3">
+    <div class="scroll col-lg-3 col-md-4 col-sm-12 col-xs-12 shadow-box">
+        <h3>            
+        <button class="btn btn-primary" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
+            </h3>
         <div>
-            <button class="btn btn-primary" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
             <h3>{{file.customfilename}}</h3> </div>
+        <div ng-show="file.tags.length > 0">
+            <p> <span class="glyphicon glyphicon-tags"></span> {{file.tags}} </p>
+        </div>
         <div>
             <div class="btn-group btn-group-merge">
                 <button class="btn btn-default" title="Downnload {{pdfItem.customfilename}}"> <a href="{{file.location}}" onclick="event.stopPropagation();" class="noLink" download><span class="glyphicon glyphicon-cloud-download" style="margin-right:5px;"></span>Download</a></button>
@@ -10,23 +15,31 @@
                 <button class="btn btn-default" title="Delete {{file.customfilename}}" ng-click="deleteFile(file.filename);"><span class="glyphicon glyphicon-remove" style="margin-right:5px;"></span>Delete</button>
             </div>
         </div>
+        <br>
+        <div ng-show="file.filetype === 'pdf'">
+            <h3>Page: <span id="page_num">0</span> / <span id="page_count">0</span></h3>
+            <div class="btn-group btn-group-merge">
+                <button class="btn btn-default" id="prev"><span class="glyphicon glyphicon-chevron-left"></span></button>
+                <button class="btn btn-default" id="next"><span class="glyphicon glyphicon-chevron-right"></span></button>
+            </div>
+        </div>
+        <br>
+        <div ng-show="linksList.length > 0" class="hidden-xs">
+            <h3>Related files</h3>
+            <div ng-repeat="pdfItem in linksList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"  style="height: 350px; overflow: auto"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
+                <h4>{{pdfItem.customfilename}}</h4> </div>
+        </div>
     </div>
-    <div class="col-lg-6">
+    <div class="col-lg-9 col-md-8 col-sm-12 col-xs-12">
         <div id="loading">
             <h2>Loading document...</h2> <img src="processing.gif"> </div>
         <div id="showSection">
-            <h3><button class="btn btn-primary" id="prev">Previous</button>
-        <button class="btn btn-primary" id="next">Next</button>
-            Page: <span id="page_num">0</span> / <span id="page_count">0</span></h3>
-            <canvas id="the-canvas" style="border:1px solid black" height="633" width="489"></canvas>
-        </div>
+            <canvas id="the-canvas" class="shadow-box" height="633" width="489"></canvas>
+            <hr> </div>
         <script src="pdf.js"></script>
         <div id="imageSection" style="height: 800px;"></div>
-    </div>
-    <div class="col-lg-2 well well-lg" ng-show="linksList.length > 0">
-        <h1>Related files</h1>
-        <div ng-repeat="pdfItem in linksList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;"> <span class="percentage" class="red">{{pdfItem.percentage}} % </span>
-            <h4>{{pdfItem.customfilename}}</h4> </div>
+        <br>
+        <hr>
     </div>
     <div class="form-content" style="display:none;">
         <form class="form" role="form">

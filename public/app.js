@@ -22,7 +22,7 @@ app.config(function ($routeProvider) {
 // Log In Controller
 // -----------------
 app.controller("logInController", function ($scope, $http, $location) {
-    $scope.button = "btn btn-lg btn-primary btn-block disabled"
+    $scope.button = "btn btn-lg btn-primary btn-block"
     $scope.$watch('email', function () {
         $scope.validate()
     });
@@ -34,7 +34,7 @@ app.controller("logInController", function ($scope, $http, $location) {
             $scope.button = "btn btn-lg btn-primary btn-block"
         }
         else {
-            $scope.button = "btn btn-lg btn-primary btn-block disabled"
+            $scope.button = "btn btn-lg btn-primary btn-block"
         }
     };
     $scope.LogIn = function () {
@@ -804,25 +804,34 @@ app.controller("uploadController", function ($scope, $http, $location) {
     $scope.setFiles = function (element) {
         $scope.$apply(function (scope) {
             // Turn the FileList object into an Array
-            $scope.files = []
-            var allFileTypesGood = true;
+            $scope.files = [];
+            var fileTypesAllGood = true;
             for (var i = 0; i < element.files.length; i++) {
                 $scope.files.push(element.files[i]);
                 var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();
                 if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) < 0) {
-                    allFileTypesGood = false;
+                    fileTypesAllGood = false;
                 }
             }
-            $scope.progressVisible = false
-            if (allFileTypesGood) {
+            if (fileTypesAllGood) {
                 $scope.uploadPopup();
             }
             else {
-                $scope.files.length = 0;
-                $scope.uploadFileTypeErrorPopup();
+                bootbox.alert("<h1>Oops!</h1> Sorry! One of your files cannot be uploaded because it is an unsupported filetype. <br>Please select your files again. <hr> <strong>Supported filetype: PDF - JPG - JPEG - PNG</strong>");
             }
+            processingModal.modal("hide");
+            $scope.progressVisible = false
         });
     };
+    var processingModal = bootbox.dialog({
+        title: "<h1>Please, wait...</h1>"
+        , message: "<div id='capture'> <h3>We are processing your files.</h3><img src='/processing.gif'> <div>"
+        , buttons: []
+        , show: false
+    });
+    $scope.processingFiles = function () {
+        processingModal.modal("show");
+    }
     $scope.updateFile = function () {
         jq("#uploadError").hide();
     }
@@ -836,6 +845,13 @@ app.controller("uploadController", function ($scope, $http, $location) {
         }
         uploadNewFile(fd, 0);
     }
+    jq('#url-input').each(function () {
+        var elem = jq(this);
+        // Look for changes in the value
+        elem.bind("paste", function (event) {
+            $scope.uploadFromUrl();
+        });
+    });
     $scope.uploadFromUrl = function () {
         url = document.getElementById('url-input').value
         var token = sessionStorage.getItem("japo-token");
@@ -845,7 +861,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.open("POST", "/api/upload");
         xhr.setRequestHeader("x-access-token", token);
         xhr.setRequestHeader("user", user);
-        xhr.setRequestHeader("filename", "tempFilename");
+        xhr.setRequestHeader("filename", "URL-Upload");
         console.log(url);
         xhr.setRequestHeader("url", url);
         xhr.onload = function () {
@@ -865,36 +881,33 @@ app.controller("uploadController", function ($scope, $http, $location) {
 
     function uploadNewFile(fd, i) {
         if (i < $scope.files.length) {
-            var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();
-            if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) > -1) {
-                var token = sessionStorage.getItem("japo-token");
-                var user = sessionStorage.getItem("username");
-                var xhr = new XMLHttpRequest()
-                xhr.upload.addEventListener("progress", uploadProgress, false);
-                xhr.open("POST", "/api/upload");
-                xhr.setRequestHeader("x-access-token", token);
-                xhr.setRequestHeader("user", user);
-                $scope.progressVisible = true
-                xhr.onreadystatechange = function () {
-                    var status;
-                    var data;
-                    if (xhr.readyState == 4) {
-                        status = xhr.status;
-                        if (xhr.status === 500) {
-                            bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
-                        }
-                        else if (xhr.status === 409) {
-                            bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
-                        }
-                        else {
-                            $location.path("/home");
-                            $scope.$apply();
-                        }
+            var token = sessionStorage.getItem("japo-token");
+            var user = sessionStorage.getItem("username");
+            var xhr = new XMLHttpRequest()
+            xhr.upload.addEventListener("progress", uploadProgress, false);
+            xhr.open("POST", "/api/upload");
+            xhr.setRequestHeader("x-access-token", token);
+            xhr.setRequestHeader("user", user);
+            $scope.progressVisible = true
+            xhr.onreadystatechange = function () {
+                var status;
+                var data;
+                if (xhr.readyState == 4) {
+                    status = xhr.status;
+                    if (xhr.status === 500) {
+                        bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
                     }
-                };
-                xhr.onload = function () {};
-                xhr.send(fd);
-            }
+                    else if (xhr.status === 409) {
+                        bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
+                    }
+                    else {
+                        $location.path("/home");
+                        $scope.$apply();
+                    }
+                }
+            };
+            xhr.onload = function () {};
+            xhr.send(fd);
         }
     }
 
@@ -912,8 +925,8 @@ app.controller("uploadController", function ($scope, $http, $location) {
     }
     $scope.uploadPopup = function () {
         if ($scope.files[0] != null) {
-            var title = "Your file is ready for uploading."
-            var message = "New uploaded files will appear automatically in your collection. You can rename your files and add tags there."
+            var title = "<h1>Your file is ready for uploading.</h1>"
+            var message = "<h4><strong>New uploaded files will appear automatically in your collection.</strong><br><br>You can rename your files and add tags there. </h4>"
             if ($scope.files.length > 1) {
                 title = "Your files are ready for uploading."
             }
@@ -922,10 +935,9 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 , title: title
                 , buttons: [
                     {
-                        label: "Cancel"
+                        label: "<span class='glyphicon glyphicon-remove'></span> Cancel"
                         , className: "btn btn-default"
                         , callback: function () {
-                            $location.path("/home");
                             modal.modal("hide");
                             return false;
                         }
@@ -933,7 +945,13 @@ app.controller("uploadController", function ($scope, $http, $location) {
                         label: "<span class='glyphicon glyphicon-ok'></span> Upload!"
                         , className: "btn btn-success"
                         , callback: function () {
-                            $scope.uploadFile();
+                            var url = document.getElementById('url-input').value;
+                            if (url) {
+                                $scope.uploadFromUrl();
+                            }
+                            else {
+                                $scope.uploadFile();
+                            }
                             $location.path("/home");
                             modal.modal("hide");
                             return false;
@@ -948,40 +966,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
             modal.modal("show");
         }
     };
-    $scope.uploadFileTypeErrorPopup = function () {
-        var title = "Error uploading file."
-        var message = "Sorry, it seems you are trying to upload an unsupported file. Our platform only allows PDF, JPG and PNG files."
-        var modal = bootbox.dialog({
-            message: message
-            , title: title
-            , buttons: [
-                {
-                    label: "<span class='glyphicon glyphicon-ok'></span> Upload another file"
-                    , className: "btn btn-primary"
-                    , callback: function () {
-                        $scope.uploadFile();
-                        $location.path("/upload");
-                        modal.modal("hide");
-                        return false;
-                    }
-          }, {
-                    label: "<span class='glyphicon glyphicon-ok'></span> Go to Home"
-                    , className: "btn btn-default"
-                    , callback: function () {
-                        $scope.uploadFile();
-                        $location.path("/home");
-                        modal.modal("hide");
-                        return false;
-                    }
-          }
-        ]
-            , show: false
-            , onEscape: function () {
-                modal.modal("hide");
-            }
-        });
-        modal.modal("show");
-    }
     $scope.goToHome = function () {
         $location.path("/home");
     }
@@ -1091,6 +1075,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
             img.setAttribute("height", "100%");
             img.setAttribute("width", "auto");
             img.setAttribute("alt", $scope.file.customfilename);
+            img.setAttribute("class", "shadow-box");
             document.getElementById("imageSection").appendChild(img);
             jq("#loading").hide();
             jq('#showSection').hide();
@@ -1100,7 +1085,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
 
     function showPdf() {
         var url = "/getfile?file=" + $scope.file.filename + "&user=" + user;
-        pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 1, canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
+        pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 2, canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
         /**
          * Get page info from document, resize canvas accordingly, and render page.
          * @param num Page number.
@@ -1293,6 +1278,14 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         });
         return json;
     };
+    jq(function () { //<-----------------------doc ready
+        jq(window).on('scroll', function () {
+            var scrollPos = jq(document).scrollTop();
+            jq('.scroll').css({
+                top: scrollPos
+            });
+        }).scroll();
+    });
 });
 //
 //
