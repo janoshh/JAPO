@@ -9,11 +9,18 @@
                 <h2>Select files to upload</h2>
                 <div id="selectFile">
                     <input type="file" ng-click="updateFile()" ng-model-instant id="fileToUpload" multiple onchange="angular.element(this).scope().setFiles(this)" /> </div>
+                <div>
+                    <h2>Or enter a URL</h2>
+                    <div class="container-fluid row">
+                        <input id="url-input" type="url" class="form-control">
+                        <button class="btn btn-success float-right" ng-click="uploadFromUrl()">Upload from URL</button>
+                    </div>
+                </div>
             </div>
             <div class="col-lg-6 col-md-6 hidden-s hidden-xs dashBorderRight" id="files">
-                <h2>Or drop your files here</h2>
+                <h2>Drop your files here</h2>
                 <div id="dropbox" class="dropbox" ng-class="dropClass"><span class="glyphicon glyphicon-inbox" id="drop"></span></div>
-            </div>            
+            </div>
         </div>
         <div id="processinggif" class="row">
             <div ng-show="files.length">
@@ -25,11 +32,11 @@
                     Please wait...</h4> <img src="/processing.gif"> </div>
         </div>
         <div id="uploadError">
-                <h2>Oops, sorry...</h2>
-                <p>We coundn't upload your file because this filetype is not supported.</p>
-                <p>Only these filetypes are supported: PDF - JPG - JPEG - PNG .</p>
-                <p>Please select another file.</p>
-            </div>
+            <h2>Oops, sorry...</h2>
+            <p>We coundn't upload your file because this filetype is not supported.</p>
+            <p>Only these filetypes are supported: PDF - JPG - JPEG - PNG .</p>
+            <p>Please select another file.</p>
+        </div>
         <div id="somethingWentWrong">
             <h1>Oops, sorry...</h1>
             <h3>There may have gone something wrong while uploading your file.</h3>

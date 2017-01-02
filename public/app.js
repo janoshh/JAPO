@@ -691,7 +691,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         fileService.saveFile(file);
         $location.path("/show/" + file.name);
     }
-
     $scope.searchChange = function () {
         text = $scope.search;
         var customNameList = [];
@@ -838,6 +837,32 @@ app.controller("uploadController", function ($scope, $http, $location) {
         uploadNewFile(fd, 0);
     }
 
+    $scope.uploadFromUrl = function () {            
+            url = document.getElementById('url-input').value
+            var token = sessionStorage.getItem("japo-token");
+            var user = sessionStorage.getItem("username");
+            var xhr = new XMLHttpRequest()
+            xhr.upload.addEventListener("progress", uploadProgress, false);
+            xhr.open("POST", "/api/upload");
+            xhr.setRequestHeader("x-access-token", token);
+            xhr.setRequestHeader("user", user);
+            xhr.setRequestHeader("filename", "tempFilename");
+            console.log(url);
+            xhr.setRequestHeader("url", url);
+            xhr.onload = function () {
+                if (xhr.status === 500) {
+                    bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
+                }
+                else if (xhr.status === 409) {
+                    bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
+                }
+                else if (xhr.status === 200) {
+                    bootbox.alert("This actually worked");
+                }
+            };
+            xhr.send();
+        }
+        
     function uploadNewFile(fd, i) {
         if (i < $scope.files.length) {
             var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();
@@ -897,18 +922,18 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 , title: title
                 , buttons: [
                     {
-                        label: "<span class='glyphicon glyphicon-ok'></span> Upload!"
-                        , className: "btn btn-success"
+                        label: "Cancel"
+                        , className: "btn btn-default"
                         , callback: function () {
-                            $scope.uploadFile();
                             $location.path("/home");
                             modal.modal("hide");
                             return false;
                         }
-          },{
-                        label: "Cancel"
-                        , className: "btn btn-default"
+          }, {
+                        label: "<span class='glyphicon glyphicon-ok'></span> Upload!"
+                        , className: "btn btn-success"
                         , callback: function () {
+                            $scope.uploadFile();
                             $location.path("/home");
                             modal.modal("hide");
                             return false;
@@ -1156,7 +1181,6 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         fileService.saveFile(file);
         $location.path("/show/" + file.filename);
     }
-    
     $scope.editFile = function (file) {
         console.log(file);
         var title = file.name;
@@ -1232,7 +1256,6 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
             }
         });
     };
-    
     jQuery.fn.serializeJSON = function () {
         var json = {};
         jQuery.map(jQuery(this).serializeArray(), function (n) {
@@ -1270,8 +1293,6 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         });
         return json;
     };
-    
-    
 });
 //
 //

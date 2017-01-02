@@ -188,50 +188,88 @@ apiRoutes.get('/users', function (req, res) {
 apiRoutes.get('/check', function (req, res) {
     res.json(req.decoded);
 });
+request = require('request');
+var download = function (uri, filename, callback) {
+    request.head(uri, function (err, res, body) {
+        //console.log('content-type:', res.headers['content-type']);
+        //console.log('content-length:', res.headers['content-length']);
+        var type = res.headers['content-type'];
+        var extension = "." + type.split("/")[1];
+        request(uri).pipe(fs.createWriteStream(__dirname + '/files/' + filename + extension)).on('close', callback);
+    });
+};
 apiRoutes.post('/upload', function (req, res) {
-    createFilesDir();
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
+    var filename = req.headers['filename'];
+    var url = req.headers['url'];
     var uploadList = [];
-    var busboy = new Busboy({
-        headers: req.headers
-    });
-    var files = 0;
-    var finished = false;
-    busboy.on('file', function (fieldname, file, filename) {
-        ++files;
+    if (url) {
         var dateFilename = Date.now() + dateFileSeperator + filename;
-        var fs = require('fs');
-        var fstream = fs.createWriteStream(__dirname + '/files/' + dateFilename);
-        var params = {
-            Bucket: bucket
-            , Key: dateFilename
-            , ACL: 'public-read'
-        };
-        uploadList.push(params);
-        fstream.on('close', function () {
-            if (--files === 0 && finished) {
-                checkForEnoughSpace(user, uploadList, function (err) {
-                    if (err === "notEnoughSpace") {
-                        res.status(409).end();
-                    }
-                    else if (err === "error") {
-                        res.status(500).end();
-                    }
-                    else {
-                        uploadToAmazon(user, uploadList, 0);
-                        return true;
-                        res.status(200).end();
-                    }
-                });
+        download(url, dateFilename, function () {
+            console.log('Download done');            
+            var params = {
+                Bucket: bucket
+                , Key: dateFilename
+                , ACL: 'public-read'
             };
+            uploadList.push(params);
+            checkForEnoughSpace(user, uploadList, function (err) {
+                if (err === "notEnoughSpace") {
+                    res.status(409).end();
+                }
+                else if (err === "error") {
+                    res.status(500).end();
+                }
+                else {
+                    uploadToAmazon(user, uploadList, 0);
+                    return true;
+                    res.status(200).end();
+                }
+            });
         });
-        file.pipe(fstream);
-    });
-    busboy.on('finish', function () {
-        finished = true;
-    });
-    return req.pipe(busboy);
+    }
+    else {
+        var busboy = new Busboy({
+            headers: req.headers
+        });
+        var files = 0;
+        var finished = false;
+        busboy.on('file', function (fieldname, file, filename) {
+            ++files;
+            var dateFilename = Date.now() + dateFileSeperator + filename;
+            var fs = require('fs');
+            var fstream = fs.createWriteStream(__dirname + '/files/' + dateFilename);
+            var params = {
+                Bucket: bucket
+                , Key: dateFilename
+                , ACL: 'public-read'
+            };
+            uploadList.push(params);
+            fstream.on('close', function () {
+                if (--files === 0 && finished) {
+                    checkForEnoughSpace(user, uploadList, function (err) {
+                        if (err === "notEnoughSpace") {
+                            res.status(409).end();
+                        }
+                        else if (err === "error") {
+                            res.status(500).end();
+                        }
+                        else {
+                            uploadToAmazon(user, uploadList, 0);
+                            return true;
+                            res.status(200).end();
+                        }
+                    });
+                };
+            });
+            file.pipe(fstream);
+        });
+        busboy.on('finish', function () {
+            finished = true;
+        });
+        return req.pipe(busboy);
+    }
 });
 
 function uploadToAmazon(user, uploadList, i) {
@@ -394,9 +432,10 @@ function getFilesizeInBytes(filename) {
 
 function createFilesDir() {
     var fs = require('fs');
-    var dir = __dirname + 'files';
+    var dir = __dirname + '/files';
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
+        console.log("Files directory added");
     }
 }
 
@@ -910,3 +949,4 @@ app.use('/api', apiRoutes);
 // =================================================================
 app.listen(port);
 console.log('Magic happens at http://localhost:' + port);
+createFilesDir();
