@@ -836,33 +836,33 @@ app.controller("uploadController", function ($scope, $http, $location) {
         }
         uploadNewFile(fd, 0);
     }
+    $scope.uploadFromUrl = function () {
+        url = document.getElementById('url-input').value
+        var token = sessionStorage.getItem("japo-token");
+        var user = sessionStorage.getItem("username");
+        var xhr = new XMLHttpRequest()
+        xhr.upload.addEventListener("progress", uploadProgress, false);
+        xhr.open("POST", "/api/upload");
+        xhr.setRequestHeader("x-access-token", token);
+        xhr.setRequestHeader("user", user);
+        xhr.setRequestHeader("filename", "tempFilename");
+        console.log(url);
+        xhr.setRequestHeader("url", url);
+        xhr.onload = function () {
+            if (xhr.status === 500) {
+                bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
+            }
+            else if (xhr.status === 409) {
+                bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
+            }
+            else if (xhr.status === 200) {
+                $location.path("/home");
+                $scope.$apply();
+            }
+        };
+        xhr.send();
+    }
 
-    $scope.uploadFromUrl = function () {            
-            url = document.getElementById('url-input').value
-            var token = sessionStorage.getItem("japo-token");
-            var user = sessionStorage.getItem("username");
-            var xhr = new XMLHttpRequest()
-            xhr.upload.addEventListener("progress", uploadProgress, false);
-            xhr.open("POST", "/api/upload");
-            xhr.setRequestHeader("x-access-token", token);
-            xhr.setRequestHeader("user", user);
-            xhr.setRequestHeader("filename", "tempFilename");
-            console.log(url);
-            xhr.setRequestHeader("url", url);
-            xhr.onload = function () {
-                if (xhr.status === 500) {
-                    bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
-                }
-                else if (xhr.status === 409) {
-                    bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
-                }
-                else if (xhr.status === 200) {
-                    bootbox.alert("This actually worked");
-                }
-            };
-            xhr.send();
-        }
-        
     function uploadNewFile(fd, i) {
         if (i < $scope.files.length) {
             var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();

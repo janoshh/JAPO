@@ -195,7 +195,9 @@ var download = function (uri, filename, callback) {
         //console.log('content-length:', res.headers['content-length']);
         var type = res.headers['content-type'];
         var extension = "." + type.split("/")[1];
-        request(uri).pipe(fs.createWriteStream(__dirname + '/files/' + filename + extension)).on('close', callback);
+        request(uri).pipe(fs.createWriteStream(__dirname + '/files/' + filename + extension)).on('close', function() {
+            callback(extension);
+        });
     });
 };
 apiRoutes.post('/upload', function (req, res) {
@@ -206,11 +208,11 @@ apiRoutes.post('/upload', function (req, res) {
     var uploadList = [];
     if (url) {
         var dateFilename = Date.now() + dateFileSeperator + filename;
-        download(url, dateFilename, function () {
+        download(url, dateFilename, function (extension) {
             console.log('Download done');            
             var params = {
                 Bucket: bucket
-                , Key: dateFilename
+                , Key: dateFilename+extension
                 , ACL: 'public-read'
             };
             uploadList.push(params);
@@ -223,7 +225,6 @@ apiRoutes.post('/upload', function (req, res) {
                 }
                 else {
                     uploadToAmazon(user, uploadList, 0);
-                    return true;
                     res.status(200).end();
                 }
             });
@@ -257,7 +258,6 @@ apiRoutes.post('/upload', function (req, res) {
                         }
                         else {
                             uploadToAmazon(user, uploadList, 0);
-                            return true;
                             res.status(200).end();
                         }
                     });
