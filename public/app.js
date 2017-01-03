@@ -845,15 +845,12 @@ app.controller("uploadController", function ($scope, $http, $location) {
         }
         uploadNewFile(fd, 0);
     }
-    jq('#url-input').each(function () {
-        var elem = jq(this);
-        // Look for changes in the value
-        elem.bind("paste", function (event) {
-            $scope.uploadFromUrl();
-        });
+   
+    jq("#url").bind("paste", function (e) {
+        var pastedData = e.originalEvent.clipboardData.getData('text');
+        $scope.uploadFromUrl(pastedData);
     });
-    $scope.uploadFromUrl = function () {
-        url = document.getElementById('url-input').value
+    $scope.uploadFromUrl = function (url) {
         var token = sessionStorage.getItem("japo-token");
         var user = sessionStorage.getItem("username");
         var xhr = new XMLHttpRequest()
@@ -862,7 +859,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.setRequestHeader("x-access-token", token);
         xhr.setRequestHeader("user", user);
         xhr.setRequestHeader("filename", "URL-Upload");
-        console.log(url);
+        console.log("URL = " + url);
         xhr.setRequestHeader("url", url);
         xhr.onload = function () {
             if (xhr.status === 500) {
