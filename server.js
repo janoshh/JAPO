@@ -209,11 +209,11 @@ apiRoutes.post('/upload', function (req, res) {
     if (url) {
         var dateFilename = Date.now() + dateFileSeperator + filename;
         download(url, dateFilename, function (filetype) {
-            if (["pdf", "jpg", "jpeg", "png"].indexOf(filetype) > 0) {
+            if (filetype === ".pdf" || filetype === ".jpg" || filetype === ".jpeg" || filetype === ".png") {
                 console.log('Download done');
                 var params = {
                     Bucket: bucket
-                    , Key: dateFilename + extension
+                    , Key: dateFilename + filetype
                     , ACL: 'public-read'
                 };
                 uploadList.push(params);

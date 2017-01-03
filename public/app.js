@@ -847,6 +847,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
     }
    
     jq("#url").bind("paste", function (e) {
+        processingModal.modal("show");
         var pastedData = e.originalEvent.clipboardData.getData('text');
         $scope.uploadFromUrl(pastedData);
     });
@@ -862,6 +863,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
         console.log("URL = " + url);
         xhr.setRequestHeader("url", url);
         xhr.onload = function () {
+            processingModal.modal("hide");
             if (xhr.status === 500) {
                 bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
             }
