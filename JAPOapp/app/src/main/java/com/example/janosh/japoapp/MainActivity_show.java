@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -13,6 +14,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -22,7 +24,6 @@ public class MainActivity_show extends AppCompatActivity {
 
     ListView documents;
     String url = "http://ec2-54-245-35-219.us-west-2.compute.amazonaws.com/api/getFiles";
-    static ProgressDialog pDialog;
     //listview
     boolean done = false;
     private String[] titleArray;
@@ -41,45 +42,39 @@ public class MainActivity_show extends AppCompatActivity {
     }
 
     public void getDocuments(){
-        // Tag used to cancel the request
-        String tag_json_obj = "json_obj_req";
-
-        pDialog = new ProgressDialog(this);
-        pDialog.setMessage("Loading...");
-        pDialog.show();
 
         JsonObjectRequest jsonObjReq = new JsonObjectRequest(Request.Method.GET,
-                url, null,
-                new Response.Listener<JSONObject>() {
+                url, null, new Response.Listener<JSONObject>() {
 
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.d("RESPONSE: ", response.toString());
-                        pDialog.hide();
-                        //get data out of response
-                        //jsonObject omvormen naar jsonArray
-                        if (response.length() > 0) {
-                            for(int i=0; i < response.length(); i ++){
-                                //response.getJSONObject(i).toString());
-                            }
-                        }
-                        // populate stringarrays to load listview
-                        done = true;
-                        titleArray = new String[]{};    //titles
-                        subItemArray=new String[]{"tag: " + "",};    //document specs
-                    }
-                }, new Response.ErrorListener() {
+            @Override
+            public void onResponse(JSONObject response) {
+                Log.d("Response get : ", response.toString());
+
+                try {
+                    // Parsing json object response
+                    // response will be a json object
+
+                    String name = response.getString("name");
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Toast.makeText(getApplicationContext(),
+                            "Error: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+        }, new Response.ErrorListener() {
 
             @Override
             public void onErrorResponse(VolleyError error) {
                 VolleyLog.d("Error: " + error.getMessage());
-                // hide the progress dialog
-                pDialog.hide();
+                Toast.makeText(getApplicationContext(),
+                        error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
         // Adding request to request queue
-        docRequest.getInstance().addToRequestQueue(jsonObjReq, tag_json_obj);
+        docRequest.getInstance().addToRequestQueue(jsonObjReq);
     }
 
     public void popList(){
