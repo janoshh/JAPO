@@ -10,9 +10,9 @@
             </div>
             <div class="col-sm-6 col-xs-2 no-padding">
                 <a class="dropdown-toggle visible-lg visible-md" type="button" data-toggle="dropdown" style="margin-top:7px;">
-                    <label><span class="glyphicon glyphicon-user" style="margin-right:5px;"></span>{{user}} <span class="glyphicon glyphicon-triangle-bottom"></span></label>
+                    <label> <span class="glyphicon glyphicon-star-empty" ng-show="premium"></span> <span class="glyphicon glyphicon-user" style="margin-right:5px;"></span> {{user}} <span class="glyphicon glyphicon-triangle-bottom"></span> </label>
                 </a>
-                <button class="btn btn-primary visible-sm visible-xs" style="margin-left: 15px;" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></button>
+                <button class="btn btn-primary visible-sm visible-xs" style="margin-left: 15px;" data-toggle="dropdown"> <span class="glyphicon glyphicon-star-empty" ng-show="premium"></span> <span class="glyphicon glyphicon-user"></span> </button>
                 <ul class="dropdown-menu">
                     <li class="visible-sm visible-xs" style="margin-left: 15px;">{{user}}</li>
                     <hr class="visible-sm visible-xs">
@@ -38,19 +38,34 @@
                 </div>
             </div>
             <div class="rightDiv">
-                <div class="progress" style="margin-top:7px;">
+                <div ng-show="premium">
+                    <h4 class="float-right">{{premiumCapacityUsed}} storage used</h4> </div>
+                <div class="progress" style="margin-top:7px;" ng-hide="premium">
                     <div class="progress-bar" role="progressbar" style="width:{{capacityBlueUsed}}%"> FREE ACCOUNT | {{capacityUsed}}% USED </div>
                     <div class="progress-bar progress-bar-danger" role="progressbar" style="width:{{capacityRedUsed}}%"></div>
                 </div>
             </div>
         </div>
+        <div ng-show="showSelectedFilesDiv" class="container-fluid show-animation selectedFilesDiv">
+            <h3>Selected files
+                <hr>
+                <div class="btn-group btn-group-merge">
+            <button class="btn btn-default" ng-click="addLinksSelectedFiles()"><span class="glyphicon glyphicon-link" style="margin-right: 5px;"></span><span class="hidden-xs">Add link</span></button>
+            <button class="btn btn-default" ng-click="addTagsSelectedFiles()"><span class="glyphicon glyphicon-tags" style="margin-right: 5px;"></span><span class="hidden-xs">Add tags</span></button>
+            <button class="btn btn-default" ng-click="deleteSelectedFiles()"><span class="glyphicon glyphicon-remove" style="margin-right: 5px;"></span><span class="hidden-xs">Delete</span></button>
+            <button class="btn btn-default" ng-click="selectAllFiles()"><span class="glyphicon glyphicon-check" style="margin-right: 5px;"></span><span class="hidden-xs">All</span></button>  
+            <button class="btn btn-default" ng-click="deselectAllFiles()"><span class="glyphicon glyphicon-unchecked" style="margin-right: 5px;"></span><span class="hidden-xs">All</span></button>     
+                </div>
+                </h3> </div>
+        <br>
         <div style="text-align: center" class="row">{{fileList.length}} files found in your collection<span ng-show="duplicates.length > 0"> ({{duplicates.length}} possibly duplicates)</span>.</div>
         <div>
             <h3>{{documentsMessage}}</h3></div>
         <div id="collection">
             <div ng-hide="searching">
-                <div ng-repeat="pdfItem in fileList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
-                    <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
+                <div ng-repeat="pdfItem in fileList" class="collectionItem gridItem" ng-click="showFile(pdfItem)" ng-mouseenter="showCheckBox=true" ng-mouseleave="showCheckBox=false">
+                    <input type="checkbox" ng-show="showCheckBox || pdfItem.checked" class="selectCheckBox" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
+                    <h4 style="white-space: nowrap;"><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.gridcustomfilename}}
                 </h4>
                     <a href="{{pdfItem.location}}" onclick="event.stopPropagation();" download> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" title="Download {{pdfItem.customfilename}}"></span></a>
                     <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
@@ -59,8 +74,9 @@
             </div>
             <div ng-hide="nsName" class="col-md-12 col-xs-12">
                 <h2>Name</h2>
-                <div ng-repeat="pdfItem in sortedNameList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
-                    <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
+                <div ng-repeat="pdfItem in sortedNameList" class="collectionItem gridItem" ng-click="showFile(pdfItem)">
+                    <input type="checkbox" ng-show="showCheckBox || pdfItem.checked" class="selectCheckBox" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
+                    <h4 style="white-space: nowrap;"><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.gridcustomfilename}}
                 </h4>
                     <a href="{{pdfItem.location}}" onclick="event.stopPropagation();" download> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" title="Download {{pdfItem.customfilename}}"></span></a>
                     <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
@@ -69,8 +85,9 @@
             </div>
             <div ng-hide="nsTag" class="col-md-12 col-xs-12">
                 <h2>Tag</h2>
-                <div ng-repeat="pdfItem in sortedTagList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
-                    <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
+                <div ng-repeat="pdfItem in sortedTagList" class="collectionItem gridItem" ng-click="showFile(pdfItem)">
+                    <input type="checkbox" ng-show="showCheckBox || pdfItem.checked" class="selectCheckBox" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
+                    <h4 style="white-space: nowrap;"><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.gridcustomfilename}}
                 </h4>
                     <a href="{{pdfItem.location}}" onclick="event.stopPropagation();" download> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" title="Download {{pdfItem.customfilename}}"></span></a>
                     <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
@@ -79,9 +96,10 @@
             </div>
             <div ng-hide="nsDate" class="col-md-12 col-xs-12">
                 <h2>Date</h2>
-                <div ng-repeat="pdfItem in sortedDateList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
-                    <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
-                </h4>
+                <div ng-repeat="pdfItem in sortedDateList" class="collectionItem gridItem" ng-click="showFile(pdfItem)">
+                    <input type="checkbox" ng-show="showCheckBox || pdfItem.checked" class="selectCheckBox" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
+                    <h4 style="white-space: nowrap;"><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.gridcustomfilename}}
+                </h4 >
                     <a href="{{pdfItem.location}}" onclick="event.stopPropagation();" download> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" title="Download {{pdfItem.customfilename}}"></span></a>
                     <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
                     <a> <span class="glyphicon glyphicon-trash" style="font-size: 25px;" ng-click="deleteFile(pdfItem.name); $event.stopPropagation();" title="Delete {{pdfItem.customfilename}}"></span></a>
@@ -89,8 +107,9 @@
             </div>
             <div ng-hide="nsContent" class="col-md-12 col-xs-12">
                 <h2>Content</h2>
-                <div ng-repeat="pdfItem in sortedContentList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
-                    <h4><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.customfilename}}
+                <div ng-repeat="pdfItem in sortedContentList" class="collectionItem gridItem" ng-click="showFile(pdfItem)">
+                    <input type="checkbox" ng-show="showCheckBox || pdfItem.checked" class="selectCheckBox" ng-checked="pdfItem.checked"  ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;" onerror="this.src='imageNotFound.png'">
+                    <h4  style="white-space: nowrap;"><span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span>{{pdfItem.gridcustomfilename}}
                 </h4>
                     <a href="{{pdfItem.location}}" onclick="event.stopPropagation();" download> <span class="glyphicon glyphicon-cloud-download" style="font-size: 25px;" title="Download {{pdfItem.customfilename}}"></span></a>
                     <a> <span class="glyphicon glyphicon-pencil" style="font-size: 25px;" ng-click="editFile(pdfItem); $event.stopPropagation();" title="Edit {{pdfItem.customfilename}}"></span></a>
@@ -102,6 +121,7 @@
             <div ng-hide="searching">
                 <table>
                     <tr class="bold">
+                        <th></th>
                         <th ng-click="sortBy('filetype')">Type</th>
                         <th ng-click="sortBy('customfilename')">Title</th>
                         <th ng-click="sortBy('tags')">Tags</th>
@@ -110,6 +130,8 @@
                         <th>Actions</th>
                     </tr>
                     <tr ng-repeat="pdfItem in fileList | orderBy:propertyName:reverse" ng-click="showFile(pdfItem)">
+                        <th>
+                            <input type="checkbox" class="selectCheckBoxList" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> </th>
                         <th> {{pdfItem.filetype}} </th>
                         <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span> {{pdfItem.customfilename}} </th>
                         <th> {{pdfItem.tags}} </th>
@@ -141,6 +163,8 @@
                 <table>
                     <h2>Name</h2>
                     <tr ng-repeat="pdfItem in sortedNameList" ng-click="showFile(pdfItem)">
+                        <th>
+                            <input type="checkbox" class="selectCheckBoxList" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> </th>
                         <th> {{pdfItem.filetype}} </th>
                         <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span> {{pdfItem.customfilename}} </th>
                         <th> {{pdfItem.tags}} </th>
@@ -159,6 +183,8 @@
                 <div id="homeShow">
                     <table>
                         <tr ng-repeat="pdfItem in sortedTagList" ng-click="showFile(pdfItem)">
+                            <th>
+                                <input type="checkbox" class="selectCheckBoxList" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> </th>
                             <th> {{pdfItem.filetype}} </th>
                             <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span> {{pdfItem.customfilename}} </th>
                             <th> {{pdfItem.tags}} </th>
@@ -178,6 +204,8 @@
                 <div id="homeShow">
                     <table>
                         <tr ng-repeat="pdfItem in sortedDateList" ng-click="showFile(pdfItem)">
+                            <th>
+                                <input type="checkbox" class="selectCheckBoxList" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> </th>
                             <th> {{pdfItem.filetype}} </th>
                             <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span> {{pdfItem.customfilename}} </th>
                             <th> {{pdfItem.tags}} </th>
@@ -197,6 +225,8 @@
                 <div id="homeShow">
                     <table>
                         <tr ng-repeat="pdfItem in sortedContentList" ng-click="showFile(pdfItem)">
+                            <th>
+                                <input type="checkbox" class="selectCheckBoxList" ng-checked="pdfItem.checked" ng-click="itemChecked(pdfItem);" onclick="event.stopPropagation()"> </th>
                             <th> {{pdfItem.filetype}} </th>
                             <th> <span class="glyphicon glyphicon-link" ng-show="pdfItem.links != ''"></span> {{pdfItem.customfilename}} </th>
                             <th> {{pdfItem.tags}} </th>
@@ -219,7 +249,14 @@
                 <label for="customFilename">Custom Filename</label>
                 <input class="form-control" id="editCustomFilename" name="editCustomFilename"> </div>
             <div class="form-group">
-                <label for="password">Tags</label>
+                <label for="editTags">Tags</label>
+                <input class="form-control" id="editTags" name="editTags"> </div>
+        </form>
+    </div>
+    <div id="addTagsForm" style="display:none;">
+        <form class="form" role="form">
+            <div class="form-group">
+                <label for="editTags">Common tags</label>
                 <input class="form-control" id="editTags" name="editTags"> </div>
         </form>
     </div>

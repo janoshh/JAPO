@@ -532,8 +532,7 @@ function compareAllFiles(user, filename, currentContent) {
                     doc.save();
                 }
             });
-            var i = 0;
-            updateLinks(user, links, currentName, i);
+            updateLinks(user, links, currentName, 0);
         }
     });
 }
@@ -789,7 +788,7 @@ apiRoutes.post('/updatefile', function (req, res, next) {
         }
         else if (doc) {
             doc.customfilename = customfilename
-            doc.tags = tags;
+            doc.tags += " "+tags;
             doc.save();
             res.status(200).end();
         }
@@ -948,6 +947,60 @@ app.get('/getFileInformation', function (req, res) {
         }
     })
 });
+apiRoutes.post('/createManualLinks', function (req, res) {
+    var user = req.headers['user'];
+    var bucket = user.replace("@", "-");
+    var receivedData = '';
+    var files = [];
+    req.on('data', function (data) {
+        receivedData += data;
+    });
+    req.on('end', function () {
+        try {
+            files = JSON.parse(receivedData);
+            createLink(files, user, 0);
+            res.status(200).end();
+        }
+        catch (ex) {
+            console.error(ex);
+        }
+    });
+});
+
+function createLink(list, user, i) {
+    if (i <= list.length) {
+        File.findOne({
+            user: user
+            , filename: list[i].name
+        }, function (err, doc) {
+            if (err) {
+                console.log(err);
+            }
+            else if (doc) {
+                var newLinkList = doc.links;
+                for (j = 0; j < list.length; j++) {
+                    if (j != i) {
+                        var newLink = {
+                            filename: list[j].name
+                            , percentage: '60%'
+                        };
+                        newLinkList.push(newLink);
+                    }
+                }
+                //console.log(newLinkList);
+                console.log("------------------------------");
+                var noDuplicates = new Set(newLinkList);
+                console.log(noDuplicates);
+                doc.links = Array.from(noDuplicates);
+                console.log("New links pushed to doc");
+                doc.save();
+                if (i + 1 < list.length) {
+                    createLink(list, user, ++i);
+                }
+            }
+        });
+    }
+}
 app.use('/api', apiRoutes);
 // =================================================================
 // start the server ================================================

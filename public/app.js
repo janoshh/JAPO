@@ -139,6 +139,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     if ($scope.doNotShowDuplicatesPopup === null) {
         $scope.doNotShowDuplicatesPopup = false;
     }
+    $scope.showSelectedFilesDiv = false;
+    $scope.itemsChecked = [];
     jq('#collectionsList').hide();
     $scope.grid = false;
     $scope.grid = function () {
@@ -203,20 +205,23 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 , 'user': user
             }
         }).then(function (response) {
-            //if (arraysEqual(response, previousList)) {
-            //    console.log("Lijsten zijn't zelfde");
-            //}
-            //else {
-            console.log("Nieuw gevonden");
             createCollection(response);
             //}
             previousList = response;
         });
     }
     var refreshFileList = $interval(function () {
-        getFileList()
-        console.log("REFRESHING");
+        var notSelectedAnyItems = true;
+        for (i = 0; i < $scope.fileList.length; i++) {
+            if ($scope.fileList[i].checked) {
+                notSelectedAnyItems = false;
+            }
+        }
+        if (notSelectedAnyItems) {
+            getFileList();
+        }
     }, 5000);
+    // Do initial get
     getFileList();
 
     function createCollection(response) {
@@ -234,8 +239,9 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             if (customfilename.lastIndexOf('.') > 0) {
                 customfilename = customfilename.substring(0, customfilename.lastIndexOf('.'));
             }
-            if (customfilename.length > 15) {
-                customfilename = customfilename.substr(0, 15) + "...";
+            gridcustomfilename = customfilename;
+            if (gridcustomfilename.length > 12) {
+                gridcustomfilename = gridcustomfilename.substr(0, 12) + "...";
             }
             var humansize = humanFileSize(fileList[i].size, true);
             var size = parseInt(fileList[i].size);
@@ -252,8 +258,9 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
             var content = fileList[i].content;
             var links = fileList[i].links;
+            var checked = false;
             var file = {
-                name, customfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links
+                name, customfilename, gridcustomfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links, checked
             };
             $scope.fileList.push(file);
         }
@@ -289,6 +296,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             $scope.documentsMessage = "You have not yet uploaded any documents.";
         }
         $scope.capacityUsed = humanFileSize($scope.capacityUsed, true);
+        $scope.premiumCapacityUsed = $scope.capacityUsed;
         if ($scope.capacityUsed.match('kB')) {
             $scope.capacityUsed = $scope.capacityUsed.replace(/[^\d.-]/g, '') / 100;
         }
@@ -302,10 +310,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         else {
             $scope.capacityBlueUsed = $scope.capacityUsed;
         }
-        maxCapacity = 100
     }
-
-    function containsObject(obj, list) {
+    $scope.containsObject = function (obj, list) {
         for (i = 0; i < list.length; i++) {
             if (list[i].name === obj.name) {
                 return true;
@@ -748,6 +754,172 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             $scope.nsContent = true;
         }
     }
+    $scope.itemChecked = function (file) {
+        if (file.checked) {
+            file.checked = false;
+        }
+        else {
+            file.checked = true;
+        }
+        checkShowSelectedFilesDiv()
+    }
+
+    function checkShowSelectedFilesDiv() {
+        var noSelectedFiles = true;
+        for (i = 0; i < $scope.fileList.length; i++) {
+            if ($scope.fileList[i].checked) {
+                noSelectedFiles = false;
+            }
+        }
+        if (noSelectedFiles) {
+            $scope.showSelectedFilesDiv = false;
+        }
+        else {
+            $scope.showSelectedFilesDiv = true;
+        }
+    }
+    $scope.deselectAllFiles = function () {
+        for (i = 0; i < $scope.fileList.length; i++) {
+            $scope.fileList[i].checked = false;
+        }
+        checkShowSelectedFilesDiv()
+    }
+    $scope.selectAllFiles = function () {
+        for (i = 0; i < $scope.fileList.length; i++) {
+            $scope.fileList[i].checked = true;
+        }
+        checkShowSelectedFilesDiv()
+    }
+
+    function getSelectedFiles() {
+        var selectedFileList = [];
+        for (i = 0; i < $scope.fileList.length; i++) {
+            if ($scope.fileList[i].checked) {
+                selectedFileList.push($scope.fileList[i]);
+            }
+        }
+        return selectedFileList
+    }
+    $scope.deleteSelectedFiles = function () {
+        bootbox.confirm({
+            title: "Delete all selected files?"
+            , message: "You are about to delete multiple files. Are you sure?"
+            , buttons: {
+                cancel: {
+                    label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
+                }
+                , confirm: {
+                    label: '<i class="glyphicon glyphicon-ok"></i> Confirm'
+                }
+            }
+            , callback: function (result) {
+                if (result) {
+                    $scope.itemsChecked = getSelectedFiles();
+
+                    function deletefiles(i) {
+                        var xhr = new XMLHttpRequest()
+                        xhr.open("POST", "/api/deletefile");
+                        xhr.setRequestHeader("x-access-token", token);
+                        xhr.setRequestHeader("user", user);
+                        xhr.setRequestHeader("filename", $scope.itemsChecked[i].name);
+                        xhr.onload = function () {
+                            if (xhr.status === 200) {
+                                if (i + 1 < $scope.itemsChecked.length) {
+                                    deletefiles(++i);
+                                }
+                                else {
+                                    $location.path("/home");
+                                    $scope.$apply();
+                                }
+                            }
+                            else {
+                                bootbox.alert("<h1>Oops!</h1> Sorry! Something went wrong while deleting one of your files");
+                            }
+                        }
+                        xhr.send()
+                    }
+                    deletefiles(0);
+                }
+            }
+        });
+    }
+    $scope.addTagsSelectedFiles = function () {
+        var modal = bootbox.dialog({
+            message: jq("#addTagsForm").html()
+            , title: "Add common tags to selected files"
+            , buttons: [
+                {
+                    label: "Save"
+                    , className: "btn btn-primary pull-left"
+                    , callback: function () {
+                        var form = modal.find(".form");
+                        var items = form.serializeJSON();
+                        $scope.itemsChecked = getSelectedFiles();
+
+                        function addTag(i) {
+                            var xhr = new XMLHttpRequest()
+                            xhr.open("POST", "/api/updatefile");
+                            xhr.setRequestHeader("x-access-token", token);
+                            xhr.setRequestHeader("user", user);
+                            xhr.setRequestHeader("filename", $scope.itemsChecked[i].name);
+                            xhr.setRequestHeader("customfilename", $scope.itemsChecked[i].customfilename);
+                            xhr.setRequestHeader("tags", items.editTags);
+                            xhr.onload = function () {
+                                if (xhr.status === 200) {
+                                    if (i + 1 < $scope.itemsChecked.length) {
+                                        addTag(++i);
+                                    }
+                                    else {
+                                        location.reload();
+                                    }
+                                }
+                                else {
+                                    bootbox.alert("<h1>Oops!</h1> Sorry! Something went wrong while editing one of your files");
+                                }
+                            }
+                            xhr.send();
+                        }
+                        addTag(0);
+                        return false;
+                    }
+          }
+                , {
+                    label: "Cancel"
+                    , className: "btn btn-default pull-left"
+                    , callback: function () {
+                        modal.modal("hide");
+                    }
+          }
+        ]
+            , show: false
+            , onEscape: function () {
+                modal.modal("hide");
+            }
+        });
+        modal.modal("show");
+    }
+    $scope.addLinksSelectedFiles = function () {
+        $scope.itemsChecked = getSelectedFiles();
+        if ($scope.itemsChecked.length >= 2) {
+            var xhr = new XMLHttpRequest()
+            xhr.open("POST", "/api/createManualLinks");
+            xhr.setRequestHeader("x-access-token", token);
+            xhr.setRequestHeader("user", user);
+            xhr.setRequestHeader('Content-Type', 'application.json');
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    location.reload();
+                }
+                else {
+                    bootbox.alert("<h1>Oops!</h1> Sorry! Something went wrong while editing one of your files");
+                }
+            }
+            xhr.send(JSON.stringify($scope.itemsChecked));
+        }
+        else {
+             bootbox.alert("<h3>Please select more than one file.</h3> We cannot create links on only one file, please select more than one file in order to create a link.");
+        }
+    }
 });
 // -----------------
 // Upload Controller
@@ -814,7 +986,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 }
             }
             if (fileTypesAllGood) {
-                $scope.uploadPopup();
+                $scope.uploadPopup(false);
             }
             else {
                 bootbox.alert("<h1>Oops!</h1> Sorry! One of your files cannot be uploaded because it is an unsupported filetype. <br>Please select your files again. <hr> <strong>Supported filetype: PDF - JPG - JPEG - PNG</strong>");
@@ -845,7 +1017,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
         }
         uploadNewFile(fd, 0);
     }
-   
     jq("#url").bind("paste", function (e) {
         processingModal.modal("show");
         var pastedData = e.originalEvent.clipboardData.getData('text');
@@ -860,15 +1031,16 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.setRequestHeader("x-access-token", token);
         xhr.setRequestHeader("user", user);
         xhr.setRequestHeader("filename", "URL-Upload");
-        console.log("URL = " + url);
         xhr.setRequestHeader("url", url);
         xhr.onload = function () {
             processingModal.modal("hide");
             if (xhr.status === 500) {
                 bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
+                jq('#url').val() = "";
             }
             else if (xhr.status === 409) {
                 bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
+                jq('#url').val() = "";
             }
             else if (xhr.status === 200) {
                 $location.path("/home");
@@ -922,7 +1094,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
             jq("#filesection").hide();
         })
     }
-    $scope.uploadPopup = function () {
+    $scope.uploadPopup = function (url) {
         if ($scope.files[0] != null) {
             var title = "<h1>Your file is ready for uploading.</h1>"
             var message = "<h4><strong>New uploaded files will appear automatically in your collection.</strong><br><br>You can rename your files and add tags there. </h4>"
@@ -944,7 +1116,6 @@ app.controller("uploadController", function ($scope, $http, $location) {
                         label: "<span class='glyphicon glyphicon-ok'></span> Upload!"
                         , className: "btn btn-success"
                         , callback: function () {
-                            var url = document.getElementById('url-input').value;
                             if (url) {
                                 $scope.uploadFromUrl();
                             }
@@ -1024,6 +1195,27 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
     jq("#loading").show();
     jq('#showSection').hide();
     jq('#imageSection').hide();
+    $scope.listOrGrid = sessionStorage.getItem('listOrGrid');
+    $scope.grid = function () {
+        jq('#btnToggleGridList').removeClass("glyphicon glyphicon-list");
+        jq('#btnToggleGridList').addClass("glyphicon glyphicon-th");
+        $scope.listOrGrid = "grid";
+        sessionStorage.setItem('listOrGrid', "grid");
+    }
+    $scope.list = function () {
+        jq('#btnToggleGridList').removeClass("glyphicon glyphicon-th");
+        jq('#btnToggleGridList').addClass("glyphicon glyphicon-list");
+        $scope.listOrGrid = "list";
+        sessionStorage.setItem('listOrGrid', "list");
+    }
+    $scope.toggleGridList = function () {
+        if (sessionStorage.getItem('listOrGrid') === "list") {
+            $scope.grid();
+        }
+        else {
+            $scope.list();
+        }
+    }
     var user = sessionStorage.getItem("username");
     var token = sessionStorage.getItem("japo-token");
     //
@@ -1039,6 +1231,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         if ($scope.file.customfilename === "undefined" || $scope.file.customfilename === "") {
             $scope.file.customfilename = $scope.file.filename.split("|")[1];
         }
+        $scope.file.readableFileSize = humanFileSize($scope.file.size, true);
         $scope.linksList = [];
         getLinkFile(0);
         publishOnPage();
@@ -1057,6 +1250,10 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
                 linkFile.percentage = $scope.file.links[index].percentage;
                 if (linkFile.customfilename === "undefined" || linkFile.customfilename === "") {
                     linkFile.customfilename = linkFile.filename.split("|")[1];
+                }
+                linkFile.gridcustomfilename = linkFile.customfilename;
+                if (linkFile.gridcustomfilename.length > 12) {
+                    linkFile.gridcustomfilename = linkFile.gridcustomfilename.substr(0, 12) + "...";
                 }
                 $scope.linksList.push(linkFile);
                 getLinkFile(++index);
@@ -1083,6 +1280,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
     }
 
     function showPdf() {
+        $scope.moreThanOnePage = false;
         var url = "/getfile?file=" + $scope.file.filename + "&user=" + user;
         pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 2, canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
         /**
@@ -1155,6 +1353,10 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         PDFJS.getDocument(url).then(function (pdfDoc_) {
             pdfDoc = pdfDoc_;
             document.getElementById('page_count').textContent = pdfDoc.numPages;
+            if (pdfDoc.numPages > 1) {
+                $scope.moreThanOnePage = true;
+                $scope.$apply();
+            }
             // Initial/first page rendering
             renderPage(pageNum);
             jq("#loading").hide();
@@ -1166,7 +1368,6 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         $location.path("/show/" + file.filename);
     }
     $scope.editFile = function (file) {
-        console.log(file);
         var title = file.name;
         jq("#editCustomFilename").attr("value", file.customfilename);
         jq("#editTags").attr("value", file.tags);

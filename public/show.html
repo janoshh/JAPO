@@ -4,7 +4,10 @@
         <button class="btn btn-primary" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
             </h3>
         <div>
-            <h3>{{file.customfilename}}</h3> </div>
+            <h3>{{file.customfilename}}</h3> 
+        <span>{{file.readableFileSize}}</span>
+        </div>
+        <hr>
         <div ng-show="file.tags.length > 0">
             <p> <span class="glyphicon glyphicon-tags"></span> {{file.tags}} </p>
         </div>
@@ -18,16 +21,28 @@
         <br>
         <div ng-show="file.filetype === 'pdf'">
             <h3>Page: <span id="page_num">0</span> / <span id="page_count">0</span></h3>
-            <div class="btn-group btn-group-merge">
+            <div class="btn-group btn-group-merge" ng-show="moreThanOnePage">
                 <button class="btn btn-default" id="prev"><span class="glyphicon glyphicon-chevron-left"></span></button>
                 <button class="btn btn-default" id="next"><span class="glyphicon glyphicon-chevron-right"></span></button>
             </div>
         </div>
         <br>
-        <div ng-show="linksList.length > 0" class="hidden-xs">
-            <h3>Related files</h3>
-            <div ng-repeat="pdfItem in linksList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"  style="height: 350px; overflow: auto"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
-                <h4>{{pdfItem.customfilename}}</h4> </div>
+        <div ng-show="linksList.length > 0" class="hidden-xs" style="min-height: 100px;">
+            <h3>Related files 
+            <button ng-click="toggleGridList()" class="btn btn-primary float-right" title="Change the way the related files are displayed"> <span id="btnToggleGridList" class="glyphicon glyphicon-list"></span></button>
+            
+            </h3>
+            <div id="links" ng-show="listOrGrid === 'grid'">
+                <div ng-repeat="pdfItem in linksList" class="collectionItem gridItem" ng-click="showFile(pdfItem)"> <img ng-src="{{pdfItem.thumbnail}}" style="margin-top: 5px;">
+                    <h4>{{pdfItem.gridcustomfilename}}</h4> </div>
+            </div>
+            <div id="linksList" ng-show="listOrGrid === 'list'" style="margin-bottom: 25px;">
+               <table>
+                    <tr ng-repeat="pdfItem in linksList" ng-click="showFile(pdfItem)">
+                        <th> {{pdfItem.customfilename}} </th>                       
+                    </tr>
+                </table>
+            </div>
         </div>
     </div>
     <div class="col-lg-9 col-md-8 col-sm-12 col-xs-12">
@@ -39,8 +54,7 @@
         <script src="pdf.js"></script>
         <div id="imageSection" style="height: 800px;"></div>
         <br>
-        <hr>
-    </div>
+        <hr> </div>
     <div class="form-content" style="display:none;">
         <form class="form" role="form">
             <div class="form-group">

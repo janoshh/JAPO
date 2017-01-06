@@ -232,8 +232,8 @@ tr:hover {
 
 .gridItem > a {
     position: relative;
-    top: -150px;
-    left: 7px;
+    top: -75px;
+    left: 17px;
     visibility: hidden;
 }
 
@@ -248,28 +248,28 @@ tr:hover {
 }
 
 @media(max-width: 600px) {
-    th:nth-child(1) {
+    th:nth-child(2) {
         display: none;
     }
-    th:nth-child(3) {
+    th:nth-child(4) {
         display: none;
     }
-    th:nth-child(5) {
+    th:nth-child(6) {
         display: none;
     }
 }
 
 @media(max-width: 500px) {
-    th:nth-child(1) {
-        display: none;
-    }
-    th:nth-child(3) {
+    th:nth-child(2) {
         display: none;
     }
     th:nth-child(4) {
         display: none;
     }
     th:nth-child(5) {
+        display: none;
+    }
+    th:nth-child(6) {
         display: none;
     }
 }
@@ -399,5 +399,37 @@ hr {
 }
 
 .shadow-box {
-    box-shadow: 0 4px 23px 5px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 23px 5px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.selectCheckBox {
+    position: relative;
+    top: -27px;
+    left: 35px;
+    width: 25px;
+    height: 25px;    
+}
+
+.selectCheckBoxList {
+    width: 17px;
+    height: 17px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #555;
+}
+
+.selectedFilesDiv {
+    text-align: center;
+    width: 450px;
+    border-radius: 15px;
+    box-shadow: 0 4px 23px 5px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+@media(max-width: 500px) {
+    .selectedFilesDiv {
+        text-align: center;
+        width: 300px;
+        border-radius: 15px;
+        box-shadow: 0 4px 23px 5px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
 }
