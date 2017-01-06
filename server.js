@@ -189,10 +189,9 @@ apiRoutes.get('/check', function (req, res) {
     res.json(req.decoded);
 });
 request = require('request');
+//
 var download = function (uri, filename, callback) {
     request.head(uri, function (err, res, body) {
-        //console.log('content-type:', res.headers['content-type']);
-        //console.log('content-length:', res.headers['content-length']);
         var type = res.headers['content-type'];
         var extension = "." + type.split("/")[1];
         request(uri).pipe(fs.createWriteStream(__dirname + '/files/' + filename + extension)).on('close', function () {
@@ -339,7 +338,8 @@ function getTextFromPdf(user, params) {
             user: user
             , filename: params.Key
         }, function (err, doc) {
-            if (doc) {
+            if (err) {}
+            else if (doc) {
                 doc.content = pages.toString();
                 doc.save();
                 if (pages.toString().length > 0) {
@@ -367,6 +367,7 @@ function getTextFromImage(user, params) {
                         user: user
                         , filename: params.Key
                     }, function (err, doc) {
+                        if (err) {}
                         doc.content = text;
                         doc.save();
                         if (text.length > 0) {
@@ -604,12 +605,18 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
     req.on('end', function () {
         fs = require('fs');
         fs.writeFile('log.txt', dataString, function (err) {
-            if (err) return console.log(err);
+            if (err) {
+                return console.log(err);
+                res.status(500).end();
+            }
         });
         dataString = dataString.substring(dataString.indexOf("8bit") + 4);
         dataString = dataString.substring(0, dataString.indexOf("--"));
         require("fs").writeFile("temp.jpg", dataString, 'base64', function (err) {
-            if (err) console.log(err);
+            if (err) {
+                console.log(err);
+                res.status(500).end();
+            }
             else {
                 var fileSize = req.headers['file-size'];
                 var tags = req.headers['tags'];
@@ -624,7 +631,10 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                 };
                 // Wegschrijven naar Amazon S3
                 s3.upload(params, function (err, data) {
-                    if (err) console.log(err)
+                    if (err) {
+                        console.log(err);
+                        res.status(500).end();
+                    }
                     else {
                         //
                         var fileLocation;
@@ -647,6 +657,7 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                         file.save(function (err, userObj) {
                             if (err) {
                                 console.log(err);
+                                res.status(500).end();
                             }
                         });
                         jimp.read(fileLocation, function (err, image) {
@@ -663,7 +674,10 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                         , Body: fileBuffer
                                         , ContentType: 'image/jpg'
                                     }, function (error, response) {
-                                        if (error) console.log(error);
+                                        if (error) {
+                                            console.log(error);
+                                            res.status(500).end();
+                                        }
                                     });
                                 });
                         });
@@ -672,6 +686,7 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                 // Recognize text of any language in any format
                                 tesseract.process("temp.png", function (err, text) {
                                     if (err) {
+                                        res.status(500).end();
                                         console.error(err);
                                     }
                                     else {
@@ -679,6 +694,9 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                             user: user
                                             , filename: filename
                                         }, function (err, doc) {
+                                            if (err) {
+                                                res.status(500).end();
+                                            }
                                             doc.content = text;
                                             doc.save();
                                         });
@@ -725,22 +743,24 @@ apiRoutes.post('/deleteaccount', function (req, res, next) {
             console.log("error listing bucket objects " + err);
             return;
         }
-        var items = data.Contents;
-        if (items.length > 0) {
-            for (var i = 0; i < items.length; i += 1) {
-                var deleteParams = {
-                    Bucket: bucket
-                    , Key: items[i].Key
-                };
-                s3.deleteObject(deleteParams, function (err, data) {
-                    if (err) console.log("delete err " + deleteParams.Key);
-                    counter++;
-                    if (items.length === counter) {
-                        deleteAmazonBucket(bucket, user, function () {
-                            res.status(200).end();
-                        });
-                    }
-                });
+        else if (data) {
+            var items = data.Contents;
+            if (items.length > 0) {
+                for (var i = 0; i < items.length; i += 1) {
+                    var deleteParams = {
+                        Bucket: bucket
+                        , Key: items[i].Key
+                    };
+                    s3.deleteObject(deleteParams, function (err, data) {
+                        if (err) console.log("delete err " + deleteParams.Key);
+                        counter++;
+                        if (items.length === counter) {
+                            deleteAmazonBucket(bucket, user, function () {
+                                res.status(200).end();
+                            });
+                        }
+                    });
+                }
             }
         }
         else {
@@ -762,12 +782,16 @@ function deleteAmazonBucket(bucket, user, callback) {
             File.find({
                 user: user
             }).remove(function (err, data) {
-                if (err) console.log(err, err.stack);
+                if (err) {
+                    console.log(err, err.stack);
+                }
             });
             User.findOne({
                 name: user
             }).remove(function (err, data) {
-                if (err) console.log(err, err.stack);
+                if (err) {
+                    console.log(err, err.stack);
+                }
             });
             callback();
         }
@@ -788,7 +812,7 @@ apiRoutes.post('/updatefile', function (req, res, next) {
         }
         else if (doc) {
             doc.customfilename = customfilename
-            doc.tags += " "+tags;
+            doc.tags = tags
             doc.save();
             res.status(200).end();
         }
@@ -838,6 +862,7 @@ apiRoutes.post('/deleteallfiles', function (req, res, next) {
         Bucket: bucket
     }, function (err, data) {
         if (err) {
+            res.status(500).end();
             return;
         }
         var items = data.Contents;
@@ -848,13 +873,17 @@ apiRoutes.post('/deleteallfiles', function (req, res, next) {
             };
             s3.deleteObject(deleteParams, function (err, data) {
                 if (err) {
+                    res.status(500).end();
                     console.log("delete err " + deleteParams.Key);
                 }
                 else {
                     File.find({
                         user: user
                     }).remove(function (err, data) {
-                        if (err) console.log(err, err.stack);
+                        if (err) {
+                            console.log(err, err.stack);
+                            res.status(500).end();
+                        }
                     });
                     res.status(200).end();
                 }
@@ -880,16 +909,25 @@ apiRoutes.post('/deletefile', function (req, res, next) {
         }
     };
     s3.deleteObjects(params, function (err, data) {
-        if (err) console.log(err, err.stack);
+        if (err) {
+            console.log(err, err.stack);
+            res.status(500).end();
+        }
         else {
             File.findOne({
                 filename: filename
             }).remove(function (err, data) {
-                if (err) console.log(err, err.stack);
+                if (err) {
+                    console.log(err, err.stack);
+                    res.status(500).end();
+                }
                 File.find({
                     user: user
                 }, function (err, docs) {
-                    if (err) console.log(err);
+                    if (err) {
+                        console.log(err);
+                        res.status(500).end();
+                    }
                     else {
                         for (i = 0; i < docs.length; i++) {
                             for (j = 0; j < docs[i].links.length; j++) {
@@ -915,8 +953,11 @@ apiRoutes.get('/getFiles', function (req, res) {
     User.findOne({
         name: user
     }, function (err, doc) {
-        if (err) throw err;
-        else {
+        if (err) {
+            throw err;
+            res.status(500).end();
+        }
+        else if (doc) {
             premium = doc.premium;
             mongoose.connection.db.collection("files", function (err, collection) {
                 collection.find({
@@ -930,6 +971,9 @@ apiRoutes.get('/getFiles', function (req, res) {
                 })
             });
         }
+        else {
+            res.status(404).end();
+        }
     })
 });
 app.get('/getFileInformation', function (req, res) {
@@ -939,7 +983,10 @@ app.get('/getFileInformation', function (req, res) {
         user: user
         , filename: filename
     }, function (err, doc) {
-        if (err) throw err;
+        if (err) {
+            console.log(err);
+            res.status(500).end();
+        }
         else {
             return res.status(200).send({
                 fileInfo: doc
@@ -963,6 +1010,7 @@ apiRoutes.post('/createManualLinks', function (req, res) {
         }
         catch (ex) {
             console.error(ex);
+            res.status(500).end();
         }
     });
 });
@@ -980,17 +1028,16 @@ function createLink(list, user, i) {
                 var newLinkList = doc.links;
                 for (j = 0; j < list.length; j++) {
                     if (j != i) {
-                        var newLink = {
-                            filename: list[j].name
-                            , percentage: '60%'
-                        };
-                        newLinkList.push(newLink);
+                        if (list[j].name != doc.name) {
+                            var newLink = {
+                                filename: list[j].name
+                                , percentage: '60%'
+                            };
+                            newLinkList.push(newLink);
+                        }
                     }
                 }
-                //console.log(newLinkList);
-                console.log("------------------------------");
                 var noDuplicates = new Set(newLinkList);
-                console.log(noDuplicates);
                 doc.links = Array.from(noDuplicates);
                 console.log("New links pushed to doc");
                 doc.save();

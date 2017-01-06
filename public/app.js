@@ -141,6 +141,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.showSelectedFilesDiv = false;
     $scope.itemsChecked = [];
+    $scope.groupList = [];
     jq('#collectionsList').hide();
     $scope.grid = false;
     $scope.grid = function () {
@@ -229,6 +230,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         $scope.fileList.length = 0;
         $scope.premium = response.data.premium;
         fileList = response.data.files[0];
+        var allTags = "";
         for (i = 0; i < fileList.length; i++) {
             var name = fileList[i].filename;
             var customfilename = fileList[i].customfilename;
@@ -247,12 +249,14 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             var size = parseInt(fileList[i].size);
             // Count all file sizes together
             $scope.capacityUsed += parseInt(fileList[i].size);
-            var date = fileList[i].date;
-            date = date.substring(0, date.indexOf('T'));
+            var rawdate = fileList[i].date;
+            
+            var date = rawdate.substring(0, rawdate.indexOf('T'));
             var tags = fileList[i].tags;
             if (tags === "undefined") {
                 tags = "";
             }
+            allTags += (" " + tags);
             var location = fileList[i].location;
             var filetype = fileList[i].filetype.toUpperCase();
             var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
@@ -260,10 +264,44 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             var links = fileList[i].links;
             var checked = false;
             var file = {
-                name, customfilename, gridcustomfilename, size, humansize, thumbnail, date, tags, location, filetype, content, links, checked
+                name, customfilename, gridcustomfilename, size, humansize, thumbnail, date, rawdate, tags, location, filetype, content, links, checked
             };
             $scope.fileList.push(file);
         }
+        // Create groups:
+        allTags = allTags.replace(/\s/g, "|");
+        var groupTags = allTags.split("|");
+        var groupTagsSet = new Set(groupTags);
+        $scope.groupList = createGroups($scope.fileList, Array.from(groupTagsSet), 3);
+
+        function createGroups(list, properties, minLength) {
+            var groups = [];
+            for (var p = 0; p < properties.length; p++) {
+                for (var l = 0; l < list.length; l++) {
+                    if (list[l].tags.indexOf(properties[p]) >= 0) {
+                        if (groups[p]) {
+                            groups[p].push(list[l]);
+                        }
+                        else {
+                            groups[p] = [];
+                            groups[p].name = capitalizeFirstLetter(properties[p]);
+                            if (properties[p] === "") {
+                                groups[p].name = "Collection";
+                            }
+                            groups[p].push(list[l]);
+                        }
+                    }
+                }
+            }
+            for (i = 0; i < groups.length; i++) {
+                if (groups[i].length < minLength) {
+                    groups.splice(i, 1);
+                }
+            }
+           
+            return groups;
+        };
+        //
         $scope.duplicates = [];
         for (i = 0; i < $scope.fileList.length; i++) {
             for (j = 0; j < $scope.fileList[i].links.length; j++) {
@@ -287,6 +325,9 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         }
         if ($scope.duplicates.length > 0) {
             $scope.duplicatesFound = true;
+        }
+        else {
+            $scope.duplicatesFound = false;
         }
         fileService.saveFileList($scope.fileList);
         if ($scope.fileList.length > 0) {
@@ -698,7 +739,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         $location.path("/show/" + file.name);
     }
     $scope.searchChange = function () {
-        text = $scope.search;
+        var text = $scope.search;
         var customNameList = [];
         var tagList = [];
         var dateList = [];
@@ -766,9 +807,33 @@ app.controller("homeController", function ($scope, $http, $location, fileService
 
     function checkShowSelectedFilesDiv() {
         var noSelectedFiles = true;
-        for (i = 0; i < $scope.fileList.length; i++) {
-            if ($scope.fileList[i].checked) {
-                noSelectedFiles = false;
+        if ($scope.searching) {
+            for (i = 0; i < $scope.sortedNameList.length; i++) {
+                if ($scope.sortedNameList[i].checked) {
+                    noSelectedFiles = false;
+                }
+            }
+            for (i = 0; i < $scope.sortedTagList.length; i++) {
+                if ($scope.sortedTagList[i].checked) {
+                    noSelectedFiles = false;
+                }
+            }
+            for (i = 0; i < $scope.sortedDateList.length; i++) {
+                if ($scope.sortedDateList[i].checked) {
+                    noSelectedFiles = false;
+                }
+            }
+            for (i = 0; i < $scope.sortedContentList.length; i++) {
+                if ($scope.sortedContentList[i].checked) {
+                    noSelectedFiles = false;
+                }
+            }
+        }
+        else {
+            for (i = 0; i < $scope.fileList.length; i++) {
+                if ($scope.fileList[i].checked) {
+                    noSelectedFiles = false;
+                }
             }
         }
         if (noSelectedFiles) {
@@ -785,17 +850,57 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         checkShowSelectedFilesDiv()
     }
     $scope.selectAllFiles = function () {
-        for (i = 0; i < $scope.fileList.length; i++) {
-            $scope.fileList[i].checked = true;
+        if ($scope.searching) {
+            for (i = 0; i < $scope.sortedNameList.length; i++) {
+                $scope.sortedNameList[i].checked = true;
+            }
+            for (i = 0; i < $scope.sortedTagList.length; i++) {
+                $scope.sortedTagList[i].checked = true;
+            }
+            for (i = 0; i < $scope.sortedDateList.length; i++) {
+                $scope.sortedDateList[i].checked = true;
+            }
+            for (i = 0; i < $scope.sortedContentList.length; i++) {
+                $scope.sortedContentList[i].checked = true;
+            }
+        }
+        else {
+            for (i = 0; i < $scope.fileList.length; i++) {
+                $scope.fileList[i].checked = true;
+            }
         }
         checkShowSelectedFilesDiv()
     }
 
     function getSelectedFiles() {
         var selectedFileList = [];
-        for (i = 0; i < $scope.fileList.length; i++) {
-            if ($scope.fileList[i].checked) {
-                selectedFileList.push($scope.fileList[i]);
+        if ($scope.searching) {
+            for (i = 0; i < $scope.sortedNameList.length; i++) {
+                if ($scope.sortedNameList[i].checked) {
+                    selectedFileList.push($scope.sortedNameList[i]);
+                }
+            }
+            for (i = 0; i < $scope.sortedTagList.length; i++) {
+                if ($scope.sortedTagList[i].checked) {
+                    selectedFileList.push($scope.sortedTagList[i]);
+                }
+            }
+            for (i = 0; i < $scope.sortedDateList.length; i++) {
+                if ($scope.sortedDateList[i].checked) {
+                    selectedFileList.push($scope.sortedDateList[i]);
+                }
+            }
+            for (i = 0; i < $scope.sortedContentList.length; i++) {
+                if ($scope.sortedContentList[i].checked) {
+                    selectedFileList.push($scope.sortedContentList[i]);
+                }
+            }
+        }
+        else {
+            for (i = 0; i < $scope.fileList.length; i++) {
+                if ($scope.fileList[i].checked) {
+                    selectedFileList.push($scope.fileList[i]);
+                }
             }
         }
         return selectedFileList
@@ -863,7 +968,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             xhr.setRequestHeader("user", user);
                             xhr.setRequestHeader("filename", $scope.itemsChecked[i].name);
                             xhr.setRequestHeader("customfilename", $scope.itemsChecked[i].customfilename);
-                            xhr.setRequestHeader("tags", items.editTags);
+                            xhr.setRequestHeader("tags", $scope.itemsChecked[i].tags + " " + items.editTags);
                             xhr.onload = function () {
                                 if (xhr.status === 200) {
                                     if (i + 1 < $scope.itemsChecked.length) {
@@ -917,8 +1022,18 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             xhr.send(JSON.stringify($scope.itemsChecked));
         }
         else {
-             bootbox.alert("<h3>Please select more than one file.</h3> We cannot create links on only one file, please select more than one file in order to create a link.");
+            bootbox.alert("<h3>Please select more than one file.</h3> We cannot create links on only one file, please select more than one file in order to create a link.");
         }
+    }
+    $scope.showGroup = function (group) {
+        if (group.name === "Collection") {
+            $scope.search = "";
+            jq('#search').val("");
+        }
+        else {
+            $scope.search = group.name;
+        }
+        $scope.searchChange();
     }
 });
 // -----------------
@@ -1526,4 +1641,8 @@ function humanFileSize(bytes, si) {
         ++u;
     } while (Math.abs(bytes) >= thresh && u < units.length - 1);
     return bytes.toFixed(1) + ' ' + units[u];
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
