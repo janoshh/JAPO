@@ -4,26 +4,29 @@
         <button class="btn btn-primary" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
             </h3>
         <div>
-            <h3 style="overflow-wrap: break-word;">{{file.customfilename}}</h3> 
-        <span>{{file.readableFileSize}}</span>
-        </div>
+            <h3 style="overflow-wrap: break-word;">{{file.customfilename}}</h3> <span>{{file.readableFileSize}}</span> </div>
         <hr>
         <div ng-show="file.tags.length > 0">
             <p> <span class="glyphicon glyphicon-tags"></span> {{file.tags}} </p>
         </div>
         <div>
             <div class="btn-group btn-group-merge">
-                <button class="btn btn-default" title="Downnload {{pdfItem.customfilename}}"> <a href="{{file.location}}" onclick="event.stopPropagation();" class="noLink" download><span class="glyphicon glyphicon-cloud-download" style="margin-right:5px;"></span>Download</a></button>
+                <button class="btn btn-default" title="Download {{file.customfilename}}"> <a href="{{file.location}}" onclick="event.stopPropagation();" class="noLink" download><span class="glyphicon glyphicon-cloud-download" style="margin-right:5px;"></span>Download</a></button>
                 <button class="btn btn-default" title="Edit {{file.customfilename}}" ng-click="editFile(file)"><span class="glyphicon glyphicon-pencil" style="margin-right:5px;"></span>Edit</button>
                 <button class="btn btn-default" title="Delete {{file.customfilename}}" ng-click="deleteFile(file.filename);"><span class="glyphicon glyphicon-remove" style="margin-right:5px;"></span>Delete</button>
-            </div>
+            </div>            
         </div>
         <br>
         <div ng-show="file.filetype === 'pdf'">
             <h3>Page: <span id="page_num">0</span> / <span id="page_count">0</span></h3>
             <div class="btn-group btn-group-merge" ng-show="moreThanOnePage">
-                <button class="btn btn-default" id="prev"><span class="glyphicon glyphicon-chevron-left"></span></button>
-                <button class="btn btn-default" id="next"><span class="glyphicon glyphicon-chevron-right"></span></button>
+                <button class="btn btn-default" id="prev" title="Previous page"><span class="fontShowIcons glyphicon glyphicon-chevron-left"></span></button>
+                <button class="btn btn-default" id="next" title="Next page"><span class="fontShowIcons glyphicon glyphicon-chevron-right"></span></button>
+            </div>
+            <div class="btn-group btn-group-merge">
+                <button class="btn btn-default" ng-click="zoomIn()" title="Zoom in"><span class="fontShowIcons glyphicon glyphicon-zoom-in"></span></button>
+                <button class="btn btn-default" ng-click="zoomFitScreen()"title="Fit on screen"><span class="fontShowIcons glyphicon glyphicon-search"></span></button>
+                <button class="btn btn-default" ng-click="zoomOut()" title="Zoom out"><span class="fontShowIcons glyphicon glyphicon-zoom-out"></span></button>
             </div>
         </div>
         <br>
@@ -37,9 +40,9 @@
                     <h4>{{pdfItem.gridcustomfilename}}</h4> </div>
             </div>
             <div id="linksList" ng-show="listOrGrid === 'list'" style="margin-bottom: 25px;">
-               <table>
+                <table>
                     <tr ng-repeat="pdfItem in linksList" ng-click="showFile(pdfItem)">
-                        <th> {{pdfItem.customfilename}} </th>                       
+                        <th> {{pdfItem.customfilename}} </th>
                     </tr>
                 </table>
             </div>

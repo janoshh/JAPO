@@ -124,7 +124,7 @@ app.controller("registerController", function ($scope, $http, $location) {
 // ---------------
 // Home Controller
 // ---------------
-app.controller("homeController", function ($scope, $http, $location, fileService, $interval) {
+app.controller("homeController", function ($scope, $http, $location, fileService, $interval, $filter) {
     if (sessionStorage.getItem('username') === "") {
         $location.path("/login");
     }
@@ -141,7 +141,10 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.showSelectedFilesDiv = false;
     $scope.itemsChecked = [];
+    $scope.currentGroup = "Collection";
     $scope.groupList = [];
+    $scope.currentGroupList = [];
+    $scope.recentlyOpened = [];
     jq('#collectionsList').hide();
     $scope.grid = false;
     $scope.grid = function () {
@@ -170,6 +173,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     $scope.nsTag = true;
     $scope.nsDate = true;
     $scope.nsContent = true;
+    $scope.showGroup = false;
     var token = sessionStorage.getItem("japo-token");
     var user = sessionStorage.getItem("username");
     var listOrGrid = sessionStorage.getItem("listOrGrid");
@@ -260,14 +264,14 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
             var content = fileList[i].content;
             var numbers = content.replace(/\D/g, '');
-            console.log(name, numbers.length);
             if (numbers.length > 100 && tags.indexOf("invoice") < 0) {
                 tags += " invoice";
             }
             var links = fileList[i].links;
             var checked = false;
+            var lastOpened = fileList[i].lastOpened;
             var file = {
-                name, customfilename, gridcustomfilename, size, humansize, thumbnail, date, rawdate, tags, location, filetype, content, links, checked
+                name, customfilename, gridcustomfilename, size, humansize, thumbnail, date, rawdate, tags, location, filetype, content, links, checked, lastOpened
             };
             $scope.fileList.push(file);
             allTags += (" " + tags);
@@ -277,33 +281,69 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         var groupTags = allTags.split("|");
         var groupTagsSet = new Set(groupTags);
         $scope.groupList = createGroups($scope.fileList, Array.from(groupTagsSet), 3);
+        createRecentlyOpendList();
 
         function createGroups(list, properties, minLength) {
+            for (var p = 0; p < properties.length; p++) {
+                if (properties[p] === "") {
+                    properties.splice(p, 1);
+                }
+            }
             var groups = [];
+            var collectionGroup = [];
+            collectionGroup.name = "Collection";
+            for (i = 0; i < $scope.fileList.length; i++) {
+                collectionGroup.push($scope.fileList[i]);
+            }
+            groups.push(collectionGroup);
+            //
+            var newUploadsGroup = [];
+            newUploadsGroup.name = "New uploads";
+            for (i = 0; i < $scope.fileList.length; i++) {
+                if ($scope.fileList[i].lastOpened === null) {
+                    newUploadsGroup.push($scope.fileList[i]);
+                }
+            }
+            if (newUploadsGroup.length > 0) {
+                groups.push(newUploadsGroup);
+            }
+            currentGroupIndex = groups.length;
             for (var p = 0; p < properties.length; p++) {
                 for (var l = 0; l < list.length; l++) {
                     if (list[l].tags.indexOf(properties[p]) >= 0) {
-                        if (groups[p]) {
-                            groups[p].push(list[l]);
+                        if (groups[p + currentGroupIndex]) {
+                            groups[p + currentGroupIndex].push(list[l]);
                         }
                         else {
-                            groups[p] = [];
-                            groups[p].name = capitalizeFirstLetter(properties[p]);
-                            if (properties[p] === "") {
-                                groups[p].name = "Collection";
-                            }
-                            groups[p].push(list[l]);
+                            groups[p + currentGroupIndex] = [];
+                            groups[p + currentGroupIndex].name = capitalizeFirstLetter(properties[p]);
+                            groups[p + currentGroupIndex].push(list[l]);
                         }
                     }
                 }
             }
+            console.log(groups);
             for (i = 0; i < groups.length; i++) {
                 if (groups[i].length < minLength) {
-                    groups.splice(i, 1);
+                    if (groups[i].name != "Collection" && groups[i].name != "New uploads" && groups[i].name != "Invoice") {
+                        console.log("Splicing " + groups[i].name);
+                        groups.splice(i, 1);
+                    }
                 }
             }
+            console.log(groups);
             return groups;
         };
+        // populate recently opened list
+        function createRecentlyOpendList() {
+            var recentlyOpened = [];
+            for (i = 0; i < $scope.fileList.length; i++) {
+                if ($scope.fileList[i].lastOpened) {
+                    recentlyOpened.push($scope.fileList[i]);
+                }
+            }
+            $scope.recentlyOpened = recentlyOpened;
+        }
         //
         $scope.duplicates = [];
         for (i = 0; i < $scope.fileList.length; i++) {
@@ -754,18 +794,24 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             $scope.nsTag = false;
             $scope.nsDate = false;
             $scope.nsContent = false;
-            for (i = 0; i < $scope.fileList.length; i++) {
-                if ($scope.fileList[i].customfilename.toLowerCase().indexOf(text.toLowerCase()) > -1) {
-                    customNameList.push($scope.fileList[i]);
+            if ($scope.showGroup) {
+                list = $scope.currentGroupList;
+            }
+            else {
+                list = $scope.fileList;
+            }
+            for (i = 0; i < list.length; i++) {
+                if (list[i].customfilename.toLowerCase().indexOf(text.toLowerCase()) > -1) {
+                    customNameList.push(list[i]);
                 }
-                if ($scope.fileList[i].tags.toLowerCase().indexOf(text.toLowerCase()) > -1) {
-                    tagList.push($scope.fileList[i]);
+                if (list[i].tags.toLowerCase().indexOf(text.toLowerCase()) > -1) {
+                    tagList.push(list[i]);
                 }
-                if ($scope.fileList[i].date.toLowerCase().indexOf(text.toLowerCase()) > -1) {
-                    dateList.push($scope.fileList[i]);
+                if (list[i].date.toLowerCase().indexOf(text.toLowerCase()) > -1) {
+                    dateList.push(list[i]);
                 }
-                if ($scope.fileList[i].content.toLowerCase().indexOf(text.toLowerCase()) > -1) {
-                    contentList.push($scope.fileList[i]);
+                if (list[i].content.toLowerCase().indexOf(text.toLowerCase()) > -1) {
+                    contentList.push(list[i]);
                 }
             }
             $scope.sortedNameList = customNameList;
@@ -1029,15 +1075,16 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             bootbox.alert("<h3>Please select more than one file.</h3> We cannot create links on only one file, please select more than one file in order to create a link.");
         }
     }
-    $scope.showGroup = function (group) {
+    $scope.openGroup = function (group) {
         if (group.name === "Collection") {
-            $scope.search = "";
-            jq('#search').val("");
+            $scope.currentGroup = "Collection";
+            $scope.showGroup = false;
         }
         else {
-            $scope.search = group.name;
+            $scope.currentGroup = group.name;
+            $scope.currentGroupList = group;
+            $scope.showGroup = true;
         }
-        $scope.searchChange();
     }
 });
 // -----------------
@@ -1409,16 +1456,18 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
             jq('#imageSection').show();
         }
     }
+    $scope.pdfScale = 2;
 
     function showPdf() {
         $scope.moreThanOnePage = false;
         var url = "/getfile?file=" + $scope.file.filename + "&user=" + user;
-        pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = 2, canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
+        pdfDoc = null, pageNum = 1, pageRendering = false, pageNumPending = null, scale = Math.random(), canvas = document.getElementById('the-canvas'), ctx = canvas.getContext('2d');
         /**
          * Get page info from document, resize canvas accordingly, and render page.
          * @param num Page number.
          */
         function renderPage(num) {
+            scale = $scope.pdfScale;
             pageRendering = true;
             // Using promise to fetch the page
             pdfDoc.getPage(num).then(function (page) {
@@ -1478,9 +1527,6 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
             queueRenderPage(pageNum);
         }
         document.getElementById('next').addEventListener('click', onNextPage);
-        /**
-         * Asynchronously downloads PDF.
-         */
         PDFJS.getDocument(url).then(function (pdfDoc_) {
             pdfDoc = pdfDoc_;
             document.getElementById('page_count').textContent = pdfDoc.numPages;
@@ -1493,10 +1539,24 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
             jq("#loading").hide();
             jq('#showSection').show();
         });
+        $scope.zoomIn = function () {
+            $scope.pdfScale += 0.25;
+            queueRenderPage(pageNum);
+        }
+        $scope.zoomOut = function () {
+            if ($scope.pdfScale >= 0.5) {
+                $scope.pdfScale -= 0.25;
+                queueRenderPage(pageNum);
+            }
+        }
+        $scope.zoomFitScreen = function () {
+            $scope.pdfScale = 1;
+            queueRenderPage(pageNum);
+        }
     }
     $scope.showFile = function (file) {
         fileService.saveFile(file);
-        updateLastOpened(user, file.name);
+        updateLastOpened(user, file.filename);
         $location.path("/show/" + file.filename);
     }
     $scope.editFile = function (file) {
@@ -1665,6 +1725,7 @@ function capitalizeFirstLetter(string) {
 }
 
 function updateLastOpened(user, filename) {
+    var token = sessionStorage.getItem("japo-token");
     var xhr = new XMLHttpRequest()
     xhr.open("POST", "/api/updatelastopened");
     xhr.setRequestHeader("x-access-token", token);

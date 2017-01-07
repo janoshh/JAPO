@@ -457,7 +457,7 @@ hr {
 }
 
 .sidePanel {
-    min-height: 600px;
+
     background-color: rgba(255,255,255,0.4)
 }
 
@@ -472,9 +472,20 @@ hr {
     font-size: 18px;
     padding: 2px;
     cursor: pointer;
-    border-radius: 5px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-top-left-radius: 10px;
 }
 
 .groupItem:hover {
-    background-color: #93d9ff;
+    background-color: lightgray;
+}
+
+.activeGroup {
+    background-color: #265a88 !important;
+    color: aliceblue;
+}
+
+.fontShowIcons  {
+    font-size: 20px;
 }

@@ -419,8 +419,9 @@ function createThumbnailFromImage(params, pdf) {
                             console.log(error);
                         }
                         // DELETE TEMPORARY FILES FROM SERVER
-                        fileSubstr = params.Key.substr(0, params.Key.indexOf(dateFileSeperator));
                         /*
+                        fileSubstr = params.Key.substr(0, params.Key.indexOf(dateFileSeperator));
+                        
                         glob("./files/"+fileSubstr+"*", function (er, files) {
                             for (i=0;i<files.length;i++) {
                                 fs.unlinkSync(files[i]);
