@@ -13,5 +13,6 @@ module.exports = mongoose.model('File', new Schema({
     tags: String,
     location: String,
     content: String,
-    links: Array
+    links: Array,
+    lastOpened: Date
 }));

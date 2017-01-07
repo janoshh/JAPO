@@ -247,6 +247,11 @@ tr:hover {
     height: auto;
 }
 
+
+    th:nth-child(7) {
+        min-width: 110px;
+    }
+
 @media(max-width: 600px) {
     th:nth-child(2) {
         display: none;
@@ -256,6 +261,12 @@ tr:hover {
     }
     th:nth-child(6) {
         display: none;
+    }
+    
+
+    
+    th:nth-child(3) {
+        max-width: 150px;
     }
 }
 
@@ -447,6 +458,7 @@ hr {
 
 .sidePanel {
     min-height: 600px;
+    background-color: rgba(255,255,255,0.4)
 }
 
 .specialBorder {

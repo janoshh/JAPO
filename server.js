@@ -63,8 +63,8 @@ apiRoutes.post('/authenticate', function (req, res) {
     User.findOne({
         name: req.body.name
     }, function (err, user) {
-        if (err) throw err;
-        if (!user) {
+        if (err) console.log(err);
+        else if (!user) {
             res.json({
                 success: false
                 , message: 'Authentication failed. User not found.'
@@ -106,8 +106,8 @@ apiRoutes.post('/createUser', function (req, res) {
     User.findOne({
         name: req.body.email
     }, function (err, user) {
-        if (err) throw err;
-        if (!user) {
+        if (err) console.log(err);
+        else if (!user) {
             var newUser = new User({
                 fname: req.body.fname
                 , lname: req.body.lname
@@ -319,6 +319,7 @@ function uploadToMongoDB(user, params) {
         , tags: ""
         , location: params.fileLocation
         , content: ""
+        , lastOpened: ""
     });
     fileMongo.save(function (err, userObj) {
         if (err) {
@@ -334,22 +335,27 @@ function getTextFromPdf(user, params) {
             console.dir(err);
             return
         }
-        File.findOne({
-            user: user
-            , filename: params.Key
-        }, function (err, doc) {
-            if (err) {}
-            else if (doc) {
-                doc.content = pages.toString();
-                doc.save();
-                if (pages.toString().length > 0) {
-                    compareAllFiles(user, params.Key, pages.toString());
+        else {
+            File.findOne({
+                user: user
+                , filename: params.Key
+            }, function (err, doc) {
+                if (err) {}
+                else if (doc) {
+                    var text = pages.toString();
+                    text = text.replace(/(?:\r\n|\r|\n)/g, '');                    
+                    text.replace(/ +(?= )/g,'');
+                    doc.content = text;
+                    doc.save();
+                    if (pages.toString().length > 0) {
+                        compareAllFiles(user, params.Key, pages.toString());
+                    }
                 }
-            }
-            else {
-                console.log("No file found");
-            }
-        });
+                else {
+                    console.log("No file found");
+                }
+            });
+        }
     })
 }
 
@@ -367,7 +373,11 @@ function getTextFromImage(user, params) {
                         user: user
                         , filename: params.Key
                     }, function (err, doc) {
-                        if (err) {}
+                        if (err) {
+                            console.log(err)
+                        }
+                        text = text.replace(/(?:\r\n|\r|\n)/g, '');
+                        text = text.replace(/ +(?= )/g,'');
                         doc.content = text;
                         doc.save();
                         if (text.length > 0) {
@@ -390,34 +400,36 @@ function createThumbnailFromImage(params, pdf) {
     }
     jimp.read(file, function (err, image) {
         if (err) {
-            throw err;
+            console.log(err);
         }
-        image.resize(thumbnailSize, thumbnailSize) // resize
-            .quality(60) // set JPEG quality
-            .write(__dirname + "/files/" + params.Key + "_thumb.jpg", function () {
-                var fileBuffer = fs.readFileSync(__dirname + "/files/" + params.Key + "_thumb.jpg");
-                var thumbFileName = "thumb_" + params.Key;
-                s3.putObject({
-                    ACL: 'public-read'
-                    , Bucket: params.Bucket
-                    , Key: thumbFileName
-                    , Body: fileBuffer
-                    , ContentType: 'image/jpg'
-                }, function (error, response) {
-                    if (error) {
-                        console.log(error);
-                    }
-                    // DELETE TEMPORARY FILES FROM SERVER
-                    fileSubstr = params.Key.substr(0, params.Key.indexOf(dateFileSeperator));
-                    /*
-                    glob("./files/"+fileSubstr+"*", function (er, files) {
-                        for (i=0;i<files.length;i++) {
-                            fs.unlinkSync(files[i]);
+        else {
+            image.resize(thumbnailSize, thumbnailSize) // resize
+                .quality(60) // set JPEG quality
+                .write(__dirname + "/files/" + params.Key + "_thumb.jpg", function () {
+                    var fileBuffer = fs.readFileSync(__dirname + "/files/" + params.Key + "_thumb.jpg");
+                    var thumbFileName = "thumb_" + params.Key;
+                    s3.putObject({
+                        ACL: 'public-read'
+                        , Bucket: params.Bucket
+                        , Key: thumbFileName
+                        , Body: fileBuffer
+                        , ContentType: 'image/jpg'
+                    }, function (error, response) {
+                        if (error) {
+                            console.log(error);
                         }
-                    })
-                    */
+                        // DELETE TEMPORARY FILES FROM SERVER
+                        fileSubstr = params.Key.substr(0, params.Key.indexOf(dateFileSeperator));
+                        /*
+                        glob("./files/"+fileSubstr+"*", function (er, files) {
+                            for (i=0;i<files.length;i++) {
+                                fs.unlinkSync(files[i]);
+                            }
+                        })
+                        */
+                    });
                 });
-            });
+        }
     });
 }
 
@@ -451,7 +463,7 @@ function checkForEnoughSpace(user, uploadList, callback) {
         user: user
     }, function (err, filedata) {
         if (err) {
-            throw err;
+            console.log(err);
             callback("error");
             return false;
         }
@@ -460,7 +472,7 @@ function checkForEnoughSpace(user, uploadList, callback) {
                 name: user
             }, function (err, userdata) {
                 if (err) {
-                    throw err;
+                    console.log(err);
                     callback("error");
                     return false;
                 }
@@ -544,7 +556,7 @@ var updateLinks = function (user, links, currentName, i) {
         user: user
         , filename: currentLinkName
     }, function (err, doc) {
-        if (err) throw (err);
+        if (err) console.log(err);
         else {
             var newLink = {
                 filename: currentName
@@ -661,25 +673,27 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                             }
                         });
                         jimp.read(fileLocation, function (err, image) {
-                            if (err) throw err;
-                            image.resize(thumbnailSize, thumbnailSize) // resize
-                                .quality(60) // set JPEG quality
-                                .write("thumbnail.jpg", function () {
-                                    var fileBuffer = fs.readFileSync("thumbnail.jpg");
-                                    var thumbFileName = "thumb_" + filename;
-                                    s3.putObject({
-                                        ACL: 'public-read'
-                                        , Bucket: bucket
-                                        , Key: thumbFileName
-                                        , Body: fileBuffer
-                                        , ContentType: 'image/jpg'
-                                    }, function (error, response) {
-                                        if (error) {
-                                            console.log(error);
-                                            res.status(500).end();
-                                        }
+                            if (err) console.log(err);
+                            else {
+                                image.resize(thumbnailSize, thumbnailSize) // resize
+                                    .quality(60) // set JPEG quality
+                                    .write("thumbnail.jpg", function () {
+                                        var fileBuffer = fs.readFileSync("thumbnail.jpg");
+                                        var thumbFileName = "thumb_" + filename;
+                                        s3.putObject({
+                                            ACL: 'public-read'
+                                            , Bucket: bucket
+                                            , Key: thumbFileName
+                                            , Body: fileBuffer
+                                            , ContentType: 'image/jpg'
+                                        }, function (error, response) {
+                                            if (error) {
+                                                console.log(error);
+                                                res.status(500).end();
+                                            }
+                                        });
                                     });
-                                });
+                            }
                         });
                         jimp.read(fileLocation, function (err, image) {
                             image.write("temp.png", function () {
@@ -954,7 +968,7 @@ apiRoutes.get('/getFiles', function (req, res) {
         name: user
     }, function (err, doc) {
         if (err) {
-            throw err;
+            console.log(err);
             res.status(500).end();
         }
         else if (doc) {
@@ -1048,6 +1062,26 @@ function createLink(list, user, i) {
         });
     }
 }
+
+apiRoutes.post('/updatelastopened', function (req, res) {
+    var user = req.headers['user'];
+    var filename = req.headers['filename'];
+    File.findOne({
+        user: user
+        , filename: filename
+    }, function (err, doc) {
+        if (err) {
+            console.log(err);
+            res.status(409).end();
+        }
+        else if (doc) {
+            doc.lastOpened = Date.now();
+            doc.save();
+            res.status(200).end();
+        }
+    });
+});
+
 app.use('/api', apiRoutes);
 // =================================================================
 // start the server ================================================

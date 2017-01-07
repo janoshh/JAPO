@@ -4,7 +4,7 @@
         <button class="btn btn-primary" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
             </h3>
         <div>
-            <h3>{{file.customfilename}}</h3> 
+            <h3 style="overflow-wrap: break-word;">{{file.customfilename}}</h3> 
         <span>{{file.readableFileSize}}</span>
         </div>
         <hr>
@@ -52,7 +52,7 @@
             <canvas id="the-canvas" class="shadow-box" height="633" width="489"></canvas>
             <hr> </div>
         <script src="pdf.js"></script>
-        <div id="imageSection" style="height: 800px;"></div>
+        <div id="imageSection"></div>
         <br>
         <hr> </div>
     <div class="form-content" style="display:none;">

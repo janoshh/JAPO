@@ -250,23 +250,27 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             // Count all file sizes together
             $scope.capacityUsed += parseInt(fileList[i].size);
             var rawdate = fileList[i].date;
-            
             var date = rawdate.substring(0, rawdate.indexOf('T'));
             var tags = fileList[i].tags;
             if (tags === "undefined") {
                 tags = "";
             }
-            allTags += (" " + tags);
             var location = fileList[i].location;
             var filetype = fileList[i].filetype.toUpperCase();
             var thumbnail = "https://s3.amazonaws.com/" + user.replace("@", "-") + "/thumb_" + name;
             var content = fileList[i].content;
+            var numbers = content.replace(/\D/g, '');
+            console.log(name, numbers.length);
+            if (numbers.length > 100 && tags.indexOf("invoice") < 0) {
+                tags += " invoice";
+            }
             var links = fileList[i].links;
             var checked = false;
             var file = {
                 name, customfilename, gridcustomfilename, size, humansize, thumbnail, date, rawdate, tags, location, filetype, content, links, checked
             };
             $scope.fileList.push(file);
+            allTags += (" " + tags);
         }
         // Create groups:
         allTags = allTags.replace(/\s/g, "|");
@@ -298,7 +302,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     groups.splice(i, 1);
                 }
             }
-           
             return groups;
         };
         //
@@ -736,6 +739,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     };
     $scope.showFile = function (file) {
         fileService.saveFile(file);
+        updateLastOpened(user, file.name);
         $location.path("/show/" + file.name);
     }
     $scope.searchChange = function () {
@@ -1070,22 +1074,34 @@ app.controller("uploadController", function ($scope, $http, $location) {
         })
     }, false)
     dropbox.addEventListener("drop", function (evt) {
-            evt.stopPropagation()
-            evt.preventDefault()
+            evt.stopPropagation();
+            evt.preventDefault();
+            $scope.processingFiles();
             $scope.$apply(function () {
                 $scope.dropText = 'Drop files here...'
                 $scope.dropClass = ''
             })
-            var files = evt.dataTransfer.files
+            var files = evt.dataTransfer.files;
+            var fileTypesAllGood = true;
             if (files.length > 0) {
                 $scope.$apply(function () {
                     $scope.files = []
                     for (var i = 0; i < files.length; i++) {
-                        $scope.files.push(files[i])
+                        $scope.files.push(files[i]);
+                        var fileType = $scope.files[i].name.substring($scope.files[i].name.lastIndexOf('.') + 1).toLowerCase();
+                        if (["pdf", "jpg", "jpeg", "png"].indexOf(fileType) < 0) {
+                            fileTypesAllGood = false;
+                        }
                     }
                 })
             }
-            $scope.uploadFile();
+            if (fileTypesAllGood) {
+                $scope.uploadPopup(false);
+            }
+            else {
+                bootbox.alert("<h1>Oops!</h1> Sorry! One of your files cannot be uploaded because it is an unsupported filetype. <br>Please select your files again. <hr> <strong>Supported filetype: PDF - JPG - JPEG - PNG</strong>");
+            }
+            processingModal.modal("hide");
         }, false)
         //============== DRAG & DROP =============
     $scope.setFiles = function (element) {
@@ -1150,11 +1166,11 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.onload = function () {
             processingModal.modal("hide");
             if (xhr.status === 500) {
-                bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
+                bootbox.alert("<h1>Oops, sorry.</h1> Something went wrong while uploading your file.");
                 jq('#url').val() = "";
             }
             else if (xhr.status === 409) {
-                bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
+                bootbox.alert("<h1>Oops, sorry.</h1> Your file could not be uploaded because you have reached your free storage limit.");
                 jq('#url').val() = "";
             }
             else if (xhr.status === 200) {
@@ -1181,10 +1197,10 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 if (xhr.readyState == 4) {
                     status = xhr.status;
                     if (xhr.status === 500) {
-                        bootbox.alert("Oops, sorry. Something went wrong while uploading your file.");
+                        bootbox.alert("<h1>Oops, sorry.</h1> Something went wrong while uploading your file.");
                     }
                     else if (xhr.status === 409) {
-                        bootbox.alert("Oops, sorry. Your file could not be uploaded because you have reached your free storage limit.");
+                        bootbox.alert("<h1>Oops, sorry.</h1> Your file could not be uploaded because you have reached your free storage limit.");
                     }
                     else {
                         $location.path("/home");
@@ -1480,6 +1496,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
     }
     $scope.showFile = function (file) {
         fileService.saveFile(file);
+        updateLastOpened(user, file.name);
         $location.path("/show/" + file.filename);
     }
     $scope.editFile = function (file) {
@@ -1645,4 +1662,13 @@ function humanFileSize(bytes, si) {
 
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function updateLastOpened(user, filename) {
+    var xhr = new XMLHttpRequest()
+    xhr.open("POST", "/api/updatelastopened");
+    xhr.setRequestHeader("x-access-token", token);
+    xhr.setRequestHeader("user", user);
+    xhr.setRequestHeader("filename", filename);
+    xhr.send();
 }
