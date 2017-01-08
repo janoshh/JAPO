@@ -131,8 +131,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, MainActivity_show.class);
-                intent.putExtra("token",token);
-                intent.putExtra("user",user);
                 MainActivity.this.startActivity(intent);
             }
         });
