@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     int REQUEST_CODE = 1;
     private static final int REQUEST_CODE_STORAGE = 1;
 
-    String fileName;
+    String fileName, fname;
     String fileType = ".png";
     String path;
     String token;
@@ -99,6 +99,12 @@ public class MainActivity extends AppCompatActivity {
                 //arguments: filePath
                 String custom = cName.getText().toString();
                 String tagname = tag.getText().toString();
+                if(custom == null){
+                    custom = fileName;
+                }
+                if (tagname == null){
+                    tagname = "";
+                }
 
                 pgBar.setVisibility(View.VISIBLE);
                 imgTxt.setText("Uploading...");
@@ -112,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
                 user = settings.getString("user", "Error loading user");
 
                 if (token != "Error loading token" && user != "Error loading user") {
-                    new UploadFileToServer(path, custom, tagname, token, user).execute();
+                    new UploadFileToServer(path, custom, tagname, token, user, fname).execute();
                 }
                 else {
                     Log.d("ERROR: ", "unable to find user or token");
@@ -125,8 +131,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, MainActivity_show.class);
-                intent.putExtra("token",token);
-                intent.putExtra("user",user);
                 MainActivity.this.startActivity(intent);
             }
         });
@@ -163,7 +167,9 @@ public class MainActivity extends AppCompatActivity {
     public File saveFile(){
         Long tsLong = System.currentTimeMillis()/1000;
         String ts = tsLong.toString();
-        fileName = "/IMG_" + ts + fileType;
+        String tempfpath = "/";
+        fileName = tempfpath + "IMG_" + ts + fileType;
+        fname = "IMG" + ts + fileType;
         File folder = tempStore;
         if(!folder.exists()){
             folder.mkdir();
@@ -191,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
     public static void onRes(){
         pgBar.setVisibility(View.INVISIBLE);
         upload.setEnabled(false);
+        viewDoc.setEnabled(true);
         imgTxt.setText("Upload success!");
         cName.setText("");
         tag.setText("");

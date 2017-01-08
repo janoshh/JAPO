@@ -24,15 +24,16 @@ import java.io.IOException;
 
 public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
     long totalSize = 0;
-    String filePath, token, user, cName, tag;
+    String filePath, token, user, cName, tag, fName;
     int statusCode;
 
-    public UploadFileToServer(String filePath, String cName, String tag, String token, String user) {
+    public UploadFileToServer(String filePath, String cName, String tag, String token, String user, String fName) {
         this.filePath = filePath;
         this.cName = cName;
         this.tag = tag;
         this.token = token;
         this.user = user;
+        this.fName = fName;
     }
 
     @Override
@@ -72,7 +73,7 @@ public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
             //entity.addPart("file", new FileBody(sourceFile));
             // Adding token to http body
             entity.addPart("token", new StringBody(token));     //token voor permission
-
+            entity.addPart("token", new StringBody(fName));
             //set header with extra info
             totalSize = entity.getContentLength();
 
@@ -81,7 +82,10 @@ public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
             httppost.setHeader("customfilename",cName);         //customfilename
             httppost.setHeader("tags",tag);                     //tag
             httppost.setHeader("file-size", totalSize+"");      //filesize voor amazon S3
+            httppost.setHeader("filename", fName);                   //faliname
             Log.d("fileSize: ", totalSize+"");
+
+            // Log.d("FILENAME: ",fName);
 
             httppost.setEntity(entity);
 
