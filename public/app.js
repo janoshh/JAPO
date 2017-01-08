@@ -333,6 +333,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     }
                 }
             }
+            /*
             for (i = 0; i < groups.length; i++) {
                 if (groups[i].length < minLength) {
                     if (groups[i].name != "Collection" && groups[i].name != "New uploads" && groups[i].name != "Invoice") {
@@ -340,6 +341,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     }
                 }
             }
+            */
             return groups;
         };
         // populate recently opened list
@@ -621,11 +623,11 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             xhr.setRequestHeader("premium", items.premium);
                             xhr.onload = function () {
                                 if (xhr.status === 200) {
-                                    bootbox.alert("Settings saved succesfully.");
+                                    bootbox.alert("<h2>Settings saved succesfully.</h2>");
                                     modal.modal("hide");
                                 }
                                 if (xhr.status === 409) {
-                                    bootbox.alert("The old password you entered, was incorrect.");
+                                    bootbox.alert("<h2>The old password you entered, was incorrect.</h2>");
                                 }
                             }
                             if (items.newPassword === items.confirmNewPassword) {
@@ -633,7 +635,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                             }
                         }
                         else {
-                            bootbox.alert("Please ensure that the new password contains six characters or more.");
+                            bootbox.alert("<h2>Please ensure that the new password contains six characters or more.</h2>");
                         }
                         return false;
                     }
@@ -658,7 +660,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         modal.modal("show");
     }
     $scope.editFile = function (file) {
-        var title = file.name;
+         var title = file.name.split("|")[1];
         jq("#editCustomFilename").attr("value", file.customfilename);
         jq("#editTags").attr("value", file.tags);
         var modal = bootbox.dialog({
@@ -971,6 +973,11 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 $scope.sortedContentList[i].checked = true;
             }
         }
+        else if ($scope.showGroup) {
+            for (i = 0; i < $scope.currentGroupList.length; i++) {
+                $scope.currentGroupList[i].checked = true;
+            }
+        }
         else {
             for (i = 0; i < $scope.fileList.length; i++) {
                 $scope.fileList[i].checked = true;
@@ -1000,6 +1007,13 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             for (i = 0; i < $scope.sortedContentList.length; i++) {
                 if ($scope.sortedContentList[i].checked) {
                     selectedFileList.push($scope.sortedContentList[i]);
+                }
+            }
+        }
+        else if ($scope.showGroup) {
+            for (i = 0; i < $scope.currentGroupList.length; i++) {
+                if ($scope.currentGroupList[i].checked) {
+                    selectedFileList.push($scope.currentGroupList[i]);
                 }
             }
         }
@@ -1652,7 +1666,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         popup.document.close();
     }
     $scope.editFile = function (file) {
-        var title = file.name;
+        var title = file.filename.split("|")[1];
         jq("#editCustomFilename").attr("value", file.customfilename);
         jq("#editTags").attr("value", file.tags);
         var modal = bootbox.dialog({
