@@ -1,45 +1,47 @@
 <div style="max-width: 80%; margin: 0 auto 0 auto">
-<div id="loginSection" data-ng-controller="logInController">
-    <div id="login" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth dashBorderLeft">
-        <form class="form-signin">
-            <h2 class="form-signin-heading">Log in</h2>
-            <div class="margin">
-                <label for="inputEmail" class="sr-only">Email address</label>
-                <input ng-model="email" type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus> </div>
-            <div class="margin">
-                <label for="inputPassword" class="sr-only">Password</label>
-                <input ng-model="password" type="password" id="inputPassword" class="form-control" placeholder="Password" required> </div>
-            <div class="margin">
-                <button ng-click="LogIn()" ng-class="button" class="float-right">Sign in</button>
-            </div>
-        </form>
+    <div id="loginSection" data-ng-controller="logInController">
+        <div id="login" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth dashBorderLeft">
+            <form class="form-signin">
+                <h2 class="form-signin-heading">Log in</h2>
+                <div class="margin">
+                    <label for="inputEmail" class="sr-only">Email address</label>
+                    <input ng-model="email" type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus> </div>
+                <div class="margin">
+                    <label for="inputPassword" class="sr-only">Password</label>
+                    <input ng-model="password" type="password" id="inputPassword" class="form-control" placeholder="Password" required> </div>
+                <div class="margin">
+                    <button ng-click="LogIn()" ng-class="button" class="float-right">Sign in</button>
+                    <h4 id="wrongCreadentials" class="red">
+                        </h4> </div>
+            </form>
+        </div>
+    </div>
+    <div id="registerSection" data-ng-controller="registerController">
+        <div id="register" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth dashBorderRight">
+            <form class="form-register" data-toggle="validator">
+                <h2 class="form-register-heading">Sign up for free!</h2>
+                <div class="margin">
+                    <label for="inputName" class="sr-only">Name</label>
+                    <input ng-model="fname" type="text" id="inputName" class="form-control" placeholder="First name" required> </div>
+                <div class="margin">
+                    <label for="inputLastName" class="sr-only">Last name</label>
+                    <input ng-model="lname" type="text" id="inputLastname" class="form-control" placeholder="Last name" required> </div>
+                <div class="margin">
+                    <label for="inputEmail" class="sr-only">Email address</label>
+                    <input ng-model="email" type="email" id="inputRegisterEmail" class="form-control" placeholder="Email address" required autofocus>
+                    <h4 id="emailAlreadyInUse" class="red"></h4> </div>
+                <div class="margin">
+                    <label for="inputPassword" class="sr-only">Password</label>
+                    <input ng-model="password" type="password" id="inputPassword" class="form-control" placeholder="Password" required> </div>
+                <div id="divCheckPasswordMatch"></div>
+                <div ng-class="passLength">Minimum of 6 characters</div>
+                <div class="margin has-feedback">
+                    <label for="confirmPassword" class="sr-only">Confirm password</label>
+                    <input ng-model="confirmPassword" type="password" id="confirmPassword" class="form-control" placeholder="Confirm password" required> <span ng-class="icon"></span> </div>
+                <div class="margin">
+                    <button ng-click="Register()" ng-class="button" class="float-right">Register</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
-<div id="registerSection" data-ng-controller="registerController">
-    <div id="register" class="container col-xs-12 col-sm-12 col-md-6 col-lg-6 maxwidth dashBorderRight">
-        <form class="form-register" data-toggle="validator">
-            <h2 class="form-register-heading">Sign up for free!</h2>
-            <div class="margin">
-                <label for="inputName" class="sr-only">Name</label>
-                <input ng-model="fname" type="text" id="inputName" class="form-control" placeholder="First name" required> </div>
-            <div class="margin">
-                <label for="inputLastName" class="sr-only">Last name</label>
-                <input ng-model="lname" type="text" id="inputLastname" class="form-control" placeholder="Last name" required> </div>
-            <div class="margin">
-                <label for="inputEmail" class="sr-only">Email address</label>
-                <input ng-model="email" type="email" id="inputRegisterEmail" class="form-control" placeholder="Email address" required autofocus> </div>
-            <div class="margin">
-                <label for="inputPassword" class="sr-only">Password</label>
-                <input ng-model="password" type="password" id="inputPassword" class="form-control" placeholder="Password" required> </div>
-            <div id="divCheckPasswordMatch"></div>
-            <div ng-class="passLength">Minimum of 6 characters</div>
-            <div class="margin has-feedback">
-                <label for="confirmPassword" class="sr-only">Confirm password</label>
-                <input ng-model="confirmPassword" type="password" id="confirmPassword" class="form-control" placeholder="Confirm password" required> <span ng-class="icon"></span> </div>
-            <div class="margin">
-                <button ng-click="Register()" ng-class="button" class="float-right">Register</button>
-            </div>
-        </form>
-    </div>
-</div>
-    </div>

@@ -46,9 +46,14 @@ app.controller("logInController", function ($scope, $http, $location) {
             "name": emailUser
             , "password": loginPass
         }).success(function (post) {
-            sessionStorage.setItem('japo-token', post.token);
-            sessionStorage.setItem('username', emailUser);
-            $location.path("/home/");
+            if (post.token) {
+                sessionStorage.setItem('japo-token', post.token);
+                sessionStorage.setItem('username', emailUser);
+                $location.path("/home/");
+            }
+            else {
+                jq('#wrongCreadentials').text("Username or password is incorrect");
+            }
         });
     }
 });
@@ -114,9 +119,15 @@ app.controller("registerController", function ($scope, $http, $location) {
                 , "email": email
                 , "password": password
             }).success(function (post) {
-                sessionStorage.setItem('japo-token', post.token);
-                sessionStorage.setItem('username', email);
-                $location.path("/home/");
+                if (post.token) {
+                    sessionStorage.setItem('japo-token', post.token);
+                    sessionStorage.setItem('username', email);
+                    $location.path("/home/");
+                }
+            }).error(function (post) {
+                if (post.message) {
+                    jq('#emailAlreadyInUse').text(post.message);
+                }
             });
         }
     }
@@ -322,16 +333,13 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     }
                 }
             }
-            console.log(groups);
             for (i = 0; i < groups.length; i++) {
                 if (groups[i].length < minLength) {
                     if (groups[i].name != "Collection" && groups[i].name != "New uploads" && groups[i].name != "Invoice") {
-                        console.log("Splicing " + groups[i].name);
                         groups.splice(i, 1);
                     }
                 }
             }
-            console.log(groups);
             return groups;
         };
         // populate recently opened list
@@ -425,18 +433,18 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             handleDuplicates($scope.duplicates);
         }
         else {
-            bootbox.alert("We did not find any duplicates.");
+            bootbox.alert("<h1>Clean collection</h1><h4>We could not find any duplicates.</h4>");
         }
     }
 
     function handleDuplicates(duplicates) {
-        var title = "We have found a possibly duplicate file."
+        var title = "<h2>We have found a possibly duplicate file.</h2>"
         if ($scope.duplicates.length > 1) {
-            title = "We have found " + duplicates.length + " possibly duplicate files."
+            title = "<h2>We have found " + duplicates.length + " possibly duplicate files.</h2>"
         }
         var modal = bootbox.dialog({
             title: title
-            , message: "You can take a look at them one by one or delete all duplicate files at once."
+            , message: "<h4>You can take a look at them one by one or delete all duplicate files at once.</h4>"
             , buttons: [
                 {
                     label: '<i class="glyphicon glyphicon-file"></i> One by one'
@@ -459,6 +467,47 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                         modal.modal("hide");
                     }
                                 }]
+            , show: false
+            , onEscape: function () {
+                modal.modal("hide");
+            }
+        });
+        modal.modal("show");
+    }
+    $scope.addToGroup = function () {
+        var groups = [];
+        selList = getSelectedFiles();
+        console.log(selList);
+        for (i = 0; i < $scope.groupList.length; i++) {
+            if ($scope.groupList[i].name != "Collection") {
+                if ($scope.groupList[i].name != "New uploads") {
+                    tag = $scope.groupList[i].name;
+                    var group = {
+                        label: $scope.groupList[i].name
+                        , className: "btn btn-default"
+                        , callback: function () {
+                            for (j = 0; j < selList.length; j++) {
+                                console.log(selList[j].name);
+                                var xhr = new XMLHttpRequest()
+                                xhr.open("POST", "/api/updatefile");
+                                xhr.setRequestHeader("x-access-token", token);
+                                xhr.setRequestHeader("user", user);
+                                xhr.setRequestHeader("filename", selList[j].name);
+                                xhr.setRequestHeader("customfilename", selList[j].editCustomFilename);
+                                xhr.setRequestHeader("tags", selList[j].tags + " " + tag.toLowerCase());
+                                xhr.send();
+                            }
+                            location.reload();
+                        }
+                    }
+                    groups.push(group);
+                }
+            }
+        }
+        var modal = bootbox.dialog({
+            title: "<h>Add file to group</h1>"
+            , message: "<h4>Select a group to add this file.</h4>"
+            , buttons: groups
             , show: false
             , onEscape: function () {
                 modal.modal("hide");
@@ -689,10 +738,16 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         });
         return json;
     };
+    var deletingAccountModal = bootbox.dialog({
+        title: "<h1>Please, wait...</h1>"
+        , message: "<div id='capture'> <h3>We are deleting your account.</h3><img src='/processing.gif'> <div>"
+        , buttons: []
+        , show: false
+    });
     $scope.deleteAccount = function () {
         bootbox.confirm({
-            title: "Delete account?"
-            , message: "You are about to delete your account. This will delete all files and cannot be undone. Are you sure?"
+            title: "<h1>Delete account?</h1>"
+            , message: "<h4>You are about to delete your account. This will delete all files and cannot be undone. Are you sure?</h4>"
             , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
@@ -703,12 +758,14 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             }
             , callback: function (result) {
                 if (result) {
+                    deletingAccountModal.modal("show");
                     var xhr = new XMLHttpRequest()
                     xhr.open("POST", "/api/deleteaccount");
                     xhr.setRequestHeader("x-access-token", token);
                     xhr.setRequestHeader("user", user);
                     xhr.onload = function () {
                         if (xhr.status === 200) {
+                            deletingAccountModal.modal("hide");
                             $location.path("/accountdeleted");
                             $scope.$apply();
                         }
@@ -720,8 +777,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.deleteAllFiles = function () {
         bootbox.confirm({
-            title: "Delete all files?"
-            , message: "You are about to delete all your files. Are you sure?"
+            title: "<h1>Delete all files?</h1>"
+            , message: "<h4>You are about to delete all your files. Are you sure?</h4>"
             , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
@@ -749,8 +806,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.deleteFile = function (filename) {
         bootbox.confirm({
-            title: "Delete " + filename.split("|")[1] + "?"
-            , message: "You are about to delete " + filename.split("|")[1] + ". Are you sure?"
+            title: "<h1>Delete " + filename.split("|")[1] + "?</h1>"
+            , message: "<h4>You are about to delete " + filename.split("|")[1] + ". Are you sure?</h4>"
             , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
@@ -919,7 +976,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                 $scope.fileList[i].checked = true;
             }
         }
-        checkShowSelectedFilesDiv()
+        checkShowSelectedFilesDiv();
     }
 
     function getSelectedFiles() {
@@ -957,8 +1014,8 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.deleteSelectedFiles = function () {
         bootbox.confirm({
-            title: "Delete all selected files?"
-            , message: "You are about to delete multiple files. Are you sure?"
+            title: "<h1>Delete all selected files?</h1>"
+            , message: "<h4>You are about to delete multiple files. Are you sure?</h4>"
             , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'
@@ -988,7 +1045,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                                 }
                             }
                             else {
-                                bootbox.alert("<h1>Oops!</h1> Sorry! Something went wrong while deleting one of your files");
+                                bootbox.alert("<h1>Oops!</h1><h4> Sorry! Something went wrong while deleting one of your files</h4>");
                             }
                         }
                         xhr.send()
@@ -1029,7 +1086,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                                     }
                                 }
                                 else {
-                                    bootbox.alert("<h1>Oops!</h1> Sorry! Something went wrong while editing one of your files");
+                                    bootbox.alert("<h1>Oops!</h1><h4> Sorry! Something went wrong while editing one of your files</h4>");
                                 }
                             }
                             xhr.send();
@@ -1066,7 +1123,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
                     location.reload();
                 }
                 else {
-                    bootbox.alert("<h1>Oops!</h1> Sorry! Something went wrong while editing one of your files");
+                    bootbox.alert("<h1>Oops!</h1><h4> Sorry! Something went wrong while editing one of your files</h4>");
                 }
             }
             xhr.send(JSON.stringify($scope.itemsChecked));
@@ -1146,7 +1203,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 $scope.uploadPopup(false);
             }
             else {
-                bootbox.alert("<h1>Oops!</h1> Sorry! One of your files cannot be uploaded because it is an unsupported filetype. <br>Please select your files again. <hr> <strong>Supported filetype: PDF - JPG - JPEG - PNG</strong>");
+                bootbox.alert("<h1>Oops!</h1><h4> Sorry! One of your files cannot be uploaded because it is an unsupported filetype. <br>Please select your files again. <hr> <strong>Supported filetype: PDF - JPG - JPEG - PNG</strong></h4>");
             }
             processingModal.modal("hide");
         }, false)
@@ -1167,7 +1224,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 $scope.uploadPopup(false);
             }
             else {
-                bootbox.alert("<h1>Oops!</h1> Sorry! One of your files cannot be uploaded because it is an unsupported filetype. <br>Please select your files again. <hr> <strong>Supported filetype: PDF - JPG - JPEG - PNG</strong>");
+                bootbox.alert("<h1>Oops!</h1><h4> Sorry! One of your files cannot be uploaded because it is an unsupported filetype. <br>Please select your files again. <hr> <strong>Supported filetype: PDF - JPG - JPEG - PNG</strong></h4>");
             }
             processingModal.modal("hide");
             $scope.progressVisible = false
@@ -1213,11 +1270,11 @@ app.controller("uploadController", function ($scope, $http, $location) {
         xhr.onload = function () {
             processingModal.modal("hide");
             if (xhr.status === 500) {
-                bootbox.alert("<h1>Oops, sorry.</h1> Something went wrong while uploading your file.");
+                bootbox.alert("<h1>Oops, sorry.</h1><h4> Something went wrong while uploading your file.</h4>");
                 jq('#url').val() = "";
             }
             else if (xhr.status === 409) {
-                bootbox.alert("<h1>Oops, sorry.</h1> Your file could not be uploaded because you have reached your free storage limit.");
+                bootbox.alert("<h1>Oops, sorry.</h1><h4> Your file could not be uploaded because you have reached your free storage limit.</h4>");
                 jq('#url').val() = "";
             }
             else if (xhr.status === 200) {
@@ -1244,10 +1301,10 @@ app.controller("uploadController", function ($scope, $http, $location) {
                 if (xhr.readyState == 4) {
                     status = xhr.status;
                     if (xhr.status === 500) {
-                        bootbox.alert("<h1>Oops, sorry.</h1> Something went wrong while uploading your file.");
+                        bootbox.alert("<h1>Oops, sorry.</h1><h4> Something went wrong while uploading your file.</h4>");
                     }
                     else if (xhr.status === 409) {
-                        bootbox.alert("<h1>Oops, sorry.</h1> Your file could not be uploaded because you have reached your free storage limit.");
+                        bootbox.alert("<h1>Oops, sorry.</h1><h4> Your file could not be uploaded because you have reached your free storage limit.</h4>");
                     }
                     else {
                         $location.path("/home");
@@ -1277,7 +1334,7 @@ app.controller("uploadController", function ($scope, $http, $location) {
             var title = "<h1>Your file is ready for uploading.</h1>"
             var message = "<h4><strong>New uploaded files will appear automatically in your collection.</strong><br><br>You can rename your files and add tags there. </h4>"
             if ($scope.files.length > 1) {
-                title = "Your files are ready for uploading."
+                title = "<h1>Your files are ready for uploading.</h1>"
             }
             var modal = bootbox.dialog({
                 message: message
@@ -1446,6 +1503,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         else {
             var img = document.createElement("img");
             img.setAttribute("src", $scope.file.location);
+            img.setAttribute("id", "image");
             img.setAttribute("height", "100%");
             img.setAttribute("width", "auto");
             img.setAttribute("alt", $scope.file.customfilename);
@@ -1456,7 +1514,7 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
             jq('#imageSection').show();
         }
     }
-    $scope.pdfScale = 2;
+    $scope.pdfScale = 1.5;
 
     function showPdf() {
         $scope.moreThanOnePage = false;
@@ -1559,6 +1617,40 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
         updateLastOpened(user, file.filename);
         $location.path("/show/" + file.filename);
     }
+    $scope.imageZoomIn = function () {
+        var height = jq('#image').height();
+        jq('#image').height(height + 200);
+    }
+    $scope.imageZoomFitScreen = function () {
+        var height = jq('#image').height();
+        jq('#image').height(1000);
+    }
+    $scope.imageZoomOut = function () {
+        var height = jq('#image').height();
+        if (height > 300) {
+            jq('#image').height(height - 200);
+        }
+    }
+    $scope.printFile = function () {
+        $scope.imageZoomFitScreen();
+        var imagObject = new Image();
+        var iamgeId;
+        iamgeId = document.getElementById('image');
+        if (iamgeId != undefined) {
+            imagObject = iamgeId;
+        }
+        else {
+            canvas = document.getElementById('the-canvas');
+            imagObject.src = canvas.toDataURL("image/jpg");
+        }
+        var originalImage = '<img id="imageViewer" src="' + imagObject.src + '"height = "' + imagObject.height + '"width = "' + imagObject.width + '" / > ';
+        popup = window.open('', 'popup', 'toolbar=no,menubar=no');
+        popup.document.open();
+        popup.document.write("<html><head></head><body onload='print()'>");
+        popup.document.write(originalImage);
+        popup.document.write("</body></html>");
+        popup.document.close();
+    }
     $scope.editFile = function (file) {
         var title = file.name;
         jq("#editCustomFilename").attr("value", file.customfilename);
@@ -1605,8 +1697,8 @@ app.controller("show", function ($scope, $http, $location, fileService, $route, 
     }
     $scope.deleteFile = function (filename) {
         bootbox.confirm({
-            title: "Delete " + filename.split("|")[1] + "?"
-            , message: "You are about to delete " + filename.split("|")[1] + ". Are you sure?"
+            title: "<h1>Delete " + filename.split("|")[1] + "?</h1>"
+            , message: "<h4>You are about to delete " + filename.split("|")[1] + ". Are you sure?</h4>"
             , buttons: {
                 cancel: {
                     label: '<i class="glyphicon glyphicon-remove"></i> Cancel'

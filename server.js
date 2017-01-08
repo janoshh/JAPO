@@ -135,7 +135,7 @@ apiRoutes.post('/createUser', function (req, res) {
             res.status(409);
             res.json({
                 success: false
-                , message: 'This email address is already been used.'
+                , message: 'This email address is already in use.'
             });
         }
     });
@@ -286,7 +286,7 @@ function uploadToAmazon(user, uploadList, i) {
         params.Body = fileBuffer;
         s3.upload(params, function (err, data) {
             if (err) {
-                console.log(error);
+                console.log(err);
             }
             else {
                 //console.log(params.Key + " uploaded to amazon s3");

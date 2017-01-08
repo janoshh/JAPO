@@ -1,5 +1,5 @@
 <div ng-controller="show">
-    <div class="scroll col-lg-3 col-md-4 col-sm-12 col-xs-12 specialBorder">
+    <div class="col-lg-3 col-md-4 col-sm-12 col-xs-12 specialBorder">
         <h3>            
         <button class="btn btn-primary" ng-click="goToHome()"><span class="glyphicon glyphicon-menu-left"></span> Home</button>
             </h3>
@@ -11,14 +11,15 @@
         </div>
         <div>
             <div class="btn-group btn-group-merge">
-                <button class="btn btn-default" title="Download {{file.customfilename}}"> <a href="{{file.location}}" onclick="event.stopPropagation();" class="noLink" download><span class="glyphicon glyphicon-cloud-download" style="margin-right:5px;"></span>Download</a></button>
-                <button class="btn btn-default" title="Edit {{file.customfilename}}" ng-click="editFile(file)"><span class="glyphicon glyphicon-pencil" style="margin-right:5px;"></span>Edit</button>
-                <button class="btn btn-default" title="Delete {{file.customfilename}}" ng-click="deleteFile(file.filename);"><span class="glyphicon glyphicon-remove" style="margin-right:5px;"></span>Delete</button>
+                <button class="btn btn-default" title="Download {{file.customfilename}}"> <a href="{{file.location}}" onclick="event.stopPropagation();" class="noLink" download><span class="fontShowIcons glyphicon glyphicon-cloud-download"></span></a></button>
+                <button class="btn btn-default" title="Edit {{file.customfilename}}" ng-click="editFile(file)"><span class="fontShowIcons glyphicon glyphicon-pencil"></span></button>
+                <button class="btn btn-default" title="Delete {{file.customfilename}}" ng-click="deleteFile(file.filename);"><span class="fontShowIcons glyphicon glyphicon-remove"></span></button>
+                <button class="btn btn-default" ng-click="printFile()" title="Print image"><span class="fontShowIcons glyphicon glyphicon-print"></span></button>
             </div>            
         </div>
         <br>
         <div ng-show="file.filetype === 'pdf'">
-            <h3>Page: <span id="page_num">0</span> / <span id="page_count">0</span></h3>
+            <h3>Page <span id="page_num">0</span> / <span id="page_count">0</span></h3>
             <div class="btn-group btn-group-merge" ng-show="moreThanOnePage">
                 <button class="btn btn-default" id="prev" title="Previous page"><span class="fontShowIcons glyphicon glyphicon-chevron-left"></span></button>
                 <button class="btn btn-default" id="next" title="Next page"><span class="fontShowIcons glyphicon glyphicon-chevron-right"></span></button>
@@ -28,9 +29,15 @@
                 <button class="btn btn-default" ng-click="zoomFitScreen()"title="Fit on screen"><span class="fontShowIcons glyphicon glyphicon-search"></span></button>
                 <button class="btn btn-default" ng-click="zoomOut()" title="Zoom out"><span class="fontShowIcons glyphicon glyphicon-zoom-out"></span></button>
             </div>
+            
         </div>
+        <div ng-hide="file.filetype === 'pdf'" class="btn-group btn-group-merge" style="margin-bottom: 15px;">
+                <button class="btn btn-default" ng-click="imageZoomIn()" title="Zoom in"><span class="fontShowIcons glyphicon glyphicon-zoom-in"></span></button>
+                <button class="btn btn-default" ng-click="imageZoomFitScreen()"title="Fit on screen"><span class="fontShowIcons glyphicon glyphicon-search"></span></button>
+                <button class="btn btn-default" ng-click="imageZoomOut()" title="Zoom out"><span class="fontShowIcons glyphicon glyphicon-zoom-out"></span></button>       
+            </div>    
         <br>
-        <div ng-show="linksList.length > 0" class="hidden-xs" style="min-height: 100px;">
+        <div ng-show="linksList.length > 0" class="hidden-sm hidden-xs" style="min-height: 100px;">
             <h3>Related files 
             <button ng-click="toggleGridList()" class="btn btn-primary float-right" title="Change the way the related files are displayed"> <span id="btnToggleGridList" class="glyphicon glyphicon-list"></span></button>
             
