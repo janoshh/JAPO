@@ -287,7 +287,6 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             $scope.fileList.push(file);
             allTags += (" " + tags);
         }
-        console.log($scope.fileList);
         // Create groups:
         allTags = allTags.replace(/\s/g, "|");
         var groupTags = allTags.split("|");
@@ -479,44 +478,44 @@ app.controller("homeController", function ($scope, $http, $location, fileService
     }
     $scope.addToGroup = function () {
         var groups = [];
-        selList = getSelectedFiles();
-        console.log(selList);
         for (i = 0; i < $scope.groupList.length; i++) {
-            if ($scope.groupList[i].name != "Collection") {
-                if ($scope.groupList[i].name != "New uploads") {
-                    tag = $scope.groupList[i].name;
-                    var group = {
-                        label: $scope.groupList[i].name
-                        , className: "btn btn-default"
-                        , callback: function () {
-                            for (j = 0; j < selList.length; j++) {
-                                console.log(selList[j].name);
-                                var xhr = new XMLHttpRequest()
-                                xhr.open("POST", "/api/updatefile");
-                                xhr.setRequestHeader("x-access-token", token);
-                                xhr.setRequestHeader("user", user);
-                                xhr.setRequestHeader("filename", selList[j].name);
-                                xhr.setRequestHeader("customfilename", selList[j].editCustomFilename);
-                                xhr.setRequestHeader("tags", selList[j].tags + " " + tag.toLowerCase());
-                                xhr.send();
-                            }
-                            location.reload();
-                        }
-                    }
-                    groups.push(group);
+            var tag = $scope.groupList[i].name;
+            if (tag != "Collection" && tag != "New uploads") {
+                var group = {
+                    text: $scope.groupList[i].name
+                    , value: tag
                 }
+                groups.push(group);
             }
         }
-        var modal = bootbox.dialog({
-            title: "<h>Add file to group</h1>"
-            , message: "<h4>Select a group to add this file.</h4>"
-            , buttons: groups
-            , show: false
-            , onEscape: function () {
-                modal.modal("hide");
+        var modal = bootbox.prompt({
+            title: "<h1>Add file to group</h1><h4>Select a group to add this file.</h4>"
+            , inputType: 'select'
+            , inputOptions: groups
+            , callback: function (result) {
+                if (result) {
+                    updateTags(result);
+                }
+                else {
+                    modal.modal("hide");
+                }
             }
         });
-        modal.modal("show");
+    }
+
+    function updateTags(tag) {
+        selList = getSelectedFiles();
+        for (j = 0; j < selList.length; j++) {
+            var xhr = new XMLHttpRequest()
+            xhr.open("POST", "/api/updatefile");
+            xhr.setRequestHeader("x-access-token", token);
+            xhr.setRequestHeader("user", user);
+            xhr.setRequestHeader("filename", selList[j].name);
+            xhr.setRequestHeader("customfilename", selList[j].customfilename);
+            xhr.setRequestHeader("tags", selList[j].tags + " " + tag.toLowerCase());
+            xhr.send();
+        }
+        location.reload();
     }
 
     function deleteDuplicatesAllAtOnce(duplicates, i) {
@@ -661,7 +660,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
         modal.modal("show");
     }
     $scope.editFile = function (file) {
-         var title = file.name.split("|")[1];
+        var title = file.name.split("|")[1];
         jq("#editCustomFilename").attr("value", file.customfilename);
         jq("#editTags").attr("value", file.tags);
         var modal = bootbox.dialog({

@@ -639,96 +639,110 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                 var file = fs.readFileSync(__dirname + "/files/" + dateFilename);
                 var params = {
                     Bucket: bucket
-                    , Key: filename
+                    , Key: dateFilename
                     , Body: file
                     , ACL: 'public-read'
                 };
-                // Wegschrijven naar Amazon S3
-                s3.upload(params, function (err, data) {
-                    if (err) {
-                        console.log(err);
+                var uploadList = [];
+                uploadList.push(params);
+                checkForEnoughSpace(user, uploadList, function (err) {
+                    if (err === "notEnoughSpace") {
+                        res.status(409).end();
+                    }
+                    else if (err === "error") {
                         res.status(500).end();
                     }
                     else {
-                        //
-                        var fileLocation;
-                        // Get Extension / Filetype
-                        fileType = ".jpg"
-                        fileLocation = data.Location;
-                        //
-                        // Wegschrijven naar MongoDB
-                        file = new File({
-                            user: user
-                            , filename: dateFilename
-                            , customfilename: customFilename
-                            , filetype: fileType
-                            , size: fileSize
-                            , date: Date.now()
-                            , tags: tags
-                            , location: fileLocation
-                            , content: ""
-                        });
-                        file.save(function (err, userObj) {
+                        // Wegschrijven naar Amazon S3
+                        s3.upload(params, function (err, data) {
                             if (err) {
                                 console.log(err);
                                 res.status(500).end();
                             }
                             else {
-                                jimp.read(fileLocation, function (err, image) {
+                                //
+                                var fileLocation;
+                                // Get Extension / Filetype
+                                fileType = ".jpg"
+                                fileLocation = data.Location;
+                                //
+                                // Wegschrijven naar MongoDB
+                                file = new File({
+                                    user: user
+                                    , filename: dateFilename
+                                    , customfilename: customFilename
+                                    , filetype: fileType
+                                    , size: fileSize
+                                    , date: Date.now()
+                                    , tags: tags
+                                    , location: fileLocation
+                                    , content: ""
+                                });
+                                file.save(function (err, userObj) {
                                     if (err) {
                                         console.log(err);
                                         res.status(500).end();
                                     }
                                     else {
-                                        var jimpFile = __dirname + "/files/" + dateFilename + "_thumb.jpg";
-                                        image.resize(thumbnailSize, thumbnailSize) // resize
-                                            .quality(60) // set JPEG quality
-                                            .write(jimpFile, function () {
-                                                var fileBuffer = fs.readFileSync(jimpFile);
-                                                var thumbFileName = "thumb_" + dateFilename;
-                                                s3.putObject({
-                                                    ACL: 'public-read'
-                                                    , Bucket: bucket
-                                                    , Key: thumbFileName
-                                                    , Body: fileBuffer
-                                                    , ContentType: 'image/jpg'
-                                                }, function (error, response) {
-                                                    if (error) {
-                                                        console.log(error);
-                                                        res.status(500).end();
-                                                    }
-                                                });
-                                            });
-                                    }
-                                });
-                                jimp.read(fileLocation, function (err, image) {
-                                    var pngGetText = __dirname + "/files/" + Date.now() + "_getText.png";
-                                    image.write(pngGetText, function () {
-                                        // Recognize text of any language in any format
-                                        tesseract.process(pngGetText, function (err, text) {
+                                        jimp.read(__dirname + "/files/" + dateFilename, function (err, image) {
                                             if (err) {
+                                                console.log(err);
                                                 res.status(500).end();
-                                                console.error(err);
                                             }
                                             else {
-                                                File.findOne({
-                                                    user: user
-                                                    , filename: dateFilename
-                                                }, function (err, doc) {
-                                                    if (err) {
-                                                        console.log(err);
-                                                        res.status(500).end();
-                                                    }
-                                                    doc.content = text;
-                                                    doc.save();
-                                                });
-                                                res.status(200).end();
-                                                if (text.lengt > 0) {
-                                                    compareAllFiles(user, dateFilename, text);
-                                                }
+                                                var jimpFile = __dirname + "/files/" + dateFilename + "_thumb.jpg";
+                                                image.resize(thumbnailSize, thumbnailSize) // resize
+                                                    .quality(60) // set JPEG quality
+                                                    .write(jimpFile, function () {
+                                                        var fileBuffer = fs.readFileSync(jimpFile);
+                                                        var thumbFileName = "thumb_" + dateFilename;
+                                                        s3.putObject({
+                                                            ACL: 'public-read'
+                                                            , Bucket: bucket
+                                                            , Key: thumbFileName
+                                                            , Body: fileBuffer
+                                                            , ContentType: 'image/jpg'
+                                                        }, function (error, response) {
+                                                            if (error) {
+                                                                console.log(error);
+                                                                res.status(500).end();
+                                                            }
+                                                            else {
+                                                                jimp.read(__dirname + "/files/" + dateFilename, function (err, image) {
+                                                                    var pngGetText = __dirname + "/files/" + Date.now() + "_getText.png";
+                                                                    image.write(pngGetText, function () {
+                                                                        // Recognize text of any language in any format
+                                                                        tesseract.process(pngGetText, function (err, text) {
+                                                                            if (err) {
+                                                                                res.status(500).end();
+                                                                                console.error(err);
+                                                                            }
+                                                                            else {
+                                                                                File.findOne({
+                                                                                    user: user
+                                                                                    , filename: dateFilename
+                                                                                }, function (err, doc) {
+                                                                                    if (err) {
+                                                                                        console.log(err);
+                                                                                        res.status(500).end();
+                                                                                    }
+                                                                                    doc.content = text;
+                                                                                    doc.save();
+                                                                                });
+                                                                                res.status(200).end();
+                                                                                if (text.lengt > 0) {
+                                                                                    compareAllFiles(user, dateFilename, text);
+                                                                                }
+                                                                            }
+                                                                        });
+                                                                    });
+                                                                });
+                                                            }
+                                                        });
+                                                    });
                                             }
                                         });
-                                    });
+                                    }
                                 });
                             }
                         });
@@ -1040,6 +1054,7 @@ apiRoutes.post('/createManualLinks', function (req, res) {
 
 function createLink(list, user, i) {
     if (i <= list.length) {
+        console.log("Starting with " + list[i].name);
         File.findOne({
             user: user
             , filename: list[i].name
@@ -1050,19 +1065,23 @@ function createLink(list, user, i) {
             else if (doc) {
                 var newLinkList = doc.links;
                 for (j = 0; j < list.length; j++) {
-                    if (j != i) {
-                        if (list[j].name != doc.name) {
-                            var newLink = {
-                                filename: list[j].name
-                                , percentage: '60%'
-                            };
+                    if (list[j].name != doc.filename) {
+                        var newLink = {
+                            filename: list[j].name
+                            , percentage: '60%'
+                        };
+                        var notYetInLinksList = true;
+                        for (a = 0; a < doc.links.length; a++) {
+                            if (newLink.filename === doc.links[a].filename) {
+                                notYetInLinksList = false;
+                            }
+                        }
+                        if (notYetInLinksList) {
                             newLinkList.push(newLink);
                         }
                     }
                 }
-                var noDuplicates = new Set(newLinkList);
-                doc.links = Array.from(noDuplicates);
-                console.log("New links pushed to doc");
+                doc.links = newLinkList;
                 doc.save();
                 if (i + 1 < list.length) {
                     createLink(list, user, ++i);
