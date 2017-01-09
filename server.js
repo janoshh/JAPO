@@ -712,29 +712,35 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                                                     var pngGetText = __dirname + "/files/" + Date.now() + "_getText.png";
                                                                     image.write(pngGetText, function () {
                                                                         // Recognize text of any language in any format
-                                                                        tesseract.process(pngGetText, function (err, text) {
-                                                                            if (err) {
-                                                                                res.status(500).end();
-                                                                                console.error(err);
-                                                                            }
-                                                                            else {
-                                                                                File.findOne({
-                                                                                    user: user
-                                                                                    , filename: dateFilename
-                                                                                }, function (err, doc) {
-                                                                                    if (err) {
-                                                                                        console.log(err);
-                                                                                        res.status(500).end();
-                                                                                    }
-                                                                                    doc.content = text;
-                                                                                    doc.save();
-                                                                                });
-                                                                                res.status(200).end();
-                                                                                if (text.lengt > 0) {
-                                                                                    compareAllFiles(user, dateFilename, text);
+                                                                        try {
+                                                                            tesseract.process(pngGetText, function (err, text) {
+                                                                                if (err) {
+                                                                                    console.error(err);
+                                                                                    res.status(500).end();
                                                                                 }
-                                                                            }
-                                                                        });
+                                                                                else {
+                                                                                    File.findOne({
+                                                                                        user: user
+                                                                                        , filename: dateFilename
+                                                                                    }, function (err, doc) {
+                                                                                        if (err) {
+                                                                                            console.log(err);
+                                                                                            res.status(500).end();
+                                                                                        }
+                                                                                        doc.content = text;
+                                                                                        doc.save();
+                                                                                    });
+                                                                                    res.status(200).end();
+                                                                                    if (text.lengt > 0) {
+                                                                                        compareAllFiles(user, dateFilename, text);
+                                                                                    }
+                                                                                }
+                                                                            });
+                                                                        }
+                                                                        catch (error) {
+                                                                            console.log(error);
+                                                                            res.status(500).end();
+                                                                        }
                                                                     });
                                                                 });
                                                             }
