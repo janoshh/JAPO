@@ -672,9 +672,12 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                 console.log(err);
                                 res.status(500).end();
                             }
-                        });
-                        jimp.read(fileLocation, function (err, image) {
-                            if (err) console.log(err);
+                            else {
+                                jimp.read(fileLocation, function (err, image) {
+                            if (err) {
+                                console.log(err);
+                                res.status(500).end();
+                            } 
                             else {
                                 image.resize(thumbnailSize, thumbnailSize) // resize
                                     .quality(60) // set JPEG quality
@@ -710,6 +713,7 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                             , filename: filename
                                         }, function (err, doc) {
                                             if (err) {
+                                                console.log(err);
                                                 res.status(500).end();
                                             }
                                             doc.content = text;
@@ -722,6 +726,8 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                                     }
                                 });
                             });
+                        });
+                            }
                         });
                         // END JIMP
                     }

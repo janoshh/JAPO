@@ -287,6 +287,7 @@ app.controller("homeController", function ($scope, $http, $location, fileService
             $scope.fileList.push(file);
             allTags += (" " + tags);
         }
+        console.log($scope.fileList);
         // Create groups:
         allTags = allTags.replace(/\s/g, "|");
         var groupTags = allTags.split("|");
