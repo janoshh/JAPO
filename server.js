@@ -343,8 +343,8 @@ function getTextFromPdf(user, params) {
                 if (err) {}
                 else if (doc) {
                     var text = pages.toString();
-                    text = text.replace(/(?:\r\n|\r|\n)/g, '');                    
-                    text.replace(/ +(?= )/g,'');
+                    text = text.replace(/(?:\r\n|\r|\n)/g, '');
+                    text.replace(/ +(?= )/g, '');
                     doc.content = text;
                     doc.save();
                     if (pages.toString().length > 0) {
@@ -361,7 +361,7 @@ function getTextFromPdf(user, params) {
 
 function getTextFromImage(user, params) {
     jimp.read(params.fileLocation, function (err, image) {
-        var pngFile = __dirname + "/files/pngtemp.png";
+        var pngFile = __dirname + "/files/" + Date.now() + "pngtemp.png";
         image.write(pngFile, function () {
             // Recognize text of any language in any format
             tesseract.process(pngFile, function (err, text) {
@@ -377,7 +377,7 @@ function getTextFromImage(user, params) {
                             console.log(err)
                         }
                         text = text.replace(/(?:\r\n|\r|\n)/g, '');
-                        text = text.replace(/ +(?= )/g,'');
+                        text = text.replace(/ +(?= )/g, '');
                         doc.content = text;
                         doc.save();
                         if (text.length > 0) {
@@ -611,6 +611,8 @@ function editDistance(s1, s2) {
 apiRoutes.post('/uploadimage', function (req, res, next) {
     var user = req.headers['user'];
     var bucket = user.replace("@", "-");
+    var filename = req.headers['filename'];
+    var dateFilename = Date.now() + dateFileSeperator + filename;
     var dataString = '';
     req.on('data', function (data) {
         dataString += data;
@@ -625,7 +627,7 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
         });
         dataString = dataString.substring(dataString.indexOf("8bit") + 4);
         dataString = dataString.substring(0, dataString.indexOf("--"));
-        require("fs").writeFile("temp.jpg", dataString, 'base64', function (err) {
+        require("fs").writeFile(__dirname + "/files/" + dateFilename, dataString, 'base64', function (err) {
             if (err) {
                 console.log(err);
                 res.status(500).end();
@@ -634,8 +636,7 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                 var fileSize = req.headers['file-size'];
                 var tags = req.headers['tags'];
                 var customFilename = req.headers['customfilename'];
-                var filename = req.headers['filename'];
-                var file = fs.readFileSync("temp.jpg");
+                var file = fs.readFileSync(__dirname + "/files/" + dateFilename);
                 var params = {
                     Bucket: bucket
                     , Key: filename
@@ -658,7 +659,7 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                         // Wegschrijven naar MongoDB
                         file = new File({
                             user: user
-                            , filename: filename
+                            , filename: dateFilename
                             , customfilename: customFilename
                             , filetype: fileType
                             , size: fileSize
@@ -674,62 +675,63 @@ apiRoutes.post('/uploadimage', function (req, res, next) {
                             }
                             else {
                                 jimp.read(fileLocation, function (err, image) {
-                            if (err) {
-                                console.log(err);
-                                res.status(500).end();
-                            } 
-                            else {
-                                image.resize(thumbnailSize, thumbnailSize) // resize
-                                    .quality(60) // set JPEG quality
-                                    .write("thumbnail.jpg", function () {
-                                        var fileBuffer = fs.readFileSync("thumbnail.jpg");
-                                        var thumbFileName = "thumb_" + filename;
-                                        s3.putObject({
-                                            ACL: 'public-read'
-                                            , Bucket: bucket
-                                            , Key: thumbFileName
-                                            , Body: fileBuffer
-                                            , ContentType: 'image/jpg'
-                                        }, function (error, response) {
-                                            if (error) {
-                                                console.log(error);
+                                    if (err) {
+                                        console.log(err);
+                                        res.status(500).end();
+                                    }
+                                    else {
+                                        var jimpFile = __dirname + "/files/" + dateFilename + "_thumb.jpg";
+                                        image.resize(thumbnailSize, thumbnailSize) // resize
+                                            .quality(60) // set JPEG quality
+                                            .write(jimpFile, function () {
+                                                var fileBuffer = fs.readFileSync(jimpFile);
+                                                var thumbFileName = "thumb_" + dateFilename;
+                                                s3.putObject({
+                                                    ACL: 'public-read'
+                                                    , Bucket: bucket
+                                                    , Key: thumbFileName
+                                                    , Body: fileBuffer
+                                                    , ContentType: 'image/jpg'
+                                                }, function (error, response) {
+                                                    if (error) {
+                                                        console.log(error);
+                                                        res.status(500).end();
+                                                    }
+                                                });
+                                            });
+                                    }
+                                });
+                                jimp.read(fileLocation, function (err, image) {
+                                    var pngGetText = __dirname + "/files/" + Date.now() + "_getText.png";
+                                    image.write(pngGetText, function () {
+                                        // Recognize text of any language in any format
+                                        tesseract.process(pngGetText, function (err, text) {
+                                            if (err) {
                                                 res.status(500).end();
+                                                console.error(err);
+                                            }
+                                            else {
+                                                File.findOne({
+                                                    user: user
+                                                    , filename: dateFilename
+                                                }, function (err, doc) {
+                                                    if (err) {
+                                                        console.log(err);
+                                                        res.status(500).end();
+                                                    }
+                                                    doc.content = text;
+                                                    doc.save();
+                                                });
+                                                res.status(200).end();
+                                                if (text.lengt > 0) {
+                                                    compareAllFiles(user, dateFilename, text);
+                                                }
                                             }
                                         });
                                     });
-                            }
-                        });
-                        jimp.read(fileLocation, function (err, image) {
-                            image.write("temp.png", function () {
-                                // Recognize text of any language in any format
-                                tesseract.process("temp.png", function (err, text) {
-                                    if (err) {
-                                        res.status(500).end();
-                                        console.error(err);
-                                    }
-                                    else {
-                                        File.findOne({
-                                            user: user
-                                            , filename: filename
-                                        }, function (err, doc) {
-                                            if (err) {
-                                                console.log(err);
-                                                res.status(500).end();
-                                            }
-                                            doc.content = text;
-                                            doc.save();
-                                        });
-                                        res.status(200).end();
-                                        if (text.lengt > 0) {
-                                            compareAllFiles(user, filename, text);
-                                        }
-                                    }
                                 });
-                            });
-                        });
                             }
                         });
-                        // END JIMP
                     }
                 });
             }
@@ -1069,7 +1071,6 @@ function createLink(list, user, i) {
         });
     }
 }
-
 apiRoutes.post('/updatelastopened', function (req, res) {
     var user = req.headers['user'];
     var filename = req.headers['filename'];
@@ -1088,7 +1089,6 @@ apiRoutes.post('/updatelastopened', function (req, res) {
         }
     });
 });
-
 app.use('/api', apiRoutes);
 // =================================================================
 // start the server ================================================
