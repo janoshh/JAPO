@@ -14,6 +14,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.apache.http.util.EntityUtilsHC4;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -62,7 +63,11 @@ public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
 
             Bitmap bm = BitmapFactory.decodeFile(filePath);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bm.compress(Bitmap.CompressFormat.PNG, 100, baos); //bm is the bitmap object
+            //Bitmap scaled = Bitmap.createScaledBitmap(bm, 300, 460, true); //rescale the resolution
+
+            Bitmap scaledBitmap = scaleDown(bm, 2500, true); //rescale to max 5mb
+
+            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos); //100 is bedoeld voor de colors
             byte[] b = baos.toByteArray();
 
             String encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
@@ -83,7 +88,6 @@ public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
             httppost.setHeader("tags",tag);                     //tag
             httppost.setHeader("file-size", totalSize+"");      //filesize voor amazon S3
             httppost.setHeader("filename", fName);                   //faliname
-            Log.d("fileSize: ", totalSize+"");
 
             // Log.d("FILENAME: ",fName);
 
@@ -96,7 +100,9 @@ public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
             statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200) {
                 responseString = EntityUtils.toString(r_entity);
-            } else {
+            } else if(statusCode == 409) {
+                responseString = EntityUtils.toString(r_entity);
+            } else{
                 responseString = "Error occurred! Http Status Code: " + statusCode;
             }
 
@@ -108,13 +114,28 @@ public class UploadFileToServer extends AsyncTask<Void, Integer, String> {
         return responseString;
     }
 
+    public static Bitmap scaleDown(Bitmap realImage, float maxImageSize,
+                                   boolean filter){
+        float ratio = Math.min(
+                (float) maxImageSize / realImage.getWidth(),
+                (float) maxImageSize / realImage.getHeight());
+        int width = Math.round((float) ratio * realImage.getWidth());
+        int height = Math.round((float) ratio * realImage.getHeight());
+
+        Bitmap newBitmap = Bitmap.createScaledBitmap(realImage, width,
+                height, filter);
+        return newBitmap;
+    }
+
     @Override
     protected void onPostExecute(String result) {
         Log.e("Response from server: ", result);
         super.onPostExecute(result);
-        if (statusCode == 200) {
+        if (statusCode == 409) {
+            MainActivity.limitReached(); //set imgtxt
+        } else if(statusCode == 200) {
             MainActivity.onRes();   //clear edittext,  set imgtxt, set pgbar invisible
-        } else {
+        } else{
             MainActivity.onBadRes();    //set imgtxt, set pgbar invisible
         }
     }

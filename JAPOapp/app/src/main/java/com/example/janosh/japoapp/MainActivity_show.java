@@ -3,6 +3,7 @@ package com.example.janosh.japoapp;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.util.Log;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -76,12 +77,27 @@ public class MainActivity_show extends AppCompatActivity {
 
                     Log.d("ARRAY: ",jsonarray.toString());
                     for(int i=0; i<jsonarray.length();i++){
+                        String size = "";
                         //get data
                         JSONObject jsonobject= jsonarray.getJSONObject(i);
-                        //JSONObject jsonobject = (JSONObject)res.get(0);
-                        String name=(String)jsonobject.get("customfilename");
+
+                        String type=(String)jsonobject.get("filetype");
+                        String name = jsonobject.get("customfilename") + type;
                         String tag=(String)jsonobject.get("tags");
-                        String size=(String)jsonobject.get("size");
+                        double tempSize=Double.parseDouble((String)jsonobject.get("size"));
+                        //check for empty strings
+                        if(name.equals(type)) {
+                            name = (String) jsonobject.get("filename");
+                            name = name.substring(14); //get real filename without timestamp
+                        } if(tag.equals("")){
+                            tag = "No tag provided";
+                        }
+                        //check size
+                        if(tempSize/1000000 > 1){
+                            size = Double.toString(round(tempSize/1000000,2)) + " MB";
+                        }else{
+                            size = Double.toString(round(tempSize/1000,2)) + " kB";
+                        }
                         //add to one string for the listview
                         String specs = "tag: " + tag + "  size: " + size;
                         Log.d("customfilename: ",name);
@@ -120,6 +136,15 @@ public class MainActivity_show extends AppCompatActivity {
 
         // Adding request to request queue
         docRequest.getInstance().addToRequestQueue(jsonObjReq);
+    }
+
+    public static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
     }
 
     public void popList(){

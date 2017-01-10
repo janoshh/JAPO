@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_STORAGE = 1;
 
     String fileName, fname;
-    String fileType = ".png";
+    String fileType = ".jpg";
     String path;
     String token;
     String user;
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                 capture.setEnabled(false);
                 cName.setEnabled(false);
                 tag.setEnabled(false);
-                viewDoc.setEnabled(false);
+                viewDoc.setEnabled(true);
                 // load token and username
                 SharedPreferences settings = getSharedPreferences("validation", MODE_PRIVATE);
                 token = settings.getString("token", "Error loading token");
@@ -137,8 +137,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //callback user input on permission request
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == REQUEST_CODE_STORAGE) {
+    public void onRequestPermissionsResult(int requestCodeStorage, int requestcodeOverLay, String[] permissions, int[] grantResults) {
+        if (requestCodeStorage == REQUEST_CODE_STORAGE) {
             if(grantResults.length == 2 && grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
                 // success!
             } else {
@@ -197,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
     public static void onRes(){
         pgBar.setVisibility(View.INVISIBLE);
         upload.setEnabled(false);
+        capture.setEnabled(true);
         viewDoc.setEnabled(true);
         imgTxt.setText("Upload success!");
         cName.setText("");
@@ -206,6 +207,15 @@ public class MainActivity extends AppCompatActivity {
     public static void onBadRes(){
         pgBar.setVisibility(View.INVISIBLE);
         imgTxt.setText("Upload failed! Try again");
+        capture.setEnabled(true);
+        cName.setEnabled(true);
+        tag.setEnabled(true);
+        viewDoc.setEnabled(true);
+    }
+
+    public static void limitReached(){
+        pgBar.setVisibility(View.INVISIBLE);
+        imgTxt.setText("Limit reached.\nCreate a premium account on our website!");
         capture.setEnabled(true);
         cName.setEnabled(true);
         tag.setEnabled(true);
